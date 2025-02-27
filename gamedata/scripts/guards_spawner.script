@@ -114,7 +114,6 @@ end
 function spawn_guard()
 	local tg = time_global()
 	if (upd_tmr and tg < upd_tmr) then
-		printf("left %s", upd_tmr - tg)
 		return
 	end
 	upd_tmr = tg + upd_upd_tmr
