@@ -1,5 +1,4 @@
 --[[
---[[
 	squads spawn only if "spawn_timer" game time passed
 	spawned squads are default vanilla's, so most of them have from 1 to 3 npcs
 	you can spawn whatever you want from squad_descr_default_stalkers.ltx or squad_descr_default_mutants.ltx (or make yours) as long as it does not have "story_id" in squad section
@@ -32,7 +31,7 @@ local guards_t = {
 
 --------- Swamps ---------
 	-- clear sky base
-	["mar_smart_terrain_8_11"] = { factions = { "ecolog" }, max_amount = 3, ranks = { "advanced", "veteran" }, smart_faction = "ecolog", squads = {} },
+	["mar_smart_terrain_8_11"] = { factions = { "ecolog" }, max_amount = 1, ranks = { "advanced", "veteran" }, smart_faction = "ecolog", squads = {} },
 	-- renegade base
 	["mar_smart_terrain_3_3"] = { factions = { "renegade" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "renegade", squads = {} },
 
@@ -41,16 +40,9 @@ local guards_t = {
 	["gar_smart_terrain_5_2"] = { factions = { "dolg" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "dolg", squads = {} },
 
 --------- Agroprom ---------
-	-- military base middle
-	["agr_smart_terrain_1_6"] = { factions = { "army" }, max_amount = 1, ranks = { "advanced", "veteran" }, smart_faction = "army", squads = {} },
-	-- military base northerth half
-	["agr_smart_terrain_1_6_near_1"] = { factions = { "army" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "army", squads = {} },
-	-- military base southern half
-	["agr_smart_terrain_1_6_near_2"] = { factions = { "army" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "army", squads = {} },
+
 
 --------- Dark Valley ---------
-	-- bandit base north
-	["val_smart_terrain_7_3"] = { factions = { "bandit" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "bandit", squads = {} },
 	-- bandit base center
 	["val_smart_terrain_7_4"] = { factions = { "bandit" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "bandit", squads = {} },
 	-- bandit base south
@@ -66,14 +58,22 @@ local guards_t = {
 --------- Warehouses ---------
 	-- merc northwestern outpost
 	["mil_smart_terrain_2_2"] = { factions = { "killer" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "killer", squads = {} },
-	["mil_smart_terrain_2_4"] = { factions = { "ecolog" }, max_amount = 3, ranks = { "veteran", "advanced" }, smart_faction = "ecolog", squads = {} },
-	-- freedom base north (entrance)
-	["mil_smart_terrain_7_8"] = { factions = { "freedom" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "freedom", squads = {} },
-	-- freedom base west
-	["mil_smart_terrain_7_10"] = { factions = { "freedom" }, max_amount = 1, ranks = { "novice", "advanced" }, smart_faction = "freedom", squads = {} },
+	["mil_smart_terrain_2_4"] = { factions = { "ecolog" }, max_amount = 1, ranks = { "veteran", "advanced" }, smart_faction = "ecolog", squads = {} },
 
 --------- Dead City ---------
 	-- merc base
+	
+--------- Jupiter ---------
+	-- Freedom base Jupiter
+	["jup_a6"] = { factions = { "freedom" }, max_amount = 1, ranks = { "veteran", "advanced", "alpha"}, smart_faction = "freedom", squads = {} },
+
+--------- Zaton ---------
+	-- Zaton Loner Base
+	["zat_stalker_base_smart"] = { factions = { "stalker" }, max_amount = 1, ranks = { "veteran", "advanced", "alpha"}, smart_faction = "stalker", squads = {} },
+	-- Iron Forest Sin
+	["zat_b100"] = { factions = { "greh" }, max_amount = 1, ranks = { "veteran", "alpha"}, smart_faction = "greh", squads = {} },
+	-- Small East Boat
+	["zat_b14_smart_terrain"] = { factions = { "bandit" }, max_amount = 1, ranks = { "alpha"}, smart_faction = "bandit", squads = {} },
 
 --------- Radar ---------
 	-- lab entrance
@@ -82,7 +82,7 @@ local guards_t = {
 
 --------- Pripyat ---------
 	-- monolith base
-	["pri_monolith"] = { factions = { "monolith" }, max_amount = 2, ranks = { "veteran", "alpha" }, smart_faction = "monolith", squads = {} },
+	["pri_monolith"] = { factions = { "monolith" }, max_amount = 1, ranks = { "veteran", "alpha" }, smart_faction = "monolith", squads = {} },
 }
 
 -- factions with weird mixed names
@@ -99,15 +99,22 @@ local squad_replace = {
 }
 
 local upd_tmr
-local upd_upd_tmr = 60000
+local upd_upd_tmr = 89650
 local prev_time
 guarded_smarts = {}
 local ctime_to_t = utils_data.CTime_to_table
 local t_to_ctime = utils_data.CTime_from_table
 
+function get_random_faction(smart, guard)
+	local random_faction = is_not_empty(guard.factions) and guard.factions[math.random(#guard.factions)]
+	random_faction = faction_name_replace[random_faction] or random_faction
+	return random_faction
+end
+
 function spawn_guard()
 	local tg = time_global()
 	if (upd_tmr and tg < upd_tmr) then
+		printf("left %s", upd_tmr - tg)
 		return
 	end
 	upd_tmr = tg + upd_upd_tmr
@@ -132,8 +139,7 @@ function spawn_guard()
 			local smart = SIMBOARD:get_smart_by_name(smart_name)
 
 			-- build squad section
-			local random_faction = is_not_empty(t.factions) and t.factions[math.random(#t.factions)]
-			random_faction = faction_name_replace[random_faction] or random_faction
+			local random_faction = get_random_faction(smart, t)
 			local random_rank = is_not_empty(t.ranks) and t.ranks[math.random(#t.ranks)]
 			local squad_section = (random_faction and random_rank) and random_faction .. "_sim_squad_" .. random_rank
 			squad_section = squad_replace[squad_section] or squad_section
@@ -269,6 +275,9 @@ function on_key_press_dbg(key)
 				end
 			end
 		end
+		upd_upd_tmr = 1000
+		spawn_timer = 30
+		spawn_guard()
 
 	elseif key == DIK_keys.DIK_K then
 		DELETE_ALL_GUARDS = true
@@ -301,4 +310,3 @@ function on_game_start()
 	RegisterScriptCallback("save_state", save_state)
 	RegisterScriptCallback("load_state", load_state)
 end
-]]--

@@ -1,0 +1,5 @@
+local old_emission_guard_patch_on_game_start = emission_guard_patch.on_game_start
+emission_guard_patch.on_game_start = function()
+    if _G.WARFARE then return end
+    old_emission_guard_patch_on_game_start()
+end

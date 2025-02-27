@@ -1,0 +1,12 @@
+local old_global_position_from = global_position.from
+global_position.from = function(object_or_position, level_id)
+	if (level_id ~= nil) then
+		local offset = global_position.level_offsets[level_id]
+
+		if (not object_or_position) or (not offset) then
+			printf("!!! %s on level has invalid offset !!! %s", object_or_position, level_id)
+			return
+		end
+	end
+	return old_global_position_from(object_or_position, level_id)
+end

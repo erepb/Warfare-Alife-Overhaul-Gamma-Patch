@@ -1,0 +1,15 @@
+local old_sim_squad_scripted_get_random_spawn_count = sim_squad_scripted.get_random_spawn_count
+sim_squad_scripted.get_random_spawn_count = function(self)
+	if _G.WARFARE then
+		local random_spawn = ini_sys:r_string_ex(settings_id,"npc_random")
+		-- check if trying to spawn trader/mechanic/medic/barman squad
+		local single = {1, 1}
+		for i = 1,#random_spawn do
+			if string.find(random_spawn[i], "trader") or string.find(random_spawn[i], "mechanic") or string.find(random_spawn[i], "barman") or string.find(random_spawn[i], "medic") or string.find(random_spawn[i], "tech") or string.find(random_spawn[i], "informator") then
+				printf("Spawning trader/mechanic/medic/barman, squad size changed to 1")
+				return single
+			end
+		end
+	end
+	return old_sim_squad_scripted_get_random_spawn_count(self)
+end

@@ -1,0 +1,26 @@
+local old_UINewGame_OnCheckSetStory = ui_mm_faction_select.UINewGame.OnCheckSetStory
+function ui_mm_faction_select.UINewGame:OnCheckSetStory()
+    if (not self.access) then
+        return
+    end
+
+    self.ck_survival:SetCheck(false)
+    self.ck_states["ck_survival"] = false
+
+    self.ck_azazel_mode:SetCheck(false)
+    self.ck_states["ck_azazel_mode"] = false
+
+    self:LoadMap()
+end
+
+local old_UINewGame_OnCheckSetWarfare = ui_mm_faction_select.UINewGame.OnCheckSetWarfare
+function ui_mm_faction_select.UINewGame:OnCheckSetWarfare()
+    if (not self.access) then
+        return
+    end
+
+    self.ck_survival:SetCheck(false)
+    self.ck_states["ck_survival"] = false
+
+    self:LoadMap()
+end

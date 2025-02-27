@@ -1,0 +1,10 @@
+function on_game_start()
+	local function on_game_load()
+		--Make sure pda.script:on_game_start doesn't create same time event when warfare is enabled
+		if (alife_storage_manager.get_state().enable_warfare_mode) then
+			CreateTimeEvent(0, "ScanForSpots", 2, pda.discover_spots)
+		end
+	end
+
+	RegisterScriptCallback("on_game_load",on_game_load)
+end

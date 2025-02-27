@@ -1,0 +1,5 @@
+local old_grok_no_north_faction_in_south_on_game_start = grok_no_north_faction_in_south.on_game_start
+grok_no_north_faction_in_south.on_game_start = function()
+	if _G.WARFARE then return end
+	old_grok_no_north_faction_in_south_on_game_start()
+end

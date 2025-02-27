@@ -1,0 +1,5 @@
+local old_grok_nes_on_game_start = grok_nes.on_game_start
+grok_nes.on_game_start = function()
+	if _G.WARFARE then return end
+	old_grok_nes_on_game_start()
+end
