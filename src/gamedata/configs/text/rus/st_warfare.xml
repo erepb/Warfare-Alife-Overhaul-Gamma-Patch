@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="windows-1251"?>
+
+<!-- 
+	EXTRA WARFARE STRINGS
+-->
+
+<string_table>	
+	<string id="st_wrfr_request_squad_1">
+		<text>Base, requesting a squad at %s, do you copy?</text>
+	</string>
+	<string id="st_wrfr_request_squad_2">
+		<text>Come in base, we need a squad at %s, copy?</text>
+	</string>
+	<string id="st_wrfr_request_squad_3">
+		<text>Come in base, requesting a squad at %s, over.</text>
+	</string>
+	<string id="st_wrfr_request_squad_4">
+		<text>Base, do you copy? I need a squad at %s, over.</text>
+	</string>
+	<string id="st_wrfr_request_squad_5">
+		<text>Base, we need a squad at %s asap, over.</text>
+	</string>
+
+	<string id="st_wrfr_respond_affirmative_1">
+		<text>Copy that, we're sending a squad from %s to your location.</text>
+	</string>
+	<string id="st_wrfr_respond_affirmative_2">
+		<text>We hear you, sending a squad from %s to your location now.</text>
+	</string>
+	<string id="st_wrfr_respond_affirmative_3">
+		<text>Roger, we're sending a squad your way from %s now.</text>
+	</string>
+	<string id="st_wrfr_respond_affirmative_4">
+		<text>Affirmative, squad is being deployed to your location from %s.</text>
+	</string>
+	<string id="st_wrfr_respond_affirmative_5">
+		<text>Roger that, a squad from %s is now moving out to your location.</text>
+	</string>
+	
+	<string id="st_wrfr_respond_ontheway_1">
+		<text>Sit tight, we're already headed to %s.</text>
+	</string>
+	<string id="st_wrfr_respond_ontheway_2">
+		<text>Hey, we're already on the way to %s, over.</text>
+	</string>
+	<string id="st_wrfr_respond_ontheway_3">
+		<text>Base already sent us to your location at %s.</text>
+	</string>
+	<string id="st_wrfr_respond_ontheway_4">
+		<text>We're heading to %s already, don't worry.</text>
+	</string>
+	<string id="st_wrfr_respond_ontheway_5">
+		<text>Heads up, we're already headed to %s.</text>
+	</string>
+	
+	<string id="st_wrfr_respond_negative_1">
+		<text>Negative, there are no bases in your vicinity to reinforce, over.</text>
+	</string>
+	<string id="st_wrfr_respond_negative_2">
+		<text>No can do, there are no bases in range of your area.</text>
+	</string>
+	<string id="st_wrfr_respond_negative_3">
+		<text>Negative, there are no bases in range of your area, over.</text>
+	</string>
+	<string id="st_wrfr_respond_negative_4">
+		<text>Not possible, we have no bases in range of your area.</text>
+	</string>
+	<string id="st_wrfr_respond_negative_5">
+		<text>Not possible, we have no bases in your vicinity to reinforce.</text>
+	</string>
+
+
+
+
+	<string id="st_wrfr_invasion_attack">
+		<text>An allied attack force from %s is launching an assault on %s.</text>
+	</string>
+	<string id="st_wrfr_invasion_defense_incoming">
+		<text>Enemy forces are approaching %s.</text>
+	</string>
+	
+	<string id="st_wrfr_invasion_defense_clear_1">
+		<text>Base, enemy forces targeting %s have been eliminated, over.</text>
+	</string>
+	<string id="st_wrfr_invasion_defense_clear_2">
+		<text>Great job, boys - we wiped them out! Everybody at %s can rest now.</text>
+	</string>
+	<string id="st_wrfr_invasion_defense_clear_3">
+		<text>Good job, guys. Looks like there aren't any more hostiles headed to %s.</text>
+	</string>
+	<string id="st_wrfr_invasion_defense_clear_4">
+		<text>Looks like we're clear - %s is secure.</text>
+	</string>
+	<string id="st_wrfr_invasion_defense_clear_5">
+		<text>Come in base, we repelled the forces attacking %s, over.</text>
+	</string>
+	
+	<string id="st_wrfr_invasion_defense_fullyreinforced">
+		<text>Enemy forces are approaching %s. Reinforcements have been sent.</text>
+	</string>
+	<string id="st_wrfr_invasion_defense_semireinforced_1">
+		<text>Enemy forces are approaching %s. More reinforcements are needed!</text>
+	</string>
+	<string id="st_wrfr_invasion_defense_notreinforced">
+		<text>Enemy forces are approaching %s. Reinforcements needed!</text>
+	</string>
+
+
+</string_table>
