@@ -489,6 +489,34 @@ function shuffleTable( t )
     end
 end
 
+function get_stalker_pop_factor_value()
+	if smr_amain_mcm then
+		return smr_amain_mcm.get_config("stalker_pop_factor")
+	else
+		return ui_options.get("alife/general/alife_stalker_pop")
+	end
+end
+
+function get_stalker_pop_factor()
+	local value = get_stalker_pop_factor_value()
+	printf("stalker_pop_factor = %s", value)
+	return value
+end
+
+function get_monster_pop_factor_value()
+	if smr_amain_mcm then
+		return smr_amain_mcm.get_config("monster_pop_factor")
+	else
+		return ui_options.get("alife/general/alife_mutant_pop")
+	end
+end
+
+function get_monster_pop_factor()
+	local value = get_monster_pop_factor_value()
+	printf("monster_pop_factor = %s, smr %s", value, smr_amain_mcm and "true" or "false")
+	return value
+end
+
 -- for vanilla, probably create a custom simulation.ltx 
 function fill_start_position()
 	printd(0)
@@ -513,8 +541,8 @@ function fill_start_position()
 	local setting_ini
 	setting_ini = ini_file("misc\\simulation.ltx")
 	
-	local stalker_pop_factor = ui_options.get("alife/general/alife_stalker_pop")
-	local monster_pop_factor = ui_options.get("alife/general/alife_mutant_pop")
+	local stalker_pop_factor = get_stalker_pop_factor()
+	local monster_pop_factor = get_monster_pop_factor()
 	
 	local result, squad_section, count, li, lc
 	-- enemy_new_game_bonus

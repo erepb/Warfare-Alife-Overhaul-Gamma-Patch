@@ -2,7 +2,6 @@ local alife_options_index = 5
 local alife_warfare_options_index = 3
 
 function ui_options.init_opt_warfare()
-    printf("ui_options.init_opt_warfare")
     local options = {
         { id= "slide_warfare"		 		 ,type= "slide"	  ,link= "ui_options_slider_warfare"	 ,text= "ui_mm_title_warfare_faction"		,size= {512,50}		},
 

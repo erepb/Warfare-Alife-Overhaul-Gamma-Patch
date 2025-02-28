@@ -276,8 +276,8 @@ end
 
 function set_max_population(smart)
 	printd(0)
-	local stalker_pop_factor = ui_options.get("alife/general/alife_stalker_pop")
-	local monster_pop_factor = ui_options.get("alife/general/alife_mutant_pop")
+	local stalker_pop_factor = warfare.get_stalker_pop_factor()
+	local monster_pop_factor = warfare.get_monster_pop_factor()
 	
 	if (smart.props and (smart.props.base > 0 or smart.props.resource > 0 or smart.props.territory > 0)) then
 		smart.max_population = round_idp(math.max(1, smart.default_max_population * stalker_pop_factor))
@@ -2936,7 +2936,7 @@ function spawn_mutants(smart)
 	end
 
 	local current_level = smart.level_id
-	local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, monster_level_capacity[current_level] * ui_options.get("alife/general/alife_mutant_pop")))		-- max allowable squads is min of user setting or level-specific capacity
+	local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, monster_level_capacity[current_level] * warfare.get_monster_pop_factor()))		-- max allowable squads is min of user setting or level-specific capacity
 	local rare_chance = warfare_options.options.monster_rare_chance_south
 
 	if (current_level > 12) and (current_level < 32) then									-- levels 13 - 31 include all levels north of military warehouses/dead city/trucks cemetery. Also includes all labs. See level_targets.script for more info
