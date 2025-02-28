@@ -499,7 +499,7 @@ end
 
 function get_stalker_pop_factor()
 	local value = get_stalker_pop_factor_value()
-	printf("stalker_pop_factor = %s", value)
+	printd("stalker_pop_factor = %s", value)
 	return value
 end
 
@@ -513,7 +513,7 @@ end
 
 function get_monster_pop_factor()
 	local value = get_monster_pop_factor_value()
-	printf("monster_pop_factor = %s, smr %s", value, smr_amain_mcm and "true" or "false")
+	printd("monster_pop_factor = %s, smr %s", value, smr_amain_mcm and "true" or "false")
 	return value
 end
 
