@@ -8,6 +8,8 @@
 	2021/02/16 - Vintar - allowed loner random patrols to be unmarked on game save, so that process_loners() can handle them, saved calculated distances between smart terrains
 	2021/02/22 - Vintar - added initial mutant spawns to non-random start. Random start mutants now spawn on lairs. Under attack status saved
 	2021/03/19 - Vintar - fix for lower population factor initial spawns
+	2023/05/16 - Vintar - add resource count as saved variable
+	2023/05/17 - Vintar - allow initial mutant spawns on resources
 
 	This file deals with warfare's essential data, such as squad registration with warfare,
 	and saving/loading important parameters like respawn timers, squad targets, faction info
@@ -146,6 +148,7 @@ function save_state(m_data)
 	m_data.warfare.ecolog_next_update = smart_terrain_warfare.ecolog_next_update
 	m_data.warfare.smart_terrain_distances = smart_terrain_warfare.smart_terrain_distances
 	m_data.warfare.under_attack = smart_terrain_warfare.under_attack
+	m_data.warfare.max_resource_count = smart_terrain_warfare.max_resource_count
 
 	for sid,_ in pairs(smart_terrain_warfare.random_patrols) do
 		local squad = sid and alife_object(sid)
@@ -216,6 +219,7 @@ function load_state(m_data)
 	smart_terrain_warfare.ecolog_next_update = m_data.warfare and m_data.warfare.ecolog_next_update or {}
 	smart_terrain_warfare.smart_terrain_distances = m_data.warfare and m_data.warfare.smart_terrain_distances or {}
 	smart_terrain_warfare.under_attack = m_data.warfare and m_data.warfare.under_attack or {}
+	smart_terrain_warfare.max_resource_count = m_data.warfare and m_data.warfare.max_resource_count or smart_terrain_warfare.max_resource_count
 
 	new_surge = m_data.warfare and m_data.warfare.new_surge or true
 	
@@ -517,7 +521,7 @@ function get_monster_pop_factor()
 	return value
 end
 
--- for vanilla, probably create a custom simulation.ltx 
+-- for vanilla, probably create a custom simulation.ltx
 function fill_start_position()
 	printd(0)
 
@@ -572,7 +576,7 @@ function fill_start_position()
 			smart.level_id = game_graph():vertex(smart.m_game_vertex_id):level_id()
 		end
 		
-		if (smart.props.lair > 0) and (smart.props.base < 1) and (smart.props.resource < 1) and (smart.props.territory < 1) then
+		if (smart.props.lair > 0) and (smart.props.base < 1) and (smart.props.territory < 1) then
 			--local mutants_on_level = sim_offline_combat.get_num_squads_on_level(smart.level_id, "monster")
 			
 			-- for new game, spawn 50% the allowable mutants, or one mutant squad per smart (whichever occurs first)

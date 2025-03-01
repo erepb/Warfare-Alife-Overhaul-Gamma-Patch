@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="windows-1251" ?>
+
+<!--
+	EXTRA WARFARE STRINGS
+-->
+
 <string_table>
     <string id="st_wrfr_request_squad_1">
         <text>База, запрашиваю отряд на %s, приём?</text>
@@ -96,4 +101,8 @@
     <string id="st_wrfr_invasion_defense_notreinforced">
         <text>Вражеские силы приближаются к %s. Нужны подкрепления!</text>
     </string>
+    <string id="st_wrfr_invasion_defense_retreating">
+        <text>Вражеские силы приближаются к %s. Союзные силы отступают.</text>
+    </string>
+
 </string_table>
