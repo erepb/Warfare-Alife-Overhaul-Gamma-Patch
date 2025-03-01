@@ -300,7 +300,6 @@ function get_section(faction, advanced_chance, veteran_chance)
 			return (name .. "_sim_squad_novice")
 		end
 	elseif faction == "monster" then
-	
 		if not (IsSurvivalMode()) then
 			current_level = veteran_chance -- using `veteran_chance` to store level number for mutants
 			-- Pick correct section by level
