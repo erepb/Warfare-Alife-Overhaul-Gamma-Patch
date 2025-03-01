@@ -271,7 +271,7 @@ function get_spawn_section(faction, resource, current_level)
 	if (resource) then
 		--printf("has valid resource count)
 	else
-		printf("resource count was %s for spawn section for faction %s on level %s", resource, faction, current_level)
+		--printf("resource count was %s for spawn section for faction %s on level %s", resource, faction, current_level)
 		resource = 0  -- nil resource count
 	end
 	

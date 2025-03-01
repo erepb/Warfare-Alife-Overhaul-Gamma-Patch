@@ -143,8 +143,8 @@ local function smart_terrain_on_update(smart)
 							in_combat = validate_enemy(sim, lid_1, squad_1, id_1, id_t, community_1)
 							if in_combat then
 								if enable_debug then
-									printf("% OCS | Battle in smart [%s]", smart:name())
-									printf("------------------------------------------------------------------------")
+									--printf("% OCS | Battle in smart [%s]", smart:name())
+									--printf("------------------------------------------------------------------------")
 								end
 								return
 							end
@@ -155,8 +155,8 @@ local function smart_terrain_on_update(smart)
 							in_combat = validate_enemy(sim, lid_1, squad_1, id_1, id_2, community_1)
 							if in_combat then
 								if enable_debug then
-									printf("% OCS | Battle in smart [%s]", smart:name())
-									printf("------------------------------------------------------------------------")
+									--printf("% OCS | Battle in smart [%s]", smart:name())
+									--printf("------------------------------------------------------------------------")
 								end
 								return
 							end
@@ -212,7 +212,7 @@ local function squad_on_update(squad_1)
 					in_combat = validate_enemy(sim, lid_1, squad_1, id_1, id_t, community_1)
 					if in_combat then
 						if enable_debug then
-							printf("------------------------------------------------------------------------")
+							--printf("------------------------------------------------------------------------")
 						end
 						return
 					end
@@ -223,7 +223,7 @@ local function squad_on_update(squad_1)
 					in_combat = validate_enemy(sim, lid_1, squad_1, id_1, id_2, community_1)
 					if in_combat then
 						if enable_debug then
-							printf("------------------------------------------------------------------------")
+							--printf("------------------------------------------------------------------------")
 						end
 						return
 					end
@@ -355,14 +355,14 @@ local function coordinator()
 	end
 	
 	if enable_debug then
-		printf("- OCS | Combat Distance: %s - Execlude special characters: %s - Mutants included: %s", opt_dist, opt_exclude, can_fight_mutant)
+		--printf("- OCS | Combat Distance: %s - Execlude special characters: %s - Mutants included: %s", opt_dist, opt_exclude, can_fight_mutant)
 	end
 	
 	--[[ Debugger
 	if enable_debug and (not _G.WARFARE) then
 		for lid,v in pairs(squads_by_level) do
 			local clr = limit_by_level[lid] and "%" or "~"
-			printf(clr .. " OCS | lvl: %s - squad_count: %s - allow_simulation %s", sim:level_name(lid), count_by_level[lid], tostring(limit_by_level[lid]))
+			--printf(clr .. " OCS | lvl: %s - squad_count: %s - allow_simulation %s", sim:level_name(lid), count_by_level[lid], tostring(limit_by_level[lid]))
 		end
 	end
 	--]]
@@ -420,7 +420,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 							
 						elseif sid_1 then
 							if enable_debug then
-								printf("% OCS |  [%s] is special, [%s] is removed", squad_1:name(), squad_2:name())
+								--printf("% OCS |  [%s] is special, [%s] is removed", squad_1:name(), squad_2:name())
 							end
 							
 							remove_squad_info(squad_2, id_2, id_1, lid)
@@ -434,7 +434,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 							
 						elseif sid_2 then
 							if enable_debug then
-								printf("% OCS |  [%s] is special, [%s] is removed", squad_2:name(), squad_1:name())
+								--printf("% OCS |  [%s] is special, [%s] is removed", squad_2:name(), squad_1:name())
 							end
 							
 							remove_squad_info(squad_1, id_1, id_2, lid)
@@ -497,8 +497,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 	damage = math_ceil(damage)
 	
 	if enable_debug then
-		printf("/ OCS | %s | Attacker [%s](Power: %s) vs Victim [%s](Power: %s) | Damage: %s",
-		alife():level_name(lid), squad_1:name(), ocs_power[id_1], squad_2:name(), ocs_power[id_2], damage)
+		--printf("/ OCS | %s | Attacker [%s](Power: %s) vs Victim [%s](Power: %s) | Damage: %s", alife():level_name(lid), squad_1:name(), ocs_power[id_1], squad_2:name(), ocs_power[id_2], damage)
 	end
 	
 	-- Cause damage
@@ -508,7 +507,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 	if (ocs_power[id_2] <= 0) then
 		
 		if enable_debug then
-			printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
+			--printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
 		end
 	
 		-- Post-battle state
@@ -527,14 +526,14 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 	elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2) then
 	
 		if enable_debug then
-			printf("~ OCS | Squad [%s] lost NPC [%s] | Remaining power: %s | Moment: %s sec", squad_2:name(), se_victim:name(), ocs_power[id_2], math_ceil(time_global()/1000))
+			--printf("~ OCS | Squad [%s] lost NPC [%s] | Remaining power: %s | Moment: %s sec", squad_2:name(), se_victim:name(), ocs_power[id_2], math_ceil(time_global()/1000))
 		end
 		
 		-- Post-battle state
 		set_battle_outcome(false, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
 		
 		if enable_debug and squad_2:npc_count() <= 1 then
-			printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
+			--printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
 		end
 		
 		if squad_2:npc_count() <= 1 then
@@ -551,7 +550,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 			remove_squad_info(squad_2, id_2, id_1, lid)
 			
 			if enable_debug then
-				printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
+				--printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
 			end
 		end
 		--]]

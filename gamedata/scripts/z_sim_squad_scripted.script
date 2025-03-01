@@ -6,7 +6,7 @@ sim_squad_scripted.get_random_spawn_count = function(self)
 		local single = {1, 1}
 		for i = 1,#random_spawn do
 			if string.find(random_spawn[i], "trader") or string.find(random_spawn[i], "mechanic") or string.find(random_spawn[i], "barman") or string.find(random_spawn[i], "medic") or string.find(random_spawn[i], "tech") or string.find(random_spawn[i], "informator") then
-				printf("Spawning trader/mechanic/medic/barman, squad size changed to 1")
+				--printf("Spawning trader/mechanic/medic/barman, squad size changed to 1")
 				return single
 			end
 		end
