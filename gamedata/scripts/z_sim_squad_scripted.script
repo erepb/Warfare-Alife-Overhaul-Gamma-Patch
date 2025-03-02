@@ -8,7 +8,7 @@ function sim_squad_scripted:get_random_spawn_count(settings_id)
 		local faction = ini_sys:r_string_ex(settings_id, "faction")
 		if (warfare_options.options.factions[faction]) then
 			if (warfare_options.options.factions[faction].random_squad_count) then
-				printf("!!! GETTING RANDOM COUNT FOR "..faction.." | " .. tonumber(warfare_options.options.factions[faction].min_random_squad_count) .. " - " .. tonumber(warfare_options.options.factions[faction].max_random_squad_count) .. " !!!!")
+				--printf("!!! GETTING RANDOM COUNT FOR "..faction.." | " .. tonumber(warfare_options.options.factions[faction].min_random_squad_count) .. " - " .. tonumber(warfare_options.options.factions[faction].max_random_squad_count) .. " !!!!")
 				count[1] = tonumber(warfare_options.options.factions[faction].min_random_squad_count)
 				count[2] = tonumber(warfare_options.options.factions[faction].max_random_squad_count)
 			end
@@ -19,7 +19,7 @@ function sim_squad_scripted:get_random_spawn_count(settings_id)
 		local single = {1, 1}
 		for i = 1,#random_spawn do
 			if string.find(random_spawn[i], "trader") or string.find(random_spawn[i], "mechanic") or string.find(random_spawn[i], "barman") or string.find(random_spawn[i], "medic") or string.find(random_spawn[i], "tech") or string.find(random_spawn[i], "informator") then
-				printf("Spawning trader/mechanic/medic/barman, squad size changed to 1")
+				--printf("Spawning trader/mechanic/medic/barman, squad size changed to 1")
 				return single
 			end
 		end
@@ -86,7 +86,7 @@ sim_squad_scripted.create_npc = function(self, spawn_smart,pos,lvid,gvid)
 
 		self.smart_id = spawn_smart.id
 	else
-		printf('spawn smart: %s', spawn_smart)
+		--printf('spawn smart: %s', spawn_smart)
 		base_spawn_position = pos or self.position
 		base_lvi = lvid or self.m_level_vertex_id
 		base_gvi = gvid or self.m_game_vertex_id
@@ -120,7 +120,7 @@ sim_squad_scripted.create_npc = function(self, spawn_smart,pos,lvid,gvid)
 			end
 		end
 	elseif #spawn_sections == 0 then
-		printf("You are trying to spawn an empty squad [%s]!!!", settings_id)
+		--printf("You are trying to spawn an empty squad [%s]!!!", settings_id)
 	end
 
 	if not (spawn_smart) then

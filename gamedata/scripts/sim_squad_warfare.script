@@ -239,7 +239,7 @@ function squad_warfare_update(squad)
 					local smart = sm and alife_object(sm)
 
 					if (smart) then
-						printf(smart:name())
+						--printf(smart:name())
 						sim_squad_warfare.set_target(squad, smart.id)
 					end
 				end
