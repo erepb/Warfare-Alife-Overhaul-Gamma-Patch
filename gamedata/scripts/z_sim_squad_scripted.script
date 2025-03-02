@@ -1,6 +1,19 @@
-local old_sim_squad_scripted_get_random_spawn_count = sim_squad_scripted.get_random_spawn_count
-sim_squad_scripted.get_random_spawn_count = function(self)
+function sim_squad_scripted:get_random_spawn_count(settings_id)
+	local count = ini_sys:r_string_ex(settings_id,"npc_in_squad") or "1,2"
+	count = str_explode(count,",")
+	count[1] = count[1] and tonumber(count[1])
+	count[2] = count[2] and tonumber(count[2]) or count[1]
+
 	if _G.WARFARE then
+		local faction = ini_sys:r_string_ex(settings_id, "faction")
+		if (warfare_options.options.factions[faction]) then
+			if (warfare_options.options.factions[faction].random_squad_count) then
+				printf("!!! GETTING RANDOM COUNT FOR "..faction.." | " .. tonumber(warfare_options.options.factions[faction].min_random_squad_count) .. " - " .. tonumber(warfare_options.options.factions[faction].max_random_squad_count) .. " !!!!")
+				count[1] = tonumber(warfare_options.options.factions[faction].min_random_squad_count)
+				count[2] = tonumber(warfare_options.options.factions[faction].max_random_squad_count)
+			end
+		end
+
 		local random_spawn = ini_sys:r_string_ex(settings_id,"npc_random")
 		-- check if trying to spawn trader/mechanic/medic/barman squad
 		local single = {1, 1}
@@ -11,5 +24,120 @@ sim_squad_scripted.get_random_spawn_count = function(self)
 			end
 		end
 	end
-	return old_sim_squad_scripted_get_random_spawn_count(self)
+
+	return count
+end
+
+local old_sim_squad_scripted_create_npc = sim_squad_scripted.create_npc
+sim_squad_scripted.create_npc = function(self, spawn_smart,pos,lvid,gvid)
+	--utils_data.debug_write("sim_squad_scripted:create_npc")
+	local settings_id = self:section_name()
+	local spawn_sections = parse_names(ini_sys:r_string_ex(settings_id, "npc") or "")
+
+	local base_spawn_position, base_lvi, base_gvi, spawn_vid
+	if (spawn_smart) then
+
+		-- Try to look/parse spawn_vid in either squad logic or smart logic
+		local spawn_vid = ini_sys:r_string_to_condlist(settings_id,"spawn_vid") or spawn_smart.ini:r_string_to_condlist(settings_id,"spawn_vid")
+		if (spawn_vid) then
+			local str = xr_logic.pick_section_from_condlist(db.actor,self,spawn_vid)
+			if (str and str ~= "" and str ~= "nil") then
+				local vid = str_explode(str,":")
+				base_lvi = tonumber(vid[1])
+				base_spawn_position = level.vertex_position(base_lvi)
+				base_gvi = tonumber(vid[2])
+			end
+		end
+
+		-- Try to look/parse spawn_point in either squad logic or smart logic
+		if not (base_spawn_position and base_lvi and base_gvi) then
+			local spawn_point = ini_sys:r_string_to_condlist(settings_id,"spawn_point") or spawn_smart.ini:r_string_to_condlist(settings_id,"spawn_point")
+			if (spawn_point) then
+				local p_path = xr_logic.pick_section_from_condlist(db.actor, self, spawn_point)
+				if (p_path and p_path ~= "" and p_path ~= "nil") then
+					local pat = patrol(p_path)
+					if (pat) then
+						base_spawn_position = pat:point(0)
+						base_lvi = pat:level_vertex_id(0)
+						base_gvi = pat:game_vertex_id(0)
+					end
+				end
+			end
+		end
+
+		-- Try spawn_smart.spawn_point
+		if not (base_spawn_position and base_lvi and base_gvi) then
+			if (spawn_smart.spawn_point) then
+				local pat = patrol(spawn_smart.spawn_point)
+				if (pat) then
+					base_spawn_position = pat:point(0)
+					base_lvi = pat:level_vertex_id(0)
+					base_gvi = pat:game_vertex_id(0)
+				end
+			end
+		end
+
+		-- if all else fail, spawn on smart
+		if not (base_spawn_position and base_lvi and base_gvi) then
+			base_spawn_position = spawn_smart.position
+			base_lvi = spawn_smart.m_level_vertex_id
+			base_gvi = spawn_smart.m_game_vertex_id
+		end
+
+		self.smart_id = spawn_smart.id
+	else
+		printf('spawn smart: %s', spawn_smart)
+		base_spawn_position = pos or self.position
+		base_lvi = lvid or self.m_level_vertex_id
+		base_gvi = gvid or self.m_game_vertex_id
+	end
+
+	local npcs_list = {}
+	for ind=1,#spawn_sections do
+		local id = self:add_squad_member(spawn_sections[ind], base_spawn_position, base_lvi, base_gvi,ind)
+		if (id) then
+			npcs_list[#npcs_list+1] = id
+		end
+	end
+
+	local random_spawn = ini_sys:r_string_ex(settings_id,"npc_random")
+	if random_spawn ~= nil then
+		random_spawn = parse_names(random_spawn)
+
+		local count = self:get_random_spawn_count(settings_id)
+
+		-- check for random squad members for each faction here.
+
+		local random_count = count[1] and count[2] and math.random(count[1],count[2]) or math.random(1,2)
+		random_count = random_count - self:npc_count()
+
+		local random_id
+		for i = 1,random_count do
+			random_id = math.random(1, #random_spawn)
+			local id = self:add_squad_member(random_spawn[random_id], base_spawn_position, base_lvi, base_gvi)
+			if (id) then
+				npcs_list[#npcs_list+1] = id
+			end
+		end
+	elseif #spawn_sections == 0 then
+		printf("You are trying to spawn an empty squad [%s]!!!", settings_id)
+	end
+
+	if not (spawn_smart) then
+		local smart = self.smart_id and db.smart_terrain_by_id[self.smart_id]
+		if (smart) then
+			local id
+			for i=1, #npcs_list do
+				id = npcs_list[i]
+				local se_obj = id and alife_object(id)
+				if (se_obj) then
+					smart:register_npc(se_obj)
+					SIMBOARD:setup_squad_and_group(se_obj)
+				end
+			end
+		end
+	end
+
+	self:set_squad_relation()
+	self:refresh()
 end

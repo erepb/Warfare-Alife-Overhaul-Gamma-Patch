@@ -416,7 +416,6 @@ function process_manual_capture(smart)
 	if currently_surge then
 		return
 	end
-	local current_level = smart.level_id
 
 	-- STEP 1: when PDA is active on empty smart, check validity for capture, any nearby bases to send a squad, and pass the info to STEP 2
 	-- if not already autocapturing and autocapture is enabled, begin the autocapture process
@@ -535,7 +534,7 @@ function process_manual_capture(smart)
 				-- base exists
 				if closest_base then
 					-- spawn squad at base and send it
-					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
+					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count)
 					local squad = utils_obj.create_squad(section, closest_base:name())
 					sim_squad_warfare.set_target(squad, smart.id)
 					-- increase spawn timer of that base
@@ -665,7 +664,7 @@ function process_manual_capture_old(smart)
 				local targeting = squad_count(smart, warfare.actor_faction)
 				
 				if (targeting < smart.max_population) then
-					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
+					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count)
 					local squad = utils_obj.create_squad(section, smart:name())
 					sim_squad_warfare.set_target(squad, smart.id)
 				end
@@ -1906,12 +1905,11 @@ function spawn_defense(smart)
 	--local size = invasions[smart.id] and invasions[smart.id][2] or 0
 	--local totalSize = size + smart.max_population
 
-	local current_level = smart.level_id
-	local section = faction_expansions.get_spawn_section(smart.owning_faction, smart.resource_count, current_level)
+	local section = faction_expansions.get_spawn_section(smart.owning_faction, smart.resource_count)
 	
 	-- army spawn quality depends on number of bases
 	if (warfare_options.options.factions[smart.owning_faction].use_bases_not_resources) then
-		section = faction_expansions.get_spawn_section(smart.owning_faction, faction_bases, current_level)
+		section = faction_expansions.get_spawn_section(smart.owning_faction, faction_bases)
 	end
 	
 	local squad = utils_obj.create_squad(section, smart:name())
@@ -2000,8 +1998,7 @@ function spawn_patrols(smart)
 			local new_table = nil
 
 			if (tobj) then
-				local current_level = smart.level_id
-				local section = faction_expansions.get_spawn_section(smart.owning_faction, smart.resource_count, current_level)
+				local section = faction_expansions.get_spawn_section(smart.owning_faction, smart.resource_count)
 				local squad = utils_obj.create_squad(section, smart:name())
 
 				if (is_squad) then
@@ -2973,7 +2970,7 @@ function spawn_mutants(smart)
 		end
 		
 		if not spawned then
-			local section = faction_expansions.get_spawn_section("monster", rare_chance, current_level)
+			local section = faction_expansions.get_spawn_section("monster", rare_chance)
 			local squad = utils_obj.create_squad(section, smart:name())
 			sim_squad_warfare.set_target(squad, smart.id)
 			if enable_debug then
