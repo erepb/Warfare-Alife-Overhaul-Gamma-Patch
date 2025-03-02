@@ -523,7 +523,6 @@ function process_manual_capture(smart)
 	if currently_surge then
 		return
 	end
-	local current_level = smart.level_id
 
     -- Disable autocapture attempts at night
     local isNight = (level.get_time_hours() < 6 or level.get_time_hours() > 20)
