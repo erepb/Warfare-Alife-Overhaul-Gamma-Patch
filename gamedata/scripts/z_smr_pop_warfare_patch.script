@@ -3,3 +3,9 @@ smr_pop.smart_can_respawn = function(smart)
     smr_pop.curr_time = game.get_game_time()
     return old_smr_pop_smart_can_respawn(smart)
 end
+
+--adjust_squad_size
+local old_smr_pop_adjust_squad_size = smr_pop.adjust_squad_size
+smr_pop.adjust_squad_size = function(smart, squad)
+    return
+end
