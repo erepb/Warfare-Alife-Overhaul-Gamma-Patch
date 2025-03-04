@@ -556,10 +556,12 @@ function process_manual_capture(smart)
 							local squads = SIMBOARD.smarts[smart.id].squads							-- get info of all squads targeting location
 							for sid,_ in pairs(squads) do
 								local squad = sid and alife_object(sid)
-								local faction = squad:get_squad_community()							-- get faction of squads
-								if (faction == warfare.actor_faction) and (not warfare.ignore[squad:section_name()]) then
-									-- squad already targeting
-									targeting_squad = squad.id
+								if squad then
+									local faction = squad:get_squad_community()							-- get faction of squads
+									if (faction == warfare.actor_faction) and (not warfare.ignore[squad:section_name()]) then
+										-- squad already targeting
+										targeting_squad = squad.id
+									end
 								end
 							end
 							
