@@ -58,7 +58,7 @@ guards_spawner.spawn_guard = function()
 			end
 
 		else
-			guards_spawner.pr("# No spawn, smart_name: [ %s ] || guards_amount: [ %s ] || max_amount: [ %s ]", smart_name, #guarded_smarts[smart_name], t.max_amount)
+			guards_spawner.pr("# No spawn, smart_name: [ %s ] || guards_amount: [ %s ] || max_amount: [ %s ]", smart_name, #guards_spawner.guarded_smarts[smart_name], t.max_amount)
 		end
 	end
 	guards_spawner.pr("---------------------------------------------")
