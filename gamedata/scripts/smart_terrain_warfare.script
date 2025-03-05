@@ -3871,13 +3871,13 @@ end
 -- get squads count and power of all factions in a smart
 -- includes stationary squads
 -- WARNING: Capable of unregistering squads!
-function squad_count_defending_all(smart)
+function squad_count_defending_all(smart, skip_check)
     printd(0, smart:name())
 	
 	local squadCount = {}
 	local squadPower = {}
 	
-	if not (smart.owning_faction) then		
+	if not skip_check and not (smart.owning_faction) then		
 		check_owner(smart)
 	end
 	
@@ -3986,7 +3986,7 @@ function check_owner(smart)
 		owner = "none"
 	end
 
-	local squadCount, squadPowers = squad_count_defending_all(smart)
+	local squadCount, squadPowers = squad_count_defending_all(smart, true)
 	
 	-- New faction owner = who has highest squad count on the smart + smart has no owner
 	local owner = "none"
