@@ -2668,6 +2668,9 @@ function process_ecolog(smart)
 
 	for sid,_ in pairs(squads) do
 		local squad = sid and alife_object(sid)
+		if squad == nil {
+			goto continue
+		}
 		local faction = squad:get_squad_community()							-- get faction of squads
 		
 		if (faction == "ecolog") and squad_is_commandable(squad, true) and (squad.current_action == 1) then								-- only operate on ecologists, exclude unique npcs
@@ -2897,6 +2900,7 @@ function process_ecolog(smart)
 				end
 			end
 		end
+		::continue::
 	end
 end
 
