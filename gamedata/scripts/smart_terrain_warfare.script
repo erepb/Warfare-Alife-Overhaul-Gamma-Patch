@@ -748,7 +748,7 @@ function process_manual_capture(smart)
 					-- get info of base NPC for message info
 					local squads = SIMBOARD.smarts[closest_base.id].squads
 					local base_squad
-					local sender
+					local sender = db.actor
 					for sid,_ in pairs(squads) do
 						local squad = sid and alife_object(sid)
 						local faction = squad:get_squad_community()							-- get faction of squads
@@ -772,23 +772,21 @@ function process_manual_capture(smart)
 						end
 					end
 
-					if (sender) then
-						if have_enough_squads then
-							-- inform player that squad is on the way
-							local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
-							local smart_translated = translate_smart_name(closest_base:name()) or closest_base:name()
-							local rnd_confirm = round_idp(math.random()*4)+1
-							local msg = strformat(game.translate_string("st_wrfr_respond_affirmative_"..rnd_confirm), smart_translated)		-- get a random string and then add the correct smart name
-							dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
-							manual_point[5] = -1		-- switch to STEP 4
-						else
-							-- inform player that squad is on the way
-							local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
-							local smart_translated = translate_smart_name(closest_base:name()) or closest_base:name()
-							local msg = strformat(game.translate_string("st_wrfr_respond_out_of_squads"), smart_translated)		-- get a random string and then add the correct smart name
-							dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
-							manual_point[5] = -1		-- switch to STEP 4
-						end
+					if have_enough_squads then
+						-- inform player that squad is on the way
+						local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+						local smart_translated = translate_smart_name(closest_base:name()) or closest_base:name()
+						local rnd_confirm = round_idp(math.random()*4)+1
+						local msg = strformat(game.translate_string("st_wrfr_respond_affirmative_"..rnd_confirm), smart_translated)		-- get a random string and then add the correct smart name
+						dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+						manual_point[5] = -1		-- switch to STEP 4
+					else
+						-- inform player that squad is on the way
+						local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+						local smart_translated = translate_smart_name(closest_base:name()) or closest_base:name()
+						local msg = strformat(game.translate_string("st_wrfr_respond_out_of_squads"), smart_translated)		-- get a random string and then add the correct smart name
+						dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+						manual_point[5] = -1		-- switch to STEP 4
 					end
 				
 				-- no bases were in range of the position, inform actor
