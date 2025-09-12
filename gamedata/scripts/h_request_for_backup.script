@@ -1,0 +1,230 @@
+--[[
+
+=======================================================================================
+	Original creator: h2142
+=======================================================================================
+
+--]]
+
+function process_manual_request(smart)
+
+    if smart_terrain_warfare.currently_surge then
+		return
+	end
+    
+    local closest_base
+	local targeting_squad
+
+    local lvl = game_graph():vertex(smart.m_game_vertex_id):level_id()
+
+	if (warfare_levels.level_information[lvl]) then --(lvl == get_player_level_id() and warfare_levels.level_information[lvl]) then
+        -- check for ally squads already targeting, cancel capture if already targeting
+	    local squads = SIMBOARD.smarts[smart.id].squads							-- get info of all squads targeting location
+	    for sid,_ in pairs(squads) do
+		    local squad = sid and alife_object(sid)
+		    if squad then
+			    local faction = squad:get_squad_community()							-- get faction of squads
+			    if (faction == warfare.actor_faction) and (not warfare.ignore[squad:section_name()]) then
+                    if smart_terrain_warfare.squad_count_detailed(smart, warfare.actor_faction) > 1 then
+				        local h_squads = SIMBOARD.smarts[smart.id].squads
+				        for h_sid,_ in pairs(h_squads) do
+					        local h_squad = h_sid and alife_object(h_sid)
+					        if not squad == h_squad then
+                                -- squad already targeting
+				                targeting_squad = squad
+                            end
+				        end
+                    end
+			    end
+		    end
+	    end
+    
+        -- check for nearby bases in the vicinity
+	    local smartCollection = {}
+		local linked = level_targets.level_links[lvl]	
+		local currentLevelSmarts = warfare_levels.level_information[lvl].smarts
+								
+		for i=1,#currentLevelSmarts do
+			local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
+			-- add any allied base to list
+			if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
+				local distance = smart_terrain_warfare.fetch_smart_distance(smart,other)
+                if distance > 20 and smart_terrain_warfare.squad_count_detailed(other, warfare.actor_faction) > 1 then
+				    smartCollection[#smartCollection+1] = { distance, other.id }
+                end
+			end
+		end
+
+		if not (#smartCollection > 0) and (not zzzz_set_target_changes.lvl_will_spawn_defense_soon(smart)) then
+			for lvl,_ in pairs(linked) do
+				local smarts = warfare_levels.level_information[lvl].smarts
+
+				for i=1,#smarts do
+					local other = smarts[i] and alife_object(smarts[i])
+					-- add any allied base to list
+					if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
+						local distance = smart_terrain_warfare.fetch_smart_distance(smart,other)
+                        if distance > 20 and smart_terrain_warfare.squad_count_detailed(other, warfare.actor_faction) > 1 then
+					        smartCollection[#smartCollection+1] = { distance, other.id }
+                        end
+					end
+				end
+			end
+		end
+
+		if not (#smartCollection > 0) then
+			for i=1,#currentLevelSmarts do
+				local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
+				-- add any allied base to list
+				if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
+					local distance = smart_terrain_warfare.fetch_smart_distance(smart,other)
+                	if distance > 20 then
+				    	smartCollection[#smartCollection+1] = { distance, other.id }
+                	end
+				end
+			end
+		end
+		-- did not find an on-level base, search linked levels
+
+		if not (#smartCollection > 0) then
+			for lvl,_ in pairs(linked) do
+				local smarts = warfare_levels.level_information[lvl].smarts
+
+				for i=1,#smarts do
+					local other = smarts[i] and alife_object(smarts[i])
+					-- add any allied base to list
+					if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
+						local distance = smart_terrain_warfare.fetch_smart_distance(smart,other)
+                        if distance > 20 and smart_terrain_warfare.squad_count_detailed(other, warfare.actor_faction) > 1 then
+					        smartCollection[#smartCollection+1] = { distance, other.id }
+                        end
+					end
+				end
+			end
+		end
+
+		if not (#smartCollection > 0) then
+			for lvl,_ in pairs(linked) do
+				local smarts = warfare_levels.level_information[lvl].smarts
+
+				for i=1,#smarts do
+					local other = smarts[i] and alife_object(smarts[i])
+					-- add any allied base to list
+					if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
+						local distance = smart_terrain_warfare.fetch_smart_distance(smart,other)
+                        if distance > 20 then
+					        smartCollection[#smartCollection+1] = { distance, other.id }
+                        end
+					end
+				end
+			end
+		end
+
+	    if (#smartCollection > 0) then
+	        table.sort(smartCollection, function(a, b)
+			    return math.abs(a[1]) < math.abs(b[1])
+		    end)
+								
+			closest_base = smartCollection[1][2]		-- found a base, use that
+	    end
+
+		--send massage from actor
+		local smart_translated = smart_terrain_warfare.translate_smart_name(smart:name()) or smart:name()
+		local sender_header = strformat("%s, %s", db.actor:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+		local rnd_request = round_idp(math.random()*4)+1	-- 5 options in st_warfare.xml
+		local msg = strformat(game.translate_string("st_wrfr_request_squad_"..rnd_request), smart_translated)		-- get a random string and then add the correct smart name
+		dynamic_news_helper.send_tip( msg, sender_header, 0, 10, db.actor:character_icon(), "beep_1", "npc" )
+
+        -- Squad was already en route to the position, so inform actor
+		if targeting_squad then
+			-- get info of traveling squad NPC for message info
+			local sender
+			for guy in targeting_squad:squad_members() do
+				local person = guy.object or guy.id and alife():object(guy.id)
+				if person then
+					sender = person
+					break
+				elseif guy then
+					sender = guy
+					break
+				end
+			end
+					
+			-- squad already targeting, inform player
+			local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+			local smart_translated = smart_terrain_warfare.translate_smart_name(smart:name()) or smart:name()
+			local rnd_ontheway = round_idp(math.random()*4)+1
+			local msg = strformat(game.translate_string("st_wrfr_respond_ontheway_"..rnd_ontheway), smart_translated)		-- get a random string and then add the correct smart name
+			dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+		end
+
+        if closest_base then
+            closest_base = closest_base and alife_object(closest_base)
+
+			local have_enough_squads = true
+			if smart_terrain_warfare.squad_count_detailed(closest_base, warfare.actor_faction) > 1 then
+				local squads = SIMBOARD.smarts[closest_base.id].squads
+				for sid,_ in pairs(squads) do
+					local squad = sid and alife_object(sid)
+					if smart_terrain_warfare.squad_is_commandable(squad) then
+						sim_squad_warfare.set_target(squad, smart.id, true)
+						break
+					end
+				end
+			else
+				have_enough_squads = false
+				smart_terrain_warfare.waiting_for_capture[game.time()] = {closest_base.id, smart.id}
+			end
+
+            -- get info of base NPC for message info
+			local squads = SIMBOARD.smarts[closest_base.id].squads
+			local base_squad
+			local sender
+			for sid,_ in pairs(squads) do
+				local squad = sid and alife_object(sid)
+				local faction = squad:get_squad_community()							-- get faction of squads
+						
+				if (faction == warfare.actor_faction) then
+					base_squad = squad
+					break
+				end
+			end
+					
+			if base_squad then
+				for guy in base_squad:squad_members() do
+					local person = guy.object or guy.id and alife():object(guy.id)
+					if person then
+						sender = person
+						break
+					elseif guy then
+						sender = guy
+						break
+					end
+				end
+			end
+					
+			if have_enough_squads then
+			    -- inform player that squad is on the way
+				local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+				local smart_translated = smart_terrain_warfare.translate_smart_name(closest_base:name()) or closest_base:name()
+				local rnd_confirm = round_idp(math.random()*4)+1
+				local msg = strformat(game.translate_string("st_wrfr_respond_affirmative_"..rnd_confirm), smart_translated)		-- get a random string and then add the correct smart name
+				dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+			else
+				-- inform player that squad is on the way
+				local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+				local smart_translated = smart_terrain_warfare.translate_smart_name(closest_base:name()) or closest_base:name()
+				local msg = strformat(game.translate_string("st_wrfr_respond_out_of_squads"), smart_translated)		-- get a random string and then add the correct smart name
+				dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+			end
+
+        -- no bases were in range of the position, inform actor
+		else
+			-- no bases were in range, inform player
+			local icon = warfare.actor_faction
+			local rnd_deny = round_idp(math.random()*4)+1
+			local text = game.translate_string("st_wrfr_respond_negative_"..rnd_deny)
+			news_manager.send_tip( db.actor, text, nil, icon, nil, nil )
+		end
+    end
+end

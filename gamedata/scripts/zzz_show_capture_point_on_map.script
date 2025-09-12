@@ -1,0 +1,86 @@
+--[[
+
+=======================================================================================
+	Original creator: h2142
+	Edit log:
+	2025/08/30 - Vintar - Request for backup added to the PDA menu
+=======================================================================================
+
+--]]
+
+printd = warfare.printd
+
+str_wrfr_cr = game.translate_string("st_wrfr_canc_req_backup")
+str_wrfr_rs = game.translate_string("st_wrfr_req_squad")
+
+function remove_from_wfc_table(smart)
+    if smart_terrain_warfare.waiting_for_capture then
+        for game_time, tbl in pairs(smart_terrain_warfare.waiting_for_capture) do
+            local h_smart = tbl[2]
+            s_obj = h_smart and alife_object(h_smart)
+            if s_obj and s_obj.id == smart.id then
+                smart_terrain_warfare.waiting_for_capture[game_time] = nil
+            end
+        end
+    end
+end
+
+function is_in_wfc_targets(smart)
+    if smart_terrain_warfare.waiting_for_capture then
+        for game_time, tbl in pairs(smart_terrain_warfare.waiting_for_capture) do
+            local h_smart = tbl[2]
+            s_obj = h_smart and alife_object(h_smart)
+            if s_obj and s_obj.id == smart.id then
+                return true
+            end
+        end
+    end
+	return false
+end
+
+local function map_spot_menu_add_property(ui,id,lvl)
+    local obj = alife_object(id)
+    if not (obj) then
+        printd(1)
+		return
+	end
+
+    if (obj:clsid() == clsid.smart_terrain) then
+	    ui:AddItem(str_wrfr_rs)
+    end
+
+	if (obj:clsid() == clsid.smart_terrain) and is_in_wfc_targets(obj) then
+        ui:AddItem(str_wrfr_cr)
+    end
+end
+
+local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
+    printd(0)
+
+	local obj = alife_object(id)
+	if not (obj) then
+        printd(1)
+		return
+	end
+
+    if (prop == str_wrfr_rs) then
+		h_request_for_backup.process_manual_request(obj)
+		return
+    end
+
+	if (prop == str_wrfr_cr) then
+		remove_from_wfc_table(obj)
+		return
+    end
+end
+
+function on_game_start()
+	local function on_game_load()
+		if alife_storage_manager.get_state().enable_warfare_mode then
+			RegisterScriptCallback("map_spot_menu_add_property",map_spot_menu_add_property)
+			RegisterScriptCallback("map_spot_menu_property_clicked",map_spot_menu_property_clicked)
+		end
+	end
+    RegisterScriptCallback("on_game_load", on_game_load)
+
+end
