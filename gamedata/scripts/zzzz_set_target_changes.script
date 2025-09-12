@@ -1,0 +1,166 @@
+--[[
+
+=======================================================================================
+	Original creator: h2142
+=======================================================================================
+
+--]]
+
+printd = warfare.printd
+
+-- Get the level ID for a squad
+function get_squad_level_id(squad)
+    local sim = alife()
+    local gg = game_graph()
+    local lvl_id = gg:vertex(squad.m_game_vertex_id):level_id()
+    return lvl_id
+end
+
+function lvl_will_spawn_defense_soon(smart)
+    if not smart then return true end
+    local lvl = game_graph():vertex(smart.m_game_vertex_id):level_id()
+    local currentLevelSmarts = warfare_levels.level_information[lvl].smarts
+								
+	for i=1,#currentLevelSmarts do
+		local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
+		-- add any allied base to list
+		if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and other.id ~= smart.id then
+            if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[other.id] and smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[other.id] then
+				if ((smart_terrain_warfare.defense_next_update[other.id]*6) - (game.get_game_time():diffSec(smart_terrain_warfare.defense_timers[other.id]))) < 9000 then
+                    local distance = smart_terrain_warfare.fetch_smart_distance(smart,other)
+                    if distance > 20 then
+                        return true
+                    end
+                end
+            end
+		end
+	end
+    return false
+end
+
+local function send_capture_massage(squad, t_obj)
+    if not (squad and t_obj) then return end
+
+    for guy in squad:squad_members() do
+		local person = guy.object or guy.id and alife():object(guy.id)
+
+		if person then
+			sender = person
+			break
+		elseif guy then
+			sender = guy
+			break
+		end
+	end
+
+    -- inform player that squad is on the way
+	local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+	local smart_translated = smart_terrain_warfare.translate_smart_name(t_obj:name()) or t_obj:name()
+	local msg = strformat(game.translate_string("st_wrfr_respond_not_out_of_squads"), smart_translated)		-- get a random string and then add the correct smart name
+	dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+
+end
+
+function sim_squad_warfare.set_target(squad, target, request)
+
+    -- added xQd's fix for not being able to dismiss companions
+    if not (squad) or axr_companions.companion_squads[squad.id] then
+
+        return
+    end
+
+    printd(0, squad:name())
+
+    if squad.stay_time then -- check if the squad has stay_time initialized(used to check if the squad are targeted by a "capture territory" task, so that the squad won't move resulting in failing of the task)
+        printf("squad %s is from capture territory task, ignore it's target", squad:name())
+        return
+    end
+
+    if (warfare.ignore[squad:section_name()]) then
+        return
+    end
+
+    local faction = squad:get_squad_community()
+	if (faction and warfare.actor_faction) and (faction == warfare.actor_faction) and (not request) then
+        local og_targ = target
+        if smart_terrain_warfare.waiting_for_capture then
+            for game_time, tbl in pairs(smart_terrain_warfare.waiting_for_capture) do
+                local h_smart = tbl[1]
+                local h_target = tbl[2]
+                if h_smart and h_target then
+                    s_obj = h_smart and alife_object(h_smart)
+                    t_obj = h_target and alife_object(h_target)
+                    local lvl = t_obj and game_graph():vertex(t_obj.m_game_vertex_id):level_id()
+                    local linked = lvl and level_targets.level_links[lvl]
+                    if t_obj and t_obj.level_id == get_squad_level_id(squad) then
+                        target = h_target
+                        smart_terrain_warfare.waiting_for_capture[game_time] = nil
+                        send_capture_massage(squad, t_obj)
+                        break
+                    end
+                    --if s_obj and (smart_terrain_warfare.squad_count_detailed(s_obj, warfare.actor_faction) > 1) then
+                        local squads = SIMBOARD.smarts[h_smart] and SIMBOARD.smarts[h_smart].squads
+                        if squads then
+                            for sid,_ in pairs(squads) do
+                                if t_obj and sid == squad.id then
+                                    target = h_target
+                                    smart_terrain_warfare.waiting_for_capture[game_time] = nil
+                                    send_capture_massage(squad, t_obj)
+                                    break
+                                end
+                            end
+                        end
+                    --end
+                    if linked and (not lvl_will_spawn_defense_soon(t_obj)) then
+                        for lvl,_ in pairs(linked) do
+                            if lvl == get_squad_level_id(squad) then
+                                target = h_target
+                                smart_terrain_warfare.waiting_for_capture[game_time] = nil
+                                send_capture_massage(squad, t_obj)
+                                break
+                            end
+                        end
+                    end
+                else
+                    smart_terrain_warfare.waiting_for_capture[game_time] = nil
+                end
+                if og_targ ~= target then
+                    smart_terrain_warfare.waiting_for_capture[game_time] = nil
+                    break
+                end
+            end
+        end
+    end
+
+    local obj = target and alife_object(target)
+
+    if (obj) then
+        squad.current_action = 0
+        squad.scripted_target = ""
+        squad.current_target_id = target
+        squad.assigned_target_id = target
+        squad.registered_with_warfare = true
+        warfare.registered_squads[squad:get_squad_community()][squad.id] = target
+
+        --if (obj:clsid() == clsid.smart_terrain) then
+        if (obj:clsid() == clsid.smart_terrain) then
+            obj:on_reach_target(squad)
+        end
+        --end
+
+        if not (squad.registered_with_warfare) then
+            squad.registered_with_warfare = true
+            warfare.registered_squads[squad:get_squad_community()][squad.id] = target
+        end
+
+        local sim = alife()
+        for k in squad:squad_members() do
+            local se_obj = k.object or k.id and sim:object(k.id)
+            if (se_obj) then
+                SIMBOARD:setup_squad_and_group(se_obj)
+            end
+        end
+    end
+
+    printd(1, squad:name())
+end

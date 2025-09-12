@@ -39,6 +39,7 @@
 	2023/10/25 - Vintar - Monolith can target Army Warehouses. Random patrols only spawn in southern maps
 	2023/12/03 - Vintar - Monolith spawn twice as slow once the Brain Scorcher is deactivated
 	2024/08/05 - Vintar - Territories don't send squads back home at night, and can be autocaptured by the player
+	2025/08/30 - h2142  - Gamma 0.9.4 infinite spawn fixed
 
 	This file handles the majority of warfare-related script tasks, such as squad behavior,
 	targeting, smart terrain updates, ownership checks, patrol behavior, etc.
@@ -90,6 +91,8 @@ under_attack = {}							-- when a smart is under attack, halt squad assignment f
 patrol_squads = {}
 random_patrols = {}
 invasions = {}
+
+waiting_for_capture = {}
 
 -- Resource count takes the maximum amount of resources owned on a given day, with the count reset at midday every day
 max_resource_count = {
@@ -567,20 +570,61 @@ function process_manual_capture(smart)
 							
 							-- check for nearby bases in the vicinity
 							local smartCollection = {}
-							if not targeting_squad then
+							if true then --not targeting_squad then
 								local linked = level_targets.level_links[lvl]	
 								local currentLevelSmarts = warfare_levels.level_information[lvl].smarts
 								
 								for i=1,#currentLevelSmarts do
 									local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
 									-- add any allied base to list
-									if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
+									if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
 										local distance = fetch_smart_distance(smart,other)
 										smartCollection[#smartCollection+1] = { distance, other.id }
 									end
 								end
 
+								if not (#smartCollection > 0) and (not zzzz_set_target_changes.lvl_will_spawn_defense_soon(smart)) then
+									for lvl,_ in pairs(linked) do
+										local smarts = warfare_levels.level_information[lvl].smarts
+
+										for i=1,#smarts do
+											local other = smarts[i] and alife_object(smarts[i])
+											-- add any allied base to list
+											if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
+												local distance = fetch_smart_distance(smart,other)
+												smartCollection[#smartCollection+1] = { distance, other.id }
+											end
+										end
+									end
+								end
+
+								if not (#smartCollection > 0) then
+									for i=1,#currentLevelSmarts do
+										local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
+										-- add any allied base to list
+										if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
+											local distance = fetch_smart_distance(smart,other)
+											smartCollection[#smartCollection+1] = { distance, other.id }
+										end
+									end
+								end
+
 								-- did not find an on-level base, search linked levels
+								if not (#smartCollection > 0) then
+									for lvl,_ in pairs(linked) do
+										local smarts = warfare_levels.level_information[lvl].smarts
+
+										for i=1,#smarts do
+											local other = smarts[i] and alife_object(smarts[i])
+											-- add any allied base to list
+											if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
+												local distance = fetch_smart_distance(smart,other)
+												smartCollection[#smartCollection+1] = { distance, other.id }
+											end
+										end
+									end
+								end
+
 								if not (#smartCollection > 0) then
 									for lvl,_ in pairs(linked) do
 										local smarts = warfare_levels.level_information[lvl].smarts
@@ -646,11 +690,51 @@ function process_manual_capture(smart)
 				local closest_base = manual_point[3] and alife_object(manual_point[3])
 				local targeting_squad = manual_point[4] and alife_object(manual_point[4])
 				
+				-- Squad was already en route to the position, so inform actor
+				if targeting_squad then
+					-- get info of traveling squad NPC for message info
+					local sender
+					for guy in targeting_squad:squad_members() do
+						local person = guy.object or guy.id and alife():object(guy.id)
+						if person then
+							sender = person
+							break
+						elseif guy then
+							sender = guy
+							break
+						end
+					end
+					
+					-- squad already targeting, inform player
+					local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+					local smart_translated = translate_smart_name(smart:name()) or smart:name()
+					local rnd_ontheway = round_idp(math.random()*4)+1
+					local msg = strformat(game.translate_string("st_wrfr_respond_ontheway_"..rnd_ontheway), smart_translated)		-- get a random string and then add the correct smart name
+					dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+				end
+				
+
 				-- base exists
 				if closest_base then
+
+					local have_enough_squads = true
+					if squad_count_detailed(closest_base, warfare.actor_faction) > 1 then
+						local squads = SIMBOARD.smarts[closest_base.id].squads
+						for sid,_ in pairs(squads) do
+							local squad = sid and alife_object(sid)
+							if squad_is_commandable(squad) then
+								sim_squad_warfare.set_target(squad, smart.id, true)
+								break
+							end
+						end
+					else
+						have_enough_squads = false
+						waiting_for_capture[game.time()] = {closest_base.id, smart.id}
+					end
+--[[
 					-- spawn squad at base and send it
 					local current_level = smart.level_id
-					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
+					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)		
 					local squad = utils_obj.create_squad(section, closest_base:name())
 					sim_squad_warfare.set_target(squad, smart.id)
 					-- increase spawn timer of that base
@@ -660,6 +744,7 @@ function process_manual_capture(smart)
 					local respawn_time = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
 					local respawn_multiplier = 1.2
 					defense_next_update[closest_base.id] = defense_next_update[closest_base.id] + respawn_multiplier * respawn_time  -- add respawn penalty to base
+]]
 					-- get info of base NPC for message info
 					local squads = SIMBOARD.smarts[closest_base.id].squads
 					local base_squad
@@ -686,37 +771,25 @@ function process_manual_capture(smart)
 							end
 						end
 					end
-					
-					-- inform player that squad is on the way
-					local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
-					local smart_translated = translate_smart_name(closest_base:name()) or closest_base:name()
-					local rnd_confirm = round_idp(math.random()*4)+1
-					local msg = strformat(game.translate_string("st_wrfr_respond_affirmative_"..rnd_confirm), smart_translated)		-- get a random string and then add the correct smart name
-					dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
-					manual_point[5] = -1		-- switch to STEP 4
-				
-				-- Squad was already en route to the position, so inform actor
-				elseif targeting_squad then
-					-- get info of traveling squad NPC for message info
-					local sender
-					for guy in targeting_squad:squad_members() do
-						local person = guy.object or guy.id and alife():object(guy.id)
-						if person then
-							sender = person
-							break
-						elseif guy then
-							sender = guy
-							break
+
+					if (sender) then
+						if have_enough_squads then
+							-- inform player that squad is on the way
+							local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+							local smart_translated = translate_smart_name(closest_base:name()) or closest_base:name()
+							local rnd_confirm = round_idp(math.random()*4)+1
+							local msg = strformat(game.translate_string("st_wrfr_respond_affirmative_"..rnd_confirm), smart_translated)		-- get a random string and then add the correct smart name
+							dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+							manual_point[5] = -1		-- switch to STEP 4
+						else
+							-- inform player that squad is on the way
+							local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
+							local smart_translated = translate_smart_name(closest_base:name()) or closest_base:name()
+							local msg = strformat(game.translate_string("st_wrfr_respond_out_of_squads"), smart_translated)		-- get a random string and then add the correct smart name
+							dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
+							manual_point[5] = -1		-- switch to STEP 4
 						end
 					end
-					
-					-- squad already targeting, inform player
-					local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
-					local smart_translated = translate_smart_name(smart:name()) or smart:name()
-					local rnd_ontheway = round_idp(math.random()*4)+1
-					local msg = strformat(game.translate_string("st_wrfr_respond_ontheway_"..rnd_ontheway), smart_translated)		-- get a random string and then add the correct smart name
-					dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
-					manual_point[5] = -1		-- switch to STEP 4
 				
 				-- no bases were in range of the position, inform actor
 				else
@@ -4823,13 +4896,12 @@ function find_random_patrol_target(smart, faction, sid)
 				end
 			end
 		end
-		
+
 		if (priority > 1) then
 			targets[#targets+1] = other
 		elseif (priority > 0) then
 			backup_targets[#backup_targets+1] = other
 		end
-		
 	end
 
 	-- used for spawning and re-targeting
@@ -4856,7 +4928,7 @@ function find_random_patrol_target(smart, faction, sid)
 
 	printd(1)
 
-	return smart.id		-- if no target is valid, the squad will sit on their current location until the next update
+	return smart and smart.id		-- if no target is valid, the squad will sit on their current location until the next update
 end
 
 
@@ -5385,6 +5457,30 @@ function check_unique_npcs(smart)
 	printd(4, sm_name)
 end
 
+local function save_wfc_state(m_data)
+	if waiting_for_capture then
+		m_data.wfcTable = waiting_for_capture
+	end
+end
+
+local function load_wfc_state(m_data)
+	waiting_for_capture = m_data.wfcTable
+	if not waiting_for_capture then
+		waiting_for_capture = {}
+	end
+	wfc_Table_size = 0
+	for i,v in pairs(waiting_for_capture) do
+		wfc_Table_size = wfc_Table_size + 1
+	end
+	if wfc_Table_size > 100 then
+		for i = 1, wfc_Table_size - 100 do
+			for v,k in pairs(waiting_for_capture) do
+				waiting_for_capture[v] = nil
+				break
+			end
+		end
+	end
+end
 
 ------------------------------------------------------------
 -- Callbacks
@@ -5393,4 +5489,7 @@ function on_game_start()
 	refresh_strings()
 
 	RegisterScriptCallback("on_localization_change",refresh_strings)
+	RegisterScriptCallback("save_state",save_wfc_state)
+	RegisterScriptCallback("load_state",load_wfc_state)
+	
 end 
