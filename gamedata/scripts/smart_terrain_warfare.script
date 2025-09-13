@@ -538,69 +538,93 @@ function process_manual_capture(smart)
 	local manual_check = manual_point and manual_point[5]		-- if there is no flag integer on the manual capture, need to make one
 	if (manual_check == nil) and ( (warfare_options.options.enable_auto_capture == true) or (manual_point and (manual_point[1] == smart.id)) ) then		-- proceed if no manual_point data and autocapture is enabled, or if existing manual_point data lacks flag
 		local lvl = game_graph():vertex(smart.m_game_vertex_id):level_id()
-
-		if (lvl == get_player_level_id() and warfare_levels.level_information[lvl]) then	
-
+		if (lvl == get_player_level_id() and warfare_levels.level_information[lvl]) then
 			-- only proceed if PDA is active
 			local obj_pda = db.actor:active_item()
-
 			if (obj_pda and sfind(obj_pda:section(),"device_pda") and obj_pda:condition() >= obj_pda:power_critical()) then
-				for i,sm in pairs(warfare_levels.level_information[lvl].smarts) do
-					local smart = sm and alife_object(sm)
-					-- valuable unowned smarts on level are checked
-					if (smart and smart.props and (smart.props.base > 0 or smart.props.territory > 0) and smart.owning_faction == "none") then
-						local dist = warfare.distance_to_xz_sqr(smart.position, alife():actor().position)
-						-- within capture distance
-						if (dist <= math.pow(warfare_options.options.auto_capture_max_distance, 2)) then
-							local closest_base
-							local targeting_squad
+				if (smart and smart.props and (smart.props.base > 0 or smart.props.resource > 0 or smart.props.territory > 0) and smart.owning_faction == "none") then
+					local dist = warfare.distance_to_xz_sqr(smart.position, alife():actor().position)
+					-- within capture distance
+					if (dist <= math.pow(warfare_options.options.auto_capture_max_distance, 2)) then
+						local closest_base
+						local targeting_squad
+						
+						-- check for ally squads already targeting, cancel capture if already targeting
+						local squads = SIMBOARD.smarts[smart.id].squads							-- get info of all squads targeting location
+						for sid,_ in pairs(squads) do
+							local squad = sid and alife_object(sid)
+							if squad then
+								local faction = squad:get_squad_community()							-- get faction of squads
+								if (faction == warfare.actor_faction) and (not warfare.ignore[squad:section_name()]) then
+									-- squad already targeting
+									targeting_squad = squad.id
+								end
+							end
+						end
+						
+						-- check for nearby bases in the vicinity
+						local smartCollection = {}
+						if true then --not targeting_squad then
+							local linked = level_targets.level_links[lvl]	
+							local currentLevelSmarts = warfare_levels.level_information[lvl].smarts
 							
-							-- check for ally squads already targeting, cancel capture if already targeting
-							local squads = SIMBOARD.smarts[smart.id].squads							-- get info of all squads targeting location
-							for sid,_ in pairs(squads) do
-								local squad = sid and alife_object(sid)
-								if squad then
-									local faction = squad:get_squad_community()							-- get faction of squads
-									if (faction == warfare.actor_faction) and (not warfare.ignore[squad:section_name()]) then
-										-- squad already targeting
-										targeting_squad = squad.id
+							for i=1,#currentLevelSmarts do
+								local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
+								-- add any allied base to list
+								if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
+									local distance = fetch_smart_distance(smart,other)
+									smartCollection[#smartCollection+1] = { distance, other.id }
+								end
+							end
+
+							if not (#smartCollection > 0) and (not zzzz_set_target_changes.lvl_will_spawn_defense_soon(smart)) then
+								for lvl,_ in pairs(linked) do
+									local smarts = warfare_levels.level_information[lvl].smarts
+
+									for i=1,#smarts do
+										local other = smarts[i] and alife_object(smarts[i])
+										-- add any allied base to list
+										if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
+											local distance = fetch_smart_distance(smart,other)
+											smartCollection[#smartCollection+1] = { distance, other.id }
+										end
 									end
 								end
 							end
-							
-							-- check for nearby bases in the vicinity
-							local smartCollection = {}
-							if true then --not targeting_squad then
-								local linked = level_targets.level_links[lvl]	
-								local currentLevelSmarts = warfare_levels.level_information[lvl].smarts
-								
+
+							if not (#smartCollection > 0) then
 								for i=1,#currentLevelSmarts do
 									local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
 									-- add any allied base to list
-									if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
+									if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
 										local distance = fetch_smart_distance(smart,other)
 										smartCollection[#smartCollection+1] = { distance, other.id }
 									end
 								end
+							end
 
-								if not (#smartCollection > 0) and (not zzzz_set_target_changes.lvl_will_spawn_defense_soon(smart)) then
-									for lvl,_ in pairs(linked) do
-										local smarts = warfare_levels.level_information[lvl].smarts
+							-- did not find an on-level base, search linked levels
+							if not (#smartCollection > 0) then
+								for lvl,_ in pairs(linked) do
+									local smarts = warfare_levels.level_information[lvl].smarts
 
-										for i=1,#smarts do
-											local other = smarts[i] and alife_object(smarts[i])
-											-- add any allied base to list
-											if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
-												local distance = fetch_smart_distance(smart,other)
-												smartCollection[#smartCollection+1] = { distance, other.id }
-											end
+									for i=1,#smarts do
+										local other = smarts[i] and alife_object(smarts[i])
+										-- add any allied base to list
+										if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
+											local distance = fetch_smart_distance(smart,other)
+											smartCollection[#smartCollection+1] = { distance, other.id }
 										end
 									end
 								end
+							end
 
-								if not (#smartCollection > 0) then
-									for i=1,#currentLevelSmarts do
-										local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
+							if not (#smartCollection > 0) then
+								for lvl,_ in pairs(linked) do
+									local smarts = warfare_levels.level_information[lvl].smarts
+
+									for i=1,#smarts do
+										local other = smarts[i] and alife_object(smarts[i])
 										-- add any allied base to list
 										if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
 											local distance = fetch_smart_distance(smart,other)
@@ -608,56 +632,24 @@ function process_manual_capture(smart)
 										end
 									end
 								end
-
-								-- did not find an on-level base, search linked levels
-								if not (#smartCollection > 0) then
-									for lvl,_ in pairs(linked) do
-										local smarts = warfare_levels.level_information[lvl].smarts
-
-										for i=1,#smarts do
-											local other = smarts[i] and alife_object(smarts[i])
-											-- add any allied base to list
-											if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and squad_count_detailed(other, warfare.actor_faction) > 1 then
-												local distance = fetch_smart_distance(smart,other)
-												smartCollection[#smartCollection+1] = { distance, other.id }
-											end
-										end
-									end
-								end
-
-								if not (#smartCollection > 0) then
-									for lvl,_ in pairs(linked) do
-										local smarts = warfare_levels.level_information[lvl].smarts
-
-										for i=1,#smarts do
-											local other = smarts[i] and alife_object(smarts[i])
-											-- add any allied base to list
-											if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) then
-												local distance = fetch_smart_distance(smart,other)
-												smartCollection[#smartCollection+1] = { distance, other.id }
-											end
-										end
-									end
-								end
 							end
-
-							if (#smartCollection > 0) then
-								table.sort(smartCollection, function(a, b)
-									return math.abs(a[1]) < math.abs(b[1])
-								end)
-								
-								closest_base = smartCollection[1][2]		-- found a base, use that
-							end
-							
-							-- store autocapture info, will be used to give messages even if invalid
-							manual_point = { smart.id, game.get_game_time(), closest_base, targeting_squad, 1 }
-							local warfareName = translate_smart_name(smart:name())	or smart:name()
-							actor_menu.set_msg(1, strformat(str_wrfr[1], tostring(warfareName)), 3)
-							break
 						end
+
+						if (#smartCollection > 0) then
+							table.sort(smartCollection, function(a, b)
+								return math.abs(a[1]) < math.abs(b[1])
+							end)
+							
+							closest_base = smartCollection[1][2]		-- found a base, use that
+						end
+						
+						-- store autocapture info, will be used to give messages even if invalid
+						manual_point = { smart.id, game.get_game_time(), closest_base, targeting_squad, 1 }
+						local warfareName = translate_smart_name(smart:name())	or smart:name()
+						actor_menu.set_msg(1, strformat(str_wrfr[1], tostring(warfareName)), 3)
 					end
 				end
-				
+
 				local manual_check2 = manual_point and manual_point[5]
 				if not manual_check2 then
 					manual_point = nil		-- actor has attempted a manual capture beyond the capture distance - kill the attempt
@@ -823,17 +815,13 @@ function process_manual_capture_old(smart)
 	local lvl = game_graph():vertex(smart.m_game_vertex_id):level_id()
 
 	if (manual_point == nil) and (warfare_options.options.enable_auto_capture) then
-		if (lvl == get_player_level_id() and warfare_levels.level_information[lvl]) then	
-			for i,sm in pairs(warfare_levels.level_information[lvl].smarts) do			
-				local smart = sm and alife_object(sm)
-				if (smart and smart.props and (smart.props.base > 0 or smart.props.resource > 0) and smart.owning_faction == "none") then
-					local dist = warfare.distance_to_xz_sqr(smart.position, alife():actor().position)
-					if (dist <= math.pow(warfare_options.options.auto_capture_max_distance, 2)) then
-						manual_point = { smart.id, game.get_game_time(), }
-						local warfareName = translate_smart_name(smart:name())	or smart:name()					
-						actor_menu.set_msg(1, strformat(str_wrfr[1], tostring(warfareName)), 3) 
-						break
-					end
+		if (lvl == get_player_level_id() and warfare_levels.level_information[lvl]) then
+			if (smart and smart.props and (smart.props.base > 0 or smart.props.resource > 0) and smart.owning_faction == "none") then
+				local dist = warfare.distance_to_xz_sqr(smart.position, alife():actor().position)
+				if (dist <= math.pow(warfare_options.options.auto_capture_max_distance, 2)) then
+					manual_point = { smart.id, game.get_game_time(), }
+					local warfareName = translate_smart_name(smart:name())	or smart:name()					
+					actor_menu.set_msg(1, strformat(str_wrfr[1], tostring(warfareName)), 3) 
 				end
 			end
 		end
