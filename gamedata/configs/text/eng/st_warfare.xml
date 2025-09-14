@@ -37,6 +37,22 @@
 		<text>Roger that, a squad from %s is now moving out to your location.</text>
 	</string>
 	
+	<string id="st_wrfr_respond_out_of_squads">
+		<text>There are no squads available at the moment; we're sending the next squad from %s to your location.</text>
+	</string>
+	<string id="st_wrfr_respond_not_out_of_squads">
+		<text>squad is being deployed to: %s.</text>
+	</string>
+	<string id="st_wrfr_canc_req_backup">
+		<text>Cancel requsets for squads for this smart</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_ignore_empty_targets">
+		<text>Ignore empty targets</text>
+	</string>
+	<string id="st_wrfr_req_squad">
+		<text>Request squad on this smart</text>
+	</string>
+
 	<string id="st_wrfr_respond_ontheway_1">
 		<text>Sit tight, we're already headed to %s.</text>
 	</string>
