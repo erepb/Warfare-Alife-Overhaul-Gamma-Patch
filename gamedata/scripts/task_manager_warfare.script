@@ -1,0 +1,14 @@
+local task_manager_task_callback = task_manager.task_callback
+function task_manager.task_callback(tsk, state)
+    if IsWarfare() and not axr_task_manager.is_task_giver_valid(task)  then
+        local tm = task_manager.get_task_manager()
+        local id = tsk:get_id()
+
+        local rtask = tm.task_info[id]
+        if not (rtask) then
+            return
+        end
+        rtask.cancelled_by_actor = true
+    end
+    return task_manager_task_callback(tsk, state)
+end
