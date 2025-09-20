@@ -1,67 +1,88 @@
-<?xml version="1.0" encoding="windows-1251" ?>
-<string_table>
+<?xml version="1.0" encoding="windows-1251"?>
+
+<!--
+    EXTRA WARFARE STRINGS 
+-->
+
+<string_table>    
     <string id="st_wrfr_request_squad_1">
-        <text>База, запрашиваю отряд на %s, приём?</text>
+        <text>База, запрашиваю отряд в %s, приём?</text>
     </string>
     <string id="st_wrfr_request_squad_2">
-        <text>База, нам нужен отряд на %s, приём?</text>
+        <text>Приём, база, нам нужен отряд в %s, слышите?</text>
     </string>
     <string id="st_wrfr_request_squad_3">
-        <text>База, запрашиваю отряд на %s, приём.</text>
+        <text>Приём, база, запрашиваю отряд в %s, конец связи.</text>
     </string>
     <string id="st_wrfr_request_squad_4">
-        <text>База, приём? Нужен отряд на %s, приём.</text>
+        <text>База, вы меня слышите? Нужен отряд в %s, конец связи.</text>
     </string>
     <string id="st_wrfr_request_squad_5">
-        <text>База, нам срочно нужен отряд на %s, приём.</text>
+        <text>База, нам срочно нужен отряд в %s, конец связи.</text>
     </string>
 
     <string id="st_wrfr_respond_affirmative_1">
-        <text>Принято, отправляем отряд с %s к вам.</text>
+        <text>Принял, отправляем отряд из %s к вам.</text>
     </string>
     <string id="st_wrfr_respond_affirmative_2">
-        <text>Слышим вас, отправляем отряд с %s к вам.</text>
+        <text>Слышим вас, высылаем отряд из %s к вам прямо сейчас.</text>
     </string>
     <string id="st_wrfr_respond_affirmative_3">
-        <text>Принято, отправляем отряд с %s к вам.</text>
+        <text>Роджер, отряд из %s уже выдвигается к вам.</text>
     </string>
     <string id="st_wrfr_respond_affirmative_4">
-        <text>Подтверждаю, отряд выдвигается к вам с %s.</text>
+        <text>Подтверждаю, отряд выдвигается из %s к вашему месту.</text>
     </string>
     <string id="st_wrfr_respond_affirmative_5">
-        <text>Принято, отряд с %s уже выдвигается к вам.</text>
+        <text>Роджер, отряд из %s уже направляется к вам.</text>
+    </string>
+    
+    <string id="st_wrfr_respond_out_of_squads">
+        <text>На данный момент свободных отрядов нет; направляем следующий отряд из %s к вам.</text>
+    </string>
+    <string id="st_wrfr_respond_not_out_of_squads">
+        <text>Отряд выдвигается к: %s.</text>
+    </string>
+    <string id="st_wrfr_canc_req_backup">
+        <text>Отменить запросы на отряды для этого объекта</text>
+    </string>
+    <string id="ui_mm_alife_warfare_faction_ignore_empty_targets">
+        <text>Игнорировать пустые цели</text>
+    </string>
+    <string id="st_wrfr_req_squad">
+        <text>Запросить отряд на этот объект</text>
     </string>
 
     <string id="st_wrfr_respond_ontheway_1">
         <text>Держитесь, мы уже направляемся к %s.</text>
     </string>
     <string id="st_wrfr_respond_ontheway_2">
-        <text>Мы уже в пути к %s, приём.</text>
+        <text>Эй, мы уже в пути к %s, приём.</text>
     </string>
     <string id="st_wrfr_respond_ontheway_3">
-        <text>База уже отправила нас к %s.</text>
+        <text>База уже отправила нас к вам в %s.</text>
     </string>
     <string id="st_wrfr_respond_ontheway_4">
-        <text>Мы уже направляемся к %s, не волнуйтесь.</text>
+        <text>Мы уже движемся к %s, не волнуйтесь.</text>
     </string>
     <string id="st_wrfr_respond_ontheway_5">
-        <text>Мы уже в пути к %s.</text>
+        <text>Внимание, мы уже идём к %s.</text>
     </string>
-
+    
     <string id="st_wrfr_respond_negative_1">
-        <text>Отрицательно, в вашем районе нет баз для подкрепления, приём.</text>
+        <text>Отрицательно, рядом с вами нет баз для подкрепления, конец связи.</text>
     </string>
     <string id="st_wrfr_respond_negative_2">
         <text>Невозможно, в вашем районе нет баз.</text>
     </string>
     <string id="st_wrfr_respond_negative_3">
-        <text>Отрицательно, в вашем районе нет баз, приём.</text>
+        <text>Отрицательно, в вашем районе нет баз, конец связи.</text>
     </string>
     <string id="st_wrfr_respond_negative_4">
-        <text>Невозможно, в вашем районе нет баз.</text>
+        <text>Невозможно, у нас нет баз в зоне вашего района.</text>
     </string>
     <string id="st_wrfr_respond_negative_5">
-        <text>Невозможно, в вашем районе нет баз для подкрепления.</text>
+        <text>Невозможно, у нас нет баз рядом с вами для подкрепления.</text>
     </string>
 
     <string id="st_wrfr_invasion_attack">
@@ -70,30 +91,37 @@
     <string id="st_wrfr_invasion_defense_incoming">
         <text>Вражеские силы приближаются к %s.</text>
     </string>
-
+    
     <string id="st_wrfr_invasion_defense_clear_1">
-        <text>База, вражеские силы, нацеленные на %s, уничтожены, приём.</text>
+        <text>База, силы противника, направленные к %s, уничтожены, конец связи.</text>
     </string>
     <string id="st_wrfr_invasion_defense_clear_2">
-        <text>Отличная работа, ребята - мы их уничтожили! Все на %s могут отдыхать.</text>
+        <text>Отличная работа, парни — мы их перебили! Все в %s могут отдохнуть.</text>
     </string>
     <string id="st_wrfr_invasion_defense_clear_3">
-        <text>Хорошая работа, ребята. Похоже, больше нет врагов, направляющихся к %s.</text>
+        <text>Хорошая работа, ребята. Похоже, к %s больше никто не идёт.</text>
     </string>
     <string id="st_wrfr_invasion_defense_clear_4">
-        <text>Похоже, всё чисто - %s в безопасности.</text>
+        <text>Похоже, всё чисто — %s в безопасности.</text>
     </string>
     <string id="st_wrfr_invasion_defense_clear_5">
-        <text>База, мы отбили атаку на %s, приём.</text>
+        <text>Приём, база, мы отбили силы, атаковавшие %s, конец связи.</text>
     </string>
-
+    
     <string id="st_wrfr_invasion_defense_fullyreinforced">
-        <text>Вражеские силы приближаются к %s. Подкрепления отправлены.</text>
+        <text>Вражеские силы приближаются к %s. Подкрепление уже выслано.</text>
     </string>
-    <string id="st_wrfr_invasion_defense_semireinforced_1">
+    <string id="st_wrfr_invasion_defense_partlyreinforced">
         <text>Вражеские силы приближаются к %s. Нужны дополнительные подкрепления!</text>
     </string>
     <string id="st_wrfr_invasion_defense_notreinforced">
-        <text>Вражеские силы приближаются к %s. Нужны подкрепления!</text>
+        <text>Вражеские силы приближаются к %s. Срочно нужны подкрепления!</text>
     </string>
+    <string id="st_wrfr_invasion_defense_retreating">
+        <text>Вражеские силы приближаются к %s. Союзные войска отступают.</text>
+    </string>
+    <string id="st_wrfr_task_cancellation">
+        <text>%s отменено из-за трагической гибели %s.</text>
+    </string>
+
 </string_table>
