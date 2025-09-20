@@ -550,6 +550,10 @@ function get_squad_relation(squad_id)
         return str_wrfr[18]
     end
 
+    if not squad.squad_members then
+        return str_wrfr[18]
+    end
+
     ----av661194
     if(squad==nil) then
         --printf("No such squad %s in board", tostring(squad_id))
