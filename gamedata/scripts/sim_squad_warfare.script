@@ -932,6 +932,8 @@ function set_target(squad, target)
     local obj = target and alife_object(target)
 
     if (obj) then
+        --printf("set_target: %s, target: %s", squad:name(), obj:name())
+
         squad.current_action = 0
         squad.scripted_target = ""
         squad.current_target_id = target
