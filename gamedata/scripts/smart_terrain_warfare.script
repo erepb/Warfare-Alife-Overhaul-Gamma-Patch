@@ -548,7 +548,7 @@ function process_manual_capture(smart)
 					if (dist <= math.pow(warfare_options.options.auto_capture_max_distance, 2)) then
 						local closest_base
 						local targeting_squad
-						
+
 						-- check for ally squads already targeting, cancel capture if already targeting
 						local squads = SIMBOARD.smarts[smart.id].squads							-- get info of all squads targeting location
 						for sid,_ in pairs(squads) do
@@ -561,13 +561,13 @@ function process_manual_capture(smart)
 								end
 							end
 						end
-						
+
 						-- check for nearby bases in the vicinity
 						local smartCollection = {}
 						if true then --not targeting_squad then
-							local linked = level_targets.level_links[lvl]	
+							local linked = level_targets.level_links[lvl]
 							local currentLevelSmarts = warfare_levels.level_information[lvl].smarts
-							
+
 							for i=1,#currentLevelSmarts do
 								local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
 								-- add any allied base to list
@@ -639,10 +639,10 @@ function process_manual_capture(smart)
 							table.sort(smartCollection, function(a, b)
 								return math.abs(a[1]) < math.abs(b[1])
 							end)
-							
+
 							closest_base = smartCollection[1][2]		-- found a base, use that
 						end
-						
+
 						-- store autocapture info, will be used to give messages even if invalid
 						manual_point = { smart.id, game.get_game_time(), closest_base, targeting_squad, 1 }
 						local warfareName = translate_smart_name(smart:name())	or smart:name()
@@ -696,7 +696,7 @@ function process_manual_capture(smart)
 							break
 						end
 					end
-					
+
 					-- squad already targeting, inform player
 					local sender_header = strformat("%s, %s", sender:character_name(), game.translate_string("st_dyn_news_comm_" .. warfare.actor_faction .. "_" .. 6))
 					local smart_translated = translate_smart_name(smart:name()) or smart:name()
@@ -704,7 +704,7 @@ function process_manual_capture(smart)
 					local msg = strformat(game.translate_string("st_wrfr_respond_ontheway_"..rnd_ontheway), smart_translated)		-- get a random string and then add the correct smart name
 					dynamic_news_helper.send_tip( msg, sender_header, 0, 10, sender:character_icon(), "beep_1", "npc" )
 				end
-				
+
 
 				-- base exists
 				if closest_base then
@@ -726,7 +726,7 @@ function process_manual_capture(smart)
 --[[
 					-- spawn squad at base and send it
 					local current_level = smart.level_id
-					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)		
+					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
 					local squad = utils_obj.create_squad(section, closest_base:name())
 					sim_squad_warfare.set_target(squad, smart.id)
 					-- increase spawn timer of that base
@@ -820,8 +820,8 @@ function process_manual_capture_old(smart)
 				local dist = warfare.distance_to_xz_sqr(smart.position, alife():actor().position)
 				if (dist <= math.pow(warfare_options.options.auto_capture_max_distance, 2)) then
 					manual_point = { smart.id, game.get_game_time(), }
-					local warfareName = translate_smart_name(smart:name())	or smart:name()					
-					actor_menu.set_msg(1, strformat(str_wrfr[1], tostring(warfareName)), 3) 
+					local warfareName = translate_smart_name(smart:name())	or smart:name()
+					actor_menu.set_msg(1, strformat(str_wrfr[1], tostring(warfareName)), 3)
 				end
 			end
 		end
@@ -4790,122 +4790,132 @@ function find_random_patrol_target(smart, faction, sid)
 	printd(0, "find_random_patrol_target: "..(smart and smart:name() or "spawn"))
 
 	local smart_level = smart and game_graph():vertex(smart.m_game_vertex_id):level_id()
-	local smartCollection = {}
-	local targets = {}
-	local backup_targets = {}
 
+	-- Collect all smarts first
+	local smartCollection = {}
 	for _,lvl in pairs(level_targets.active_levels) do
 		local smarts = warfare_levels.level_information[lvl].smarts
-			
 		for i=1,#smarts do
-			smartCollection[#smartCollection+1] = smarts[i]
-		end
-	end	
-	
-	for i=1,#smartCollection do
-		local other = smartCollection[i] and alife_object(smartCollection[i])		
-		local priority = 0
-
-		if (smart) then																								-- only check priorities if the squad has spawned
-			if (other) then
-				local other_faction = other.owning_faction or "none"
-				local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
-				
-				-- Duty random patrols target lairs only. Other factions operate normally
-				if (faction ~= "dolg") then
-					if (warfare.influence_levels[other.id] and faction == warfare.actor_faction) then
-						priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
-					end
-					
-					if other.props[faction] then
-						priority = priority + (other.props[faction] * warfare_options.options.factions[faction].faction_flag_priority)
-					end
-					
-					if (other.props.base > 0) then
-						priority = priority + (other.props.base * warfare_options.options.factions[faction].base_priority)
-					end
-					
-					if (other.props.resource > 0) then			
-						priority = priority + (other.props.resource * warfare_options.options.factions[faction].resource_priority)
-					end
-					
-					if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1) then	
-						priority = priority + (other.props.territory * warfare_options.options.factions[faction].territory_priority)
-					end
-				
-					local p = "lvl_"..other_level.."_priority"
-					if warfare_options.options.factions[faction][p] then
-						priority = priority + warfare_options.options.factions[faction][p]
-					end
-
-					if (other.id == smart.id) then
-						priority = 0
-					end
-					
-					if (other_faction ~= "none") and (is_factions_enemies(faction, other_faction)) and (sid) then				-- random patrols only attack hostile locations if they are much stronger than enemy presence
-						local squad = sid and alife_object(sid)
-						local enemy_squads = SIMBOARD.smarts[other.id].squads
-						local enemy_power = 0
-						local patrol_power = sim_offline_combat.calculate_squad_power(squad)
-						for enemy_id,_ in pairs(enemy_squads) do
-							local enemy_squad = enemy_id and alife_object(enemy_id)
-							enemy_power = enemy_power + sim_offline_combat.calculate_squad_power(enemy_squad)
-						end
-						local attack_chance = (patrol_power / enemy_power - 1) * 100
-						if (patrol_power) and (patrol_power > enemy_power) and (attack_chance > math.random(1,100)) then
-							priority = 2
-						else
-							priority = 0
-						end
-					end
-
-					-- heavily de-prioritize pure lairs
-					if (other.props.resource < 1 and other.props.base < 1 and other.props.territory < 1) then				
-						priority = -1000
-					end
-					
-					-- ISG extremely interested in targeting labs
-					if (faction == "isg") and lab_entrance_smarts[other:name()] then
-						priority = 10 * priority
-					end
-					
-					-- prevent main base attacks if option is enabled
-					if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] then
-						priority = -1000
-					end
-				
-				-- Duty random patrol goes to lairs
-				elseif (other.props.lair > 0) then
-					priority = 2
-				end
-			end
-
-		elseif (other.owning_faction ~= "none") and is_factions_enemies(faction, other.owning_faction) then		-- during the spawning phase, forbid hostile locations
-			priority = 0
-		elseif ( (faction == "stalker") or (faction == "ecolog") ) and (other.owning_faction ~= "none") and not is_factions_enemies(faction, other.owning_faction) then		-- loners/ecolog can spawn on any neutral location
-			priority = 2
-		elseif (faction == other.owning_faction) and (faction ~= "zombied") then	-- faction random patrols can spawn on their own locations
-			priority = 2
-		elseif (other.owning_faction == "none")	then	-- if the squad has trouble spawning, spawn them on any vacant location in the south
-			priority = 0
+			local other = smarts[i] and alife_object(smarts[i])
 			if other then
-				local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
-				if (other_level < 12) then	-- only south spawns
-					priority = 1
-				end
+				smartCollection[#smartCollection+1] = other
 			end
-		end
-
-		if (priority > 1) then
-			targets[#targets+1] = other
-		elseif (priority > 0) then
-			backup_targets[#backup_targets+1] = other
 		end
 	end
 
+	-- Fisher-Yates shuffle for true randomness
+	for i = #smartCollection, 2, -1 do
+		local j = math.random(i)
+		smartCollection[i], smartCollection[j] = smartCollection[j], smartCollection[i]
+	end
+
+	local faction_options = warfare_options.options.factions[faction]
+
+	-- Now iterate through shuffled array and find first valid target
+	local target = nil
+	local backup_target = nil
+
+	for i=1,#smartCollection do
+		local other = smartCollection[i]
+		local priority = 0
+		local other_faction = other.owning_faction or "none"
+
+		if (smart) then  -- only check priorities if the squad has spawned
+			-- Skip if it's the same smart
+			if (other.id == smart.id) then
+				goto continue
+			end
+
+			-- Duty random patrols target lairs only
+			if faction == "dolg" then
+				if (other.props.lair > 0) then
+					priority = 2
+				end
+			else
+				-- Calculate priority based on various factors
+				if (warfare.influence_levels[other.id] and faction == warfare.actor_faction) then
+					priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
+				end
+
+				if other.props[faction] then
+					priority = priority + (other.props[faction] * faction_options.faction_flag_priority)
+				end
+
+				if (other.props.base > 0) then
+					priority = priority + (other.props.base * faction_options.base_priority)
+				end
+
+				if (other.props.resource > 0) then
+					priority = priority + (other.props.resource * faction_options.resource_priority)
+				end
+
+				if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1) then
+					priority = priority + (other.props.territory * faction_options.territory_priority)
+				end
+
+				local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
+				local p = "lvl_"..other_level.."_priority"
+				if faction_options[p] then
+					priority = priority + faction_options[p]
+				end
+
+				-- Check hostile locations
+				if (other_faction ~= "none") and (is_factions_enemies(faction, other_faction)) and (sid) then
+					local squad = sid and alife_object(sid)
+					local enemy_squads = SIMBOARD.smarts[other.id].squads
+					local enemy_power = 0
+					local patrol_power = sim_offline_combat.calculate_squad_power(squad)
+					for enemy_id,_ in pairs(enemy_squads) do
+						local enemy_squad = enemy_id and alife_object(enemy_id)
+						enemy_power = enemy_power + sim_offline_combat.calculate_squad_power(enemy_squad)
+					end
+					local attack_chance = (patrol_power / enemy_power - 1) * 100
+					if (patrol_power) and (patrol_power > enemy_power) and (attack_chance > math.random(1,100)) then
+						priority = 2
+					else
+						priority = 0
+					end
+				end
+
+				-- heavily de-prioritize pure lairs
+				if (other.props.resource < 1 and other.props.base < 1 and other.props.territory < 1) then
+					priority = -1000
+				end
+
+				-- ISG extremely interested in targeting labs
+				if faction == "isg" and lab_entrance_smarts[other:name()] then
+					priority = 10 * priority
+				end
+
+				-- prevent main base attacks if option is enabled
+				if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] then
+					priority = -1000
+				end
+			end
+
+		elseif (other_faction ~= "none") and is_factions_enemies(faction, other_faction) then
+			priority = 0
+		elseif (faction == "stalker" or faction == "ecolog") and (other_faction ~= "none") and not is_factions_enemies(faction, other_faction) then
+			priority = 2
+		elseif (faction == other_faction) and (faction ~= "zombied") then
+			priority = 2
+		elseif (other_faction == "none") then
+			priority = 1
+		end
+
+		-- Check if we found a valid target
+		if (priority > 1) then
+			target = other
+			break -- Found a valid target, stop searching
+		elseif (priority > 0) and not backup_target then
+			backup_target = other -- Keep first valid backup
+		end
+
+		::continue::
+	end
+
 	-- used for spawning and re-targeting
-	if (#targets > 0) then
-		local target = targets[math.random(#targets)]
+	if target then
 		if enable_debug then
 			if (smart) then
 				--printf("setting target of %s random patrol to: %s", faction, target:name())
@@ -4917,12 +4927,11 @@ function find_random_patrol_target(smart, faction, sid)
 	end
 
 	-- only used for spawning
-	if (#backup_targets > 0) then
-		local target = backup_targets[math.random(#backup_targets)]
+	if backup_target then
 		if enable_debug then
-			--printf("spawning %s random patrol on %s", faction, target:name())
+			--printf("spawning %s random patrol on %s", faction, backup_target:name())
 		end
-		return target.id
+		return backup_target.id
 	end
 
 	printd(1)
@@ -5490,5 +5499,5 @@ function on_game_start()
 	RegisterScriptCallback("on_localization_change",refresh_strings)
 	RegisterScriptCallback("save_state",save_wfc_state)
 	RegisterScriptCallback("load_state",load_wfc_state)
-	
-end 
+
+end
