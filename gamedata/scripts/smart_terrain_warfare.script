@@ -542,6 +542,7 @@ function process_manual_capture(smart)
 					local min_respawn = warfare_options.options.factions[warfare.actor_faction].min_faction_respawn
 					local max_respawn = warfare_options.options.factions[warfare.actor_faction].max_faction_respawn
 					local respawn_time = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
+					respawn_time = math.random(respawn_time)
 					local respawn_multiplier = 1.2
 					defense_next_update[closest_base.id] = defense_next_update[closest_base.id] + respawn_multiplier * respawn_time  -- add respawn penalty to base
 					-- get info of base NPC for message info
@@ -1880,6 +1881,7 @@ function spawn_defense(smart)
 		local max_respawn = warfare_options.options.factions[smart.owning_faction].max_faction_respawn
 		faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier									-- base count plus modifier
 		local current_respawn = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
+		current_respawn = math.random(current_respawn)
 		defense_next_update[smart.id] = current_respawn
 		defense_timers[smart.id] = game.get_game_time()
 		reset_defense_timer[smart.id] = nil											-- timer reset only occurs when a base changes owners
@@ -1947,6 +1949,7 @@ function spawn_patrols(smart)
 			
 			if (ff) then
 				respawn = warfare.lerp(ff.min_patrol_time, ff.max_patrol_time, clamp(faction_bases / warfare.base_count, 0, 1))
+				respawn = math.random(respawn)
 			else
 				respawn = 10
 			end
