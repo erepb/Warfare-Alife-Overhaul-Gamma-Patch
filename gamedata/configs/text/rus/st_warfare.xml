@@ -121,7 +121,7 @@
         <text>Вражеские силы приближаются к %s. Союзные войска отступают.</text>
     </string>
     <string id="st_wrfr_task_cancellation">
-        <text>%s отменено из-за трагической гибели %s.</text>
+        <text>Задание %s отменено из-за трагической гибели %s.</text>
     </string>
 
 </string_table>
