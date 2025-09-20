@@ -1448,6 +1448,8 @@ function create_invasion_plan(smart, target)
 				end
 			end
 		end
+
+		total_enemy_power = total_enemy_power * get_max_power_mult(target)
 	
 		-- get allied squad avg power
 		local num_allied_squads = 0
@@ -1461,6 +1463,8 @@ function create_invasion_plan(smart, target)
 				total_allied_power = total_allied_power + sq_pow
 			end
 		end
+
+		total_allied_power = total_allied_power * sim_offline_combat.calculate_distance_combat_multiplier(target, smart.owning_faction)
 		
 		-- compare average enemy squad power to the attacking faction's average squad power
 		local avg_allied_squad_power = total_allied_power / num_allied_squads
@@ -2015,7 +2019,7 @@ function spawn_patrols(smart)
 						arrive_time = nil
 					}
 				end
-				
+
 				sim_squad_warfare.set_target(squad, tobj.id)
 				patrol_squads[smart.id][squad.id] = new_table
 				squad.patrol_table = new_table
@@ -2234,7 +2238,7 @@ function process_patrols(smart)
 										arrive_time = nil
 									}
 								end
-								
+
 								sim_squad_warfare.set_target(squad, tobj.id)
 								patrol_squads[smart.id][squad.id] = new_table
 								squad.patrol_table = new_table
@@ -3972,6 +3976,28 @@ function squad_is_commandable(squad, random_patrol_override)
 	return false
 end
 
+function get_max_power_mult(smart)
+	if not warfare_options.options.distance_based_combat_multiplier then
+		return 1
+	end
+
+	smart_type = sim_offline_combat.get_smart_type_string(smart)
+	if (smart_type == "base") then
+		return warfare_options.options.distance_combat_max_multiplier_base
+	end
+	if (smart_type == "resource") then
+		return warfare_options.options.distance_combat_max_multiplier_resource
+	end
+	if (smart_type == "territory") then
+		return warfare_options.options.distance_combat_max_multiplier_territory
+	end
+	if (smart_type == "lair") then
+		return warfare_options.options.distance_combat_max_multiplier_lair
+	end
+
+	return 1.0
+end
+
 
 function check_owner(smart)
 	if not (smart) then
@@ -4042,6 +4068,7 @@ function check_owner(smart)
 	-- Store information in smart_terrain; no need to calculate again elsewhere
 	smart.defense_count = squadCount[owner] or 0
 	smart.defense_power = squadPowers[owner] or 0
+	smart.defense_power = smart.defense_power * get_max_power_mult(smart)		-- apply distance-based combat multiplier if enabled
 	
 	if (smart.defense_count > 25) then
 		local smrt_name = game.translate_string("st_" .. smart:name() .. "_name")
@@ -4376,6 +4403,8 @@ function find_targets(smart, faction_override, overflow_squad)
 		faction = faction_override
 		d = get_faction_power(smart, faction)
 	end
+
+	d = d * get_max_power_mult(smart) or 1
 	
 	-- non-linked levels are included only for overflow squads
 	if (warfare_options.options.factions[faction].linked_level_targeting) and not (overflow_squad) then	
@@ -4401,8 +4430,7 @@ function find_targets(smart, faction_override, overflow_squad)
 	end
 	
 	local targets = {}
-	local mainbase_targets = {}  -- backup array if targets array is empty
-	
+
 	if (faction == "monster") then
 		return
 	end
@@ -4553,13 +4581,13 @@ function find_targets(smart, faction_override, overflow_squad)
 
 				local distance = fetch_smart_distance(smart,other)
 				local inv_dist = (1 / distance)
-				
+
 				-- prevent main base attacks if option is enabled
 				if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and (other_faction ~= "none") then
-					mainbase_targets[#targets+1] = { priority * inv_dist, other.id }
-				else
-					targets[#targets+1] = { priority * inv_dist, other.id }  -- otherwise add to standard target array
+					inv_dist = inv_dist / 1000
 				end
+
+				targets[#targets+1] = { priority * inv_dist, other.id }  -- otherwise add to standard target array
 
 			end
 		end
@@ -4570,15 +4598,6 @@ function find_targets(smart, faction_override, overflow_squad)
 	end)
 	
 	printd(1, smart:name())
-	
-	-- if targets array is empty and mainbase array isn't, use mainbase targets
-	if (#targets < 1) and (#mainbase_targets > 0) then
-		table.sort(mainbase_targets, function(a, b)
-			return math.abs(a[1]) > math.abs(b[1])
-		end)
-	
-		return mainbase_targets
-	end
 	
 	return targets
 end
@@ -4600,7 +4619,9 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
 	if (faction) then
 		d = get_faction_power(smart, faction)
 	end
-	
+
+	d = d * get_max_power_mult(smart) or 1
+
 	-- search all levels
 	if (search_all_levels) or not (faction_props.linked_level_targeting) then
 		for _,lvl in pairs(level_targets.active_levels) do
@@ -4734,6 +4755,11 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
 			if (priority > 0) then
 				local distance = fetch_smart_distance(smart,other)
 				local inv_dist = (1 / distance)
+
+				-- prevent main base attacks if option is enabled
+				if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and (other_faction ~= "none") and other_faction ~= faction then
+					inv_dist = inv_dist / 1000
+				end
 				
 				-- extra weight on distance
 				targets[#targets+1] = { priority * inv_dist * inv_dist, other.id }

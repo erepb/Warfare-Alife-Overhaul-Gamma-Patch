@@ -22,7 +22,7 @@ function ui_options.init_opt_coder()
 
         { id="keep_last_base"	                      ,type= "check"    ,val= 1	,def= false 	                                                  ,hint="alife_warfare_faction_keep_last_base"	                        },
         { id="min_faction_respawn"                    ,type= "track"    ,val= 2	,def= 500  	,min= 0     ,max= 50000            ,step= 50 	      ,hint="alife_warfare_faction_min_faction_respawn"					    },
-        { id="max_faction_respawn"                    ,type= "track"    ,val= 2	,def= 35000 ,min= 0     ,max= 100000           ,step= 50 	      ,hint="alife_warfare_faction_max_faction_respawn"                     },
+        { id="max_faction_respawn"                    ,type= "track"    ,val= 2	,def= 35000 ,min= 0     ,max= 500000           ,step= 50 	      ,hint="alife_warfare_faction_max_faction_respawn"                     },
 
         { id="min_invasion_size"                      ,type= "track"    ,val= 2	,def= 1   ,min= 0     ,max= 5             ,step= 0.1 	          ,hint="alife_warfare_faction_min_invasion_size"                       },
         { id="max_invasion_size"                      ,type= "track"    ,val= 2	,def= 1.5 ,min= 0     ,max= 5             ,step= 0.1 	          ,hint="alife_warfare_faction_max_invasion_size"                       },
@@ -30,7 +30,7 @@ function ui_options.init_opt_coder()
         { id="max_invasion_depart_time"               ,type= "track"    ,val= 2	,def= 10  ,min= 0     ,max= 100            ,step= 10 	          ,hint="alife_warfare_faction_max_invasion_depart_time"                },
 
         { id="min_patrol_time"                        ,type= "track"    ,val= 2	,def= 60  ,min= 0     ,max= 50000           ,step= 50 	          ,hint="alife_warfare_faction_min_patrol_time"                         },
-        { id="max_patrol_time"                        ,type= "track"    ,val= 2	,def= 240 ,min= 0     ,max= 50000           ,step= 50 	          ,hint="alife_warfare_faction_max_patrol_time"                         },
+        { id="max_patrol_time"                        ,type= "track"    ,val= 2	,def= 240 ,min= 0     ,max= 500000           ,step= 50 	          ,hint="alife_warfare_faction_max_patrol_time"                         },
         { id="min_patrol_squads"                      ,type= "track"    ,val= 2	,def= 0   ,min= 0     ,max= 5             ,step= 1 	          ,hint="alife_warfare_faction_min_patrol_squads"                       },
         { id="max_patrol_squads"                      ,type= "track"    ,val= 2	,def= 0   ,min= 0     ,max= 5             ,step= 1 	          ,hint="alife_warfare_faction_max_patrol_squads"                       },
         { id="patrol_hunt_chance"                     ,type= "track"    ,val= 2	,def= 50  ,min= 0     ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_patrol_hunt_chance"                      },
@@ -166,6 +166,14 @@ function ui_options.init_opt_coder()
             { id= "monster_rare_chance_lab"    	 	 		    	,type= "track"    ,val= 2	,def= 50		,min= 0     ,max= 100        ,step= 1  	        },
             { id= "offline_combat_distance"    	 	 		    	,type= "track"    ,val= 2	,def= 50	  ,min= 1     ,max= 100        ,step= 1  	        },
             { id= "overflow_overrides_manual_control" 		        ,type= "check"    ,val= 1	,def= true	                                                    },
+            { id= "distance_based_combat_multiplier"    	 	    ,type= "check"    ,val= 1	,def= true	             	                    				},
+            { id= "distance_combat_max_multiplier_base"    	 	    ,type= "track"    ,val= 2	,def= 2.0	  ,min= 1.0     ,max= 10.0        ,step= 0.1  	        },
+            { id= "distance_combat_max_multiplier_resource"    	    ,type= "track"    ,val= 2	,def= 1.5	  ,min= 1.0     ,max= 10.0        ,step= 0.1  	        },
+            { id= "distance_combat_max_multiplier_territory"    	    ,type= "track"    ,val= 2	,def= 1.0	  ,min= 1.0     ,max= 10.0        ,step= 0.1  	        },
+            { id= "distance_combat_max_multiplier_lair"    	        ,type= "track"    ,val= 2	,def= 1.0	  ,min= 1.0     ,max= 10.0        ,step= 0.1  	        },
+            { id= "distance_combat_min_multiplier"    	 	        ,type= "track"    ,val= 2	,def= 0.5	  ,min= 0.1     ,max= 10.0        ,step= 0.1  	        },
+            { id= "distance_combat_max_distance"    	 	        ,type= "track"    ,val= 2	,def= 300  ,min= 100   ,max= 2000     ,step= 100  	    },
+
         },
     }
     warfare_options.gr[alife_warfare_azazel_options_index].presets = {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}
