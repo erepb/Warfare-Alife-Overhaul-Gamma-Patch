@@ -1,14 +1,47 @@
-local task_manager_task_callback = task_manager.task_callback
-function task_manager.task_callback(tsk, state)
-    if IsWarfare() and not axr_task_manager.is_task_giver_valid(task)  then
-        local tm = task_manager.get_task_manager()
-        local id = tsk:get_id()
+--[[
 
-        local rtask = tm.task_info[id]
-        if not (rtask) then
-            return
-        end
-        rtask.cancelled_by_actor = true
+=======================================================================================
+	Original creator: SaloEater
+    Prevent s
+	Edit log:
+    2025/09/15 - SaloEater - Allow the test to be cancelled when task givers are killed
+	2025/09/19 - SheBang   - Still fail the task if the task giver is killed by the actor
+
+    This file deals with task closure upon the death of the task givers.
+=======================================================================================
+
+--]]
+
+
+function npc_on_death_callback(victim, who) -- Callback, NPC caused by death
+	if not victim then
+		return
+	end
+
+    local tm = task_manager.get_task_manager()
+    if not tm then
+        return
     end
-    return task_manager_task_callback(tsk, state)
+
+    for tid, task in pairs(tm.task_info) do
+        if task and task.t then
+            if task.task_giver_id == victim:id() then
+                if who and who:id() == AC_ID then
+                    tm:set_task_failed(tid)
+                    printdbg("tasked failed: " .. tid)
+                else
+                    tm:set_task_cancelled(tid)
+                    printdbg("tasked cancelled: " .. tid)
+                    local icon = warfare.actor_faction
+                    local text = strformat("Task cancelled due to %s's unfortunate death.", victim:character_name())
+					news_manager.send_tip( db.actor, text, nil, icon, nil, nil )
+                end
+            end
+        end
+    end
+end
+
+
+function on_game_start()
+	RegisterScriptCallback("npc_on_death_callback", npc_on_death_callback)
 end
