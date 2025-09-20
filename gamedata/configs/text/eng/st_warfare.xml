@@ -123,6 +123,8 @@
 	<string id="st_wrfr_invasion_defense_retreating">
 		<text>Enemy forces are approaching %s. Allied forces are retreating.</text>
 	</string>
-
+    <string id="st_wrfr_task_cancellation">
+		<text>%s is cancelled due to %s's unfortunate death.</text>
+	</string>
 
 </string_table>
