@@ -546,11 +546,7 @@ end
 function get_squad_relation(squad_id)
     local squad = squad_id and alife_object(squad_id)
 
-    if not squad then
-        return str_wrfr[18]
-    end
-
-    if not squad.squad_members then
+    if not squad or not squad.squad_members then
         return str_wrfr[18]
     end
 
