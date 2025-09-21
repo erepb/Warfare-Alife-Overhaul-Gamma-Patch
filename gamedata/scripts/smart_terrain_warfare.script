@@ -3888,29 +3888,37 @@ function squad_count_defending_all(smart, skip_check)
 	local squads = SIMBOARD.smarts[smart.id].squads
 	for sid,_ in pairs(squads) do
 		local squad = sid and alife_object(sid)
-		if squad and (squad:clsid() == clsid.online_offline_group_s) then
-			local faction = squad:get_squad_community()
-			
+		if not squad then
+			goto continue
+		end
+		if not squad.get_squad_community then
+			goto continue
+		end
+		local faction = squad:get_squad_community()
+		if not faction then
+			goto continue
+		end
+
+		if squad:clsid() == clsid.online_offline_group_s then
 			if warfare_factions.factions_p[faction]                         -- squad is from warfare faction
 			and warfare.registered_squads[faction][sid]                     -- squad is registered in warfare
 			and (squad.current_action == 1)                                 -- squad arrived to smart
 			and not (axr_companions.companion_squads[squad.id]) and not (warfare.ignore[squad:section_name()]) then
 				local power = sim_offline_combat.calculate_squad_power(squad)
-				
+
 				if (power and power > 0 and squad:npc_count() > 0 and squad.current_target_id and squad.current_target_id == smart.id) then
 					squadCount[faction] = (squadCount[faction] or 0) + 1
 					squadPower[faction] = (squadPower[faction] or 0) + power
 				end
 			end
-		elseif squad then
-			local faction = squad:get_squad_community()
-			if faction then
-				warfare.registered_squads[faction][sid] = nil
-			end
+		else
+			warfare.registered_squads[faction][sid] = nil
 		end
+
+		::continue::
 	end
-    
-    printd(1, smart:name())
+
+	printd(1, smart:name())
 	
 	return squadCount,squadPower
 end
