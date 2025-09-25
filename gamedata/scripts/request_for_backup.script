@@ -55,7 +55,7 @@ function process_manual_request(smart)
 			end
 		end
 
-		if not (#smartCollection > 0) and (not zzzz_set_target_changes.lvl_will_spawn_defense_soon(smart)) then
+		if not (#smartCollection > 0) and (not smart_terrain_warfare.lvl_will_spawn_defense_soon(smart)) then
 			for lvl,_ in pairs(linked) do
 				local smarts = warfare_levels.level_information[lvl].smarts
 
@@ -167,7 +167,7 @@ function process_manual_request(smart)
 				for sid,_ in pairs(squads) do
 					local squad = sid and alife_object(sid)
 					if smart_terrain_warfare.squad_is_commandable(squad) then
-						sim_squad_warfare.set_target(squad, smart.id, true)
+						sim_squad_warfare.set_target(squad, smart.id)
 						break
 					end
 				end
