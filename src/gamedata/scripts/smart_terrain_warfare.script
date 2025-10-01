@@ -4761,6 +4761,7 @@ function find_random_patrol_target(smart, faction, sid)
 	local smartCollection = {}
 	local targets = {}
 	local backup_targets = {}
+	local faction_options = warfare_options.options.factions[faction]
 
 	for _,lvl in pairs(level_targets.active_levels) do
 		local smarts = warfare_levels.level_information[lvl].smarts
@@ -4788,19 +4789,19 @@ function find_random_patrol_target(smart, faction, sid)
 						priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
 					end
 
-					if other.props[faction] then
+					if other.props[faction] and faction_options.faction_flag_priority then
 						priority = priority + (other.props[faction] * warfare_options.options.factions[faction].faction_flag_priority)
 					end
 
-					if (other.props.base > 0) then
+					if (other.props.base > 0) and faction_options.base_priority then
 						priority = priority + (other.props.base * warfare_options.options.factions[faction].base_priority)
 					end
 
-					if (other.props.resource > 0) then
+					if (other.props.resource > 0) and faction_options.resource_priority then
 						priority = priority + (other.props.resource * warfare_options.options.factions[faction].resource_priority)
 					end
 
-					if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1) then
+					if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1 and faction_options.territory_priority) then
 						priority = priority + (other.props.territory * warfare_options.options.factions[faction].territory_priority)
 					end
 
