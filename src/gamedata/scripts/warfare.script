@@ -152,7 +152,7 @@ function save_state(m_data)
 
         if (squad) then
             -- empty squads and loner/ecolog squads are unmarked
-            if (squad:npc_count() == 0) then
+            if (not squad.npc_count or squad:npc_count() == 0) then
                 smart_terrain_warfare.random_patrols[sid] = nil
             end
         end
