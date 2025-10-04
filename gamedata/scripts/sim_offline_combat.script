@@ -262,8 +262,8 @@ function get_smart_type_string(smart)
 	end
 end
 
-function calculate_distance_combat_multiplier(target_smart, community)
-	-- printf("-offline_simulation | calculate_distance_combat_multiplier - smart: %s, community: %s", smart and smart:name() or "nil", community or "nil")
+function calculate_distance_combat_multiplier(pos, community)
+	-- printf("offline_simulation | calculate_distance_combat_multiplier - pos: %s, community: %s", pos, community)
 	if not _G.WARFARE then
 		return 1.0 -- No modification if warfare is not active
 	end
@@ -272,7 +272,7 @@ function calculate_distance_combat_multiplier(target_smart, community)
 		return 1.0 -- No modification if feature is disabled
 	end
 
-	local max_distance = warfare_options.options.distance_combat_max_distance
+	local global_max_distance = warfare_options.options.distance_combat_max_distance
 	local min_multiplier = warfare_options.options.distance_combat_min_multiplier
 	local max_multipliers = {
 		base = warfare_options.options.distance_combat_max_multiplier_base or warfare_options.options.distance_combat_max_multiplier,
@@ -289,16 +289,17 @@ function calculate_distance_combat_multiplier(target_smart, community)
 			-- Check if this smart is owned by the same faction
 			if smart.owning_faction == community then
 				-- Calculate distance using the existing warfare system function
-				local distance = smart_terrain_warfare.fetch_smart_distance(target_smart, smart)
+				local distance = math.max(1, warfare.distance_to_xz_sqr(global_position.from(smart), pos))
 				distance = math.pow(distance, 0.5)
 
 				local multiplier = min_multiplier
+				local max_mult = max_multipliers[get_smart_type_string(smart)] or 1
+                local max_distance = global_max_distance * max_mult
 
 				-- If squad is within max distance, calculate multiplier
 				if distance < max_distance then
 					-- Exponential interpolation between max and min multipliers based on distance
-					local max_mult = max_multipliers[get_smart_type_string(smart)] or 1
-					max_distance = max_distance * max_mult
+
 					local distance_factor = distance / max_distance
 
 					-- Exponential decay formula: y = a * e^(-b * x) + c
@@ -310,44 +311,39 @@ function calculate_distance_combat_multiplier(target_smart, community)
 				end
 
 				if multiplier > best_multiplier then
+				    -- printf("better mult. max mult: %s, distance: %s, mult: %s", max_mult, distance, multiplier)
 					best_multiplier = multiplier
 				end
 			end
 		end
 	end
 
-	return best_multiplier > 0 and best_multiplier or 1.0 -- Default multiplier if no suitable smart found
+	return best_multiplier > 0 and best_multiplier or 1.0
+end
+
+local function get_closest_smart(squad)
+    local squad_smart = nil
+    if squad.smart_id and SIMBOARD and SIMBOARD.smarts[squad.smart_id] then
+        return SIMBOARD.smarts[squad.smart_id].smrt
+    end
+
+    return nil
 end
 
 local function calculate_squad_distance_combat_multiplier(squad)
-	-- printf("-offline_simulation | calculate_distance_combat_multiplier - squad: %s", squad and squad:name() or "nil")
+	-- printf("offline_simulation | calculate_squad_distance_combat_multiplier - squad: %s", squad and squad:name() or "nil")
 	if not squad then
 		printf("-offline_simulation | get_closest_smart_for_squad - squad is nil, returning nil")
-		return nil, nil
+		return 1
 	end
 
 	local squad_community = squad:get_squad_community()
 	if not squad_community then
 		printf("-offline_simulation | get_closest_smart_for_squad - squad_community is nil, returning nil")
-		return nil, nil
+		return 1
 	end
 
-	local squad_smart = nil
-	if squad.smart_id and SIMBOARD and SIMBOARD.smarts[squad.smart_id] then
-		squad_smart = SIMBOARD.smarts[squad.smart_id]
-		if not squad_smart then
-			printf("-offline_simulation | get_closest_smart_for_squad - squad_smart is nil, returning nil")
-			return nil, nil
-		end
-		squad_smart = squad_smart.smrt
-	end
-
-	if not squad_smart then
-		printf("-offline_simulation | get_closest_smart_for_squad - squad_smart is nil, returning nil")
-		return nil, nil
-	end
-
-	return calculate_distance_combat_multiplier(squad_smart, squad_community)
+	return calculate_distance_combat_multiplier(squad.position, squad_community)
 end
 
 -------------------------------
@@ -355,10 +351,10 @@ end
 -------------------------------
 local function coordinator()
 	ResetTimeEvent("cycle","ocs", UPDATE_TIME)
-	
+
 	-- Toggle feature
-	
-	
+
+
 	if (ui_options.get("alife/general/offline_combat") == "on_smarts_only") then
 		new_state = 2
 	elseif (ui_options.get("alife/general/offline_combat") == "full") then
@@ -373,12 +369,12 @@ local function coordinator()
 		end
 		old_state = 0
 		new_state = 0
-		
+
 		return false
 	end
-	
+
 	if (old_state ~= new_state) then
-	
+
 		-- On smart only
 		if (new_state == 2) then
 			if (old_state == 1) then
@@ -388,9 +384,9 @@ local function coordinator()
 			old_state = 2
 			RegisterScriptCallback("smart_terrain_on_update", smart_terrain_on_update)
 			printdbg("- OCS | Simulate at smarts = ON")
-			
+
 		-- Full
-		elseif (new_state == 1) then	
+		elseif (new_state == 1) then
 			if (old_state == 2) then
 				UnregisterScriptCallback("smart_terrain_on_update", smart_terrain_on_update)
 				printdbg("~ OCS | Simulate at smarts = OFF")
@@ -400,12 +396,12 @@ local function coordinator()
 			printdbg("- OCS | Full simulation = ON")
 		end
 	end
-			
+
 	-- Empty tables, prepare
 	local sim = alife()
 	local gg = game_graph()
 	empty_table(squads_by_level)
-	
+
 	-- Get rid of non-existing task squads cache
 	for id,v in pairs(task_squads) do
 		local squad = sim:object(id)
@@ -414,7 +410,7 @@ local function coordinator()
 			task_squads[id] = nil
 		end
 	end
-	
+
 	-- Exclude task givers squads from simulation
 	empty_table(task_giver_squads)
 	for k,tsk in pairs(task_manager.get_task_manager().task_info) do
@@ -426,20 +422,20 @@ local function coordinator()
 			task_giver_squads[squad.id] = true
 		end
 	end
-	
+
 	-- Include non-important squads
 	-- Warfare uses ignore_list instead of storyID check (which would include lots of hostile mutants)
 	for id,_ in pairs(SIMBOARD.squads) do
 		local squad = sim:object(id)
 		local section = squad and squad:section_name()
 		local sid = get_object_story_id(id)
-		if squad and section 
+		if squad and section
 		and ( (_G.WARFARE and not ignore_list[section])
 		or ( (not _G.WARFARE) and (not sid) and ini_sys:r_bool_ex(section,"common") ) )
---		and (not task_squads[id]) 
+--		and (not task_squads[id])
 		then
 			local lid = gg:vertex(squad.m_game_vertex_id):level_id()
-			
+
 			-- Build a table of squads id in every map
 			if (not squads_by_level[lid]) then
 				squads_by_level[lid] = {}
@@ -451,7 +447,7 @@ local function coordinator()
 	local stalker_pop_factor = warfare.get_stalker_pop_factor()
 	local monster_pop_factor = warfare.get_monster_pop_factor()
 	local pop_factor = (stalker_pop_factor + monster_pop_factor)/2
-	
+
 	-- Options by mode
 	if _G.WARFARE then
 		opt_dist = COMBAT_DISTANCE_WARFARE
@@ -466,11 +462,11 @@ local function coordinator()
 		opt_exclude = EXCLUDE_STORY_ID
 		can_fight_mutant = true
 	end
-	
+
 	if enable_debug then
 		--printf("- OCS | Combat Distance: %s - Execlude special characters: %s - Mutants included: %s", opt_dist, opt_exclude, can_fight_mutant)
 	end
-	
+
 	--[[ Debugger
 	if enable_debug and (not _G.WARFARE) then
 		for lid,v in pairs(squads_by_level) do
@@ -479,7 +475,7 @@ local function coordinator()
 		end
 	end
 	--]]
-	
+
 	return false
 end
 
@@ -489,14 +485,14 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 	if (id_2 == id_1) then
 		return false
 	end
-	
+
 	if (not sim) then
 		sim = alife()
 	end
-	
+
 	local squad_2 = id_2 and sim:object(id_2)
 	local section = squad_2 and squad_2:section_name()
-	
+
 	if squad_2
 	and (not squad_2.online)
 	and ((opponents[id_2] == id_1) or (opponents[id_2] == nil)) -- target is not occupied
@@ -504,38 +500,38 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 --	and (not task_giver_squads[id_2])
 	and ( not _G.WARFARE or (_G.WARFARE and not ignore_list[section]) )
 	then
-	
+
 		-- Only simulate for enemies
 		local community_2 = squad_2:get_squad_community()
-		if (community_2 ~= "monster" or can_fight_mutant) and is_enemy(community_1, community_2) then 	
-			
+		if (community_2 ~= "monster" or can_fight_mutant) and is_enemy(community_1, community_2) then
+
 			-- Only simulate for close squads
 			local d = distance_to_xz_sqr(squad_1.position, squad_2.position)
-			if (d < opt_dist) then 	
-				
+			if (d < opt_dist) then
+
 				if opt_exclude then
 					local sid_1 = not squad_1.common
 					local sid_2 = not squad_2.common
-					
+
 					-- If both are story squads, don't simulate battle
 					if sid_1 and sid_2 then
 						--printf("% [%s] and [%s] are special, ignore", squad_1:name(), squad_2:name())
 						return false
-						
+
 					-- If one is a story squad, kill the other squads incase they have the same target
 					elseif (sid_1 or sid_2) and (squad_1.assigned_target_id == squad_2.assigned_target_id) then
-					
+
 						if (sid_1 and NOT_SO_SPECIAL[community_1])  then
 							--printf("% OCS |  [%s] {%s} is not so special, ignore battle", squad_1:name(), community_1)
-							
+
 						elseif (sid_2 and NOT_SO_SPECIAL[community_2]) then
 							--printf("% OCS |  [%s] {%s} is not so special, ignore battle", squad_2:name(), community_2)
-							
+
 						elseif sid_1 then
 							if enable_debug then
 								--printf("% OCS |  [%s] is special, [%s] is removed", squad_1:name(), squad_2:name())
 							end
-							
+
 							remove_squad_info(squad_2, id_2, id_1, lid)
 							local se_attacker = get_random_npc(squad_1)
 							for k in squad_2:squad_members() do
@@ -544,12 +540,12 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 									victim:on_death(se_attacker)
 								end
 							end
-							
+
 						elseif sid_2 then
 							if enable_debug then
 								--printf("% OCS |  [%s] is special, [%s] is removed", squad_2:name(), squad_1:name())
 							end
-							
+
 							remove_squad_info(squad_1, id_1, id_2, lid)
 							local se_attacker = get_random_npc(squad_2)
 							for k in squad_1:squad_members() do
@@ -559,16 +555,16 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 								end
 							end
 						end
-						
+
 						return false
 					end
 				end
-				
+
 				-- Simulate battle
 				simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2, lid)
-			
+
 				return true
-				
+
 			--[[ Collect enemies to target
 			elseif (not opponents[id_1]) and (_G.WARFARE) then
 				c_cnt = c_cnt + 1
@@ -577,7 +573,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 			end
 		end
 	end
-	
+
 	return false
 end
 
@@ -587,25 +583,13 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 -- squad 2 = Victim
 
 	-- Get squad power
-	power_1 = calculate_squad_power(squad_1, community_1)
-	power_2 = calculate_squad_power(squad_2, community_2)
-	ocs_power[id_1] = power_1
-	ocs_power[id_2] = power_2
-	
-	-- Apply distance-based multiplier to squad power if warfare is active and the feature is enabled
-	if _G.WARFARE and warfare_options.options.distance_based_combat_multiplier then
-		local attacker_multiplier = calculate_distance_combat_multiplier(squad_1)
-		local victim_multiplier = calculate_distance_combat_multiplier(squad_2)
+	ocs_power[id_1] = calculate_squad_power(squad_1, community_1)
+	ocs_power[id_2] = calculate_squad_power(squad_2, community_2)
 
-		-- Apply multipliers to squad power
-		power_1 = math_ceil(power_1 * attacker_multiplier)
-		power_2 = math_ceil(power_2 * victim_multiplier)
-	end
-
-	if not (power_1 > 0 and power_2 > 0) then
+	if not (ocs_power[id_1] > 0 and ocs_power[id_2] > 0) then
 		return
 	end
-	
+
 	-- Make both squads targeting themselves
 	opponents[id_1] = id_2
 	--squad_1.assigned_target_id = id_2
@@ -619,26 +603,29 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 
 	-- Calculate damage dealt
 	local raw_power = calculate_squad_power(squad_2, community_2, true)
-	local damage = power_1 * (HIT_BASE + math_random() * HIT_FACTOR)
+	local damage = ocs_power[id_1] * (HIT_BASE + math_random() * HIT_FACTOR)
 	damage = math_ceil(damage)
-	
-	if enable_debug then
-		--printf("/ OCS | %s | Attacker [%s](Power: %s) vs Victim [%s](Power: %s) | Damage: %s", alife():level_name(lid), squad_1:name(), power_1, squad_2:name(), power_2, damage)
+
+	if true or enable_debug then
+		printf("/ OCS | %s | Attacker [%s](Power: %s) vs Victim [%s](Power: %s) | Damage: %s", alife():level_name(lid), squad_1:name(), ocs_power[id_1], squad_2:name(), ocs_power[id_2], damage)
 	end
 
 	-- Cause damage
-	power_2 = power_2 - damage
-	
+	ocs_power[id_2] = ocs_power[id_2] - damage
+
+    local npc_pow = calculate_npc_power(se_victim, community_2, squad2)
+	--printf("/ OCS | %s | Victim [%s]: Raw power - %s, new power - %s, delta - %s, npc power - %s", alife():level_name(lid), squad_2:name(), raw_power, ocs_power[id_2], raw_power - ocs_power[id_2], npc_pow)
+
 	-- Release victim squad if it got rekt
-	if (power_2 <= 0) then
-		
-		if enable_debug then
+	if (ocs_power[id_2] <= 0) then
+
+		if true or enable_debug then
 			--printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
 		end
-	
+
 		-- Post-battle state
 		set_battle_outcome(true, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
-		
+
 		-- Release
 		remove_squad_info(squad_2, id_2, id_1, lid)
 		for k in squad_2:squad_members() do
@@ -647,12 +634,12 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 				victim:on_death(se_attacker)
 			end
 		end
-		
+
 	-- Kill the victim NPC if the damage dealt exceeds its rank
-	elseif (raw_power - power_2) > calculate_npc_power(se_victim, community_2) then
-	
-		if enable_debug then
-			--printf("~ OCS | Squad [%s] lost NPC [%s] | Remaining power: %s | Moment: %s sec", squad_2:name(), se_victim:name(), power_2, math_ceil(time_global()/1000))
+	elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2, squad2) then
+
+		if true or enable_debug then
+			--printf("~ OCS | Squad [%s] lost NPC [%s] | Remaining power: %s | Moment: %s sec", squad_2:name(), se_victim:name(), ocs_power[id_2], math_ceil(time_global()/1000))
 		end
 		
 		-- Post-battle state
@@ -744,7 +731,7 @@ end
 -------------------------------
 -- Utilities
 -------------------------------
-function calculate_npc_power(se_obj, community)
+function calculate_npc_power(se_obj, community, squad)
 	local power, cls = 0, se_obj:clsid()
 	if IsMonster(nil,cls) then
 		power = math_ceil(m_class[cls] * m_rank_max)
@@ -753,8 +740,13 @@ function calculate_npc_power(se_obj, community)
 	else
 		power = se_obj:rank()
 	end
-	
-	return ( power * (faction_power[community] or 1) )
+
+    local mult = 1
+    if squad then
+        mult = calculate_distance_combat_multiplier(squad.position, community)
+    end
+
+	return ( power * (faction_power[community] or 1) ) * mult
 end
 
 function calculate_squad_power(squad, community, raw)
@@ -771,12 +763,13 @@ function calculate_squad_power(squad, community, raw)
 		local se_obj = k.id and sim:object(k.id)
 		
 		if (se_obj) then
-			power = power + calculate_npc_power(se_obj, community)
+			power = power + calculate_npc_power(se_obj, community, nil)
 		end
 	end
 	
 	power = math_ceil(power)
-	
+    power = power * calculate_squad_distance_combat_multiplier(squad)
+
 	--printf("-pwr [%s] = %s", squad:name(), power)
 	if (not raw) then
 		ocs_power[squad.id] = power
