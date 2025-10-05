@@ -3,7 +3,7 @@
 =======================================================================================
 	Original creator: h2142
 	Edit log:
-	2025/08/30 - Vintar - Request for backup added to the PDA menu
+	2025/08/30 - h2142 - Request for backup added to the PDA menu
 =======================================================================================
 
 --]]
@@ -64,7 +64,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 	end
 
     if (prop == str_wrfr_rs) then
-		h_request_for_backup.process_manual_request(obj)
+		request_for_backup.process_manual_request(obj)
 		return
     end
 

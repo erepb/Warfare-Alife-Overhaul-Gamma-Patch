@@ -577,7 +577,7 @@ function process_manual_capture(smart)
 								end
 							end
 
-							if not (#smartCollection > 0) and (not zzzz_set_target_changes.lvl_will_spawn_defense_soon(smart)) then
+							if not (#smartCollection > 0) and (not lvl_will_spawn_defense_soon(smart)) then
 								for lvl,_ in pairs(linked) do
 									local smarts = warfare_levels.level_information[lvl].smarts
 
@@ -715,7 +715,7 @@ function process_manual_capture(smart)
 						for sid, _ in pairs(squads) do
 							local squad = sid and alife_object(sid)
 							if squad_is_commandable(squad) then
-								sim_squad_warfare.set_target(squad, smart.id, true)
+								sim_squad_warfare.set_target(squad, smart.id)
 								break
 							end
 						end
@@ -5289,6 +5289,29 @@ function find_offlevel_targets_for_overflow(smart, faction, search_all_levels)
 	end)
 	
 	return targets
+end
+
+
+function lvl_will_spawn_defense_soon(smart)
+    if not smart then return true end
+    local lvl = game_graph():vertex(smart.m_game_vertex_id):level_id()
+    local currentLevelSmarts = warfare_levels.level_information[lvl].smarts
+								
+	for i=1,#currentLevelSmarts do
+		local other = currentLevelSmarts[i] and alife_object(currentLevelSmarts[i])
+		-- add any allied base to list
+		if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and other.id ~= smart.id then
+            if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[other.id] and smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[other.id] then
+				if ((smart_terrain_warfare.defense_next_update[other.id]*6) - (game.get_game_time():diffSec(smart_terrain_warfare.defense_timers[other.id]))) < 9000 then
+                    local distance = smart_terrain_warfare.fetch_smart_distance(smart,other)
+                    if distance > 20 then
+                        return true
+                    end
+                end
+            end
+		end
+	end
+    return false
 end
 
 
