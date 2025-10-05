@@ -606,7 +606,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 	local damage = ocs_power[id_1] * (HIT_BASE + math_random() * HIT_FACTOR)
 	damage = math_ceil(damage)
 
-	if true or enable_debug then
+	if enable_debug then
 		printf("/ OCS | %s | Attacker [%s](Power: %s) vs Victim [%s](Power: %s) | Damage: %s", alife():level_name(lid), squad_1:name(), ocs_power[id_1], squad_2:name(), ocs_power[id_2], damage)
 	end
 
@@ -619,8 +619,8 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 	-- Release victim squad if it got rekt
 	if (ocs_power[id_2] <= 0) then
 
-		if true or enable_debug then
-			--printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
+		if enable_debug then
+			printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
 		end
 
 		-- Post-battle state
@@ -638,8 +638,8 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 	-- Kill the victim NPC if the damage dealt exceeds its rank
 	elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2, squad2) then
 
-		if true or enable_debug then
-			--printf("~ OCS | Squad [%s] lost NPC [%s] | Remaining power: %s | Moment: %s sec", squad_2:name(), se_victim:name(), ocs_power[id_2], math_ceil(time_global()/1000))
+		if enable_debug then
+			printf("~ OCS | Squad [%s] lost NPC [%s] | Remaining power: %s | Moment: %s sec", squad_2:name(), se_victim:name(), ocs_power[id_2], math_ceil(time_global()/1000))
 		end
 		
 		-- Post-battle state
