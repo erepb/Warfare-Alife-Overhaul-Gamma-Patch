@@ -1,4 +1,4 @@
-function sim_squad_scripted:get_random_spawn_count(settings_id)
+function sim_squad_scripted.sim_squad_scripted.get_random_spawn_count(self, settings_id)
 	local count = ini_sys:r_string_ex(settings_id,"npc_in_squad") or "1,2"
 	count = str_explode(count,",")
 	count[1] = count[1] and tonumber(count[1])
@@ -15,10 +15,12 @@ function sim_squad_scripted:get_random_spawn_count(settings_id)
 		end
 
 		local random_spawn = ini_sys:r_string_ex(settings_id,"npc_random")
+		random_spawn = parse_names(random_spawn)
 		-- check if trying to spawn trader/mechanic/medic/barman squad
 		local single = {1, 1}
 		for i = 1,#random_spawn do
-			if string.find(random_spawn[i], "trader") or string.find(random_spawn[i], "mechanic") or string.find(random_spawn[i], "barman") or string.find(random_spawn[i], "medic") or string.find(random_spawn[i], "tech") or string.find(random_spawn[i], "informator") then
+			local spawn = random_spawn[i]
+			if string.find(spawn, "trader") or string.find(spawn, "mechanic") or string.find(spawn, "barman") or string.find(spawn, "medic") or string.find(spawn, "tech") or string.find(spawn, "informator") then
 				--printf("Spawning trader/mechanic/medic/barman, squad size changed to 1")
 				return single
 			end
@@ -28,8 +30,8 @@ function sim_squad_scripted:get_random_spawn_count(settings_id)
 	return count
 end
 
-local old_sim_squad_scripted_create_npc = sim_squad_scripted.create_npc
-sim_squad_scripted.create_npc = function(self, spawn_smart,pos,lvid,gvid)
+local old_sim_squad_scripted_create_npc = sim_squad_scripted.sim_squad_scripted.create_npc
+sim_squad_scripted.sim_squad_scripted.create_npc = function(self, spawn_smart,pos,lvid,gvid)
 	--utils_data.debug_write("sim_squad_scripted:create_npc")
 	local settings_id = self:section_name()
 	local spawn_sections = parse_names(ini_sys:r_string_ex(settings_id, "npc") or "")

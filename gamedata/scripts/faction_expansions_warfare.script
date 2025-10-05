@@ -1,0 +1,70 @@
+table.insert(faction_expansions.random_mutants, "simulation_mix_dogs")
+table.insert(faction_expansions.random_mutants, "simulation_tushkano")
+table.insert(faction_expansions.random_mutants, "simulation_zombie")
+table.insert(faction_expansions.random_mutants, "simulation_lurker")
+table.insert(faction_expansions.random_mutants, "simulation_fracture")
+
+table.insert(faction_expansions.random_rare, "simulation_poltergeist_tele")
+table.insert(faction_expansions.random_rare, "simulation_poltergeist_flame")
+table.insert(faction_expansions.random_rare, "simulation_psysucker")
+table.insert(faction_expansions.random_rare, "simulation_psy_dog")
+table.insert(faction_expansions.random_rare, "simulation_lurker")
+table.insert(faction_expansions.random_rare, "simulation_lurker")
+
+table.insert(faction_expansions.random_zombies, "simulation_fracture")
+table.insert(faction_expansions.random_zombies, "simulation_fracture")
+table.insert(faction_expansions.random_zombies, "simulation_fracture")
+
+local old_faction_expansions_get_advanced_chance = faction_expansions.get_advanced_chance
+function faction_expansions.get_advanced_chance(resource)
+    return 150 * (math.pow((resource / warfare.resource_count), 0.8))
+end
+
+local old_faction_expansions_get_veteran_chance = faction_expansions.get_veteran_chance
+function faction_expansions.get_veteran_chance(resource)
+    return 100 * (math.pow((resource / warfare.resource_count), 2))
+end
+
+local old_faction_expansions_get_spawn_section = faction_expansions.get_spawn_section
+function faction_expansions.get_spawn_section(faction, resource)
+    if (faction ~= "monster") then
+        if (faction == "stalker") or (faction == "ecolog") then								-- loners and ecologists have set chances for squad skill: 7% veteran, 36% advanced, 57% novice
+            return faction_expansions.get_section(faction, 36, 7)
+        else
+            local advanced = faction_expansions.get_advanced_chance(resource)
+            local veteran = faction_expansions.get_veteran_chance(resource)
+            return faction_expansions.get_section(faction, advanced, veteran)
+        end
+    elseif (faction == "monster") then
+        return faction_expansions.get_section(faction, resource, resource)										-- for monster spawns, 'resource' is rare_chance
+    end
+end
+
+--get_section
+local old_faction_expansions_get_section = faction_expansions.get_section
+function faction_expansions.get_section(faction, advanced_chance, veteran_chance)
+    local r = math.random(0,100)
+    local name = faction_expansions.faction_list[faction]
+    if name then
+        if r <= veteran_chance then
+            return (name .. "_sim_squad_veteran")
+        elseif r <= advanced_chance then
+            return (name .. "_sim_squad_advanced")
+        else
+            return (name .. "_sim_squad_novice")
+        end
+    elseif faction == "monster" then
+
+        if not (IsSurvivalMode()) then
+            if (r <= advanced_chance) then													-- 'advanced_chance' is actually rare_chance
+                return faction_expansions.random_rare[math.random(#faction_expansions.random_rare)]
+            else
+                return faction_expansions.random_mutants[math.random(#faction_expansions.random_mutants)]
+            end
+        else
+            return faction_expansions.random_zombies[math.random(#faction_expansions.random_zombies)]
+        end
+    end
+
+    return nil
+end

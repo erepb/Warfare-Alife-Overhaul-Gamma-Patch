@@ -4,7 +4,6 @@ local alife_warfare_general_options_index = 1
 local alife_warfare_azazel_options_index = 2
 local alife_warfare_stalker_options_index = 3
 
-printf("overriding ui_options")
 local old_ui_options_init_opt_coder = ui_options.init_opt_coder
 function ui_options.init_opt_coder()
     old_ui_options_init_opt_coder()
