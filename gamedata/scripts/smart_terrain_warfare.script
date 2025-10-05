@@ -1900,19 +1900,19 @@ function spawn_defense(smart)
 		faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier									-- base count plus modifier
 		local current_respawn = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
 		current_respawn = math.random(current_respawn)
-		printf("WARFARE DEBUG: reset defense timer. min/max: %s/%s, bases: %s, timer: %s", min_respawn, max_respawn, faction_bases, current_respawn)
+		--printf("WARFARE DEBUG: reset defense timer. min/max: %s/%s, bases: %s, timer: %s", min_respawn, max_respawn, faction_bases, current_respawn)
 		defense_next_update[smart.id] = current_respawn
 		defense_timers[smart.id] = game.get_game_time()
 		reset_defense_timer[smart.id] = nil											-- timer reset only occurs when a base changes owners
 		return
 	elseif (game.get_game_time():diffSec(defense_timers[smart.id]) > (defense_next_update[smart.id]*6)) then
-	    printf("WARFARE DEBUG: defence time elapsed. was set at: %s %s, curr time: %s %s, diff: %s, next_update: %s(%s)", defense_timers[smart.id]:dateToString(0), defense_timers[smart.id]:timeToString(2), game.get_game_time():dateToString(0), game.get_game_time():timeToString(2), game.get_game_time():diffSec(defense_timers[smart.id]), defense_next_update[smart.id], defense_next_update[smart.id]*6)
+	    --printf("WARFARE DEBUG: defence time elapsed. was set at: %s %s, curr time: %s %s, diff: %s, next_update: %s(%s)", defense_timers[smart.id]:dateToString(0), defense_timers[smart.id]:timeToString(2), game.get_game_time():dateToString(0), game.get_game_time():timeToString(2), game.get_game_time():diffSec(defense_timers[smart.id]), defense_next_update[smart.id], defense_next_update[smart.id]*6)
 		local min_respawn = warfare_options.options.factions[smart.owning_faction].min_faction_respawn
 		local max_respawn = warfare_options.options.factions[smart.owning_faction].max_faction_respawn
 		faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
 		local current_respawn = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
     	current_respawn = math.random(current_respawn)
-    	printf("WARFARE DEBUG: update defense timer. min/max: %s/%s, bases: %s, timer: %s", min_respawn, max_respawn, faction_bases, current_respawn)
+    	--printf("WARFARE DEBUG: update defense timer. min/max: %s/%s, bases: %s, timer: %s", min_respawn, max_respawn, faction_bases, current_respawn)
 		defense_next_update[smart.id] = current_respawn
 		defense_timers[smart.id] = warfare_utils.add_time(defense_timers[smart.id], defense_next_update[smart.id]*6)
 	else
@@ -1941,7 +1941,7 @@ function spawn_defense(smart)
 	end
 
 	local squad = utils_obj.create_squad(section, smart:name())
-	printf("WARFARE DEBUG: spawning defense squad faction: %s, resources: %s", smart.owning_faction, smart.resource_count)
+	--printf("WARFARE DEBUG: spawning defense squad faction: %s, resources: %s", smart.owning_faction, smart.resource_count)
 	sim_squad_warfare.set_target(squad, smart.id)
 
 	printd(2, smart:name())
@@ -2034,7 +2034,7 @@ function spawn_patrols(smart)
 			if (tobj) then
 				local section = faction_expansions.get_spawn_section(smart.owning_faction, smart.resource_count)
 				local squad = utils_obj.create_squad(section, smart:name())
-		    	printf("WARFARE DEBUG: spawning patrol squad faction: %s, resources: %s", smart.owning_faction, smart.resource_count)
+		    	--printf("WARFARE DEBUG: spawning patrol squad faction: %s, resources: %s", smart.owning_faction, smart.resource_count)
 
 				if (is_squad) then
 					new_table = {

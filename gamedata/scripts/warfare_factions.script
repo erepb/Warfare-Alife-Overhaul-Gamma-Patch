@@ -93,7 +93,7 @@ end
 ]]
 
 function update()
-    printf("WARFARE DEBUG: update")
+    --printf("WARFARE DEBUG: update")
     for i,faction in pairs(factions) do
         if faction ~= "monster" then
             update_faction(faction)
@@ -278,7 +278,7 @@ function update_faction(faction)
                     if spawn_random_patrol then
                         local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count)
                         local squad = utils_obj.create_squad(section, start:name())
-                        printf("WARFARE DEBUG: spawning ranom patrol squad faction: %s, resources: %s", faction, faction_information[faction].resource_count)
+                        --printf("WARFARE DEBUG: spawning ranom patrol squad faction: %s, resources: %s", faction, faction_information[faction].resource_count)
 
                         smart_terrain_warfare.random_patrols[squad.id] = faction
                         sim_squad_warfare.set_target(squad, target_id)
