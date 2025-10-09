@@ -118,16 +118,15 @@ function get_smart_faction(smart)
 end
 
 -- Function to display information for faction-controlled smarts
-function render_faction_smart_info(smart, faction_owner)
+function render_faction_smart_info(smart, faction)
     -- Base Vacancy Information (Detailed)
     if smart.props.base and smart.props.base > 0 then
         ImGui.Text("Base Vacancy Details:")
         
-        local regular_squads, sq_pow, stationary_sq_num = smart_terrain_warfare.squad_count_detailed(smart, faction_owner)
+        local regular_squads, sq_pow, stationary_sq_num = smart_terrain_warfare.squad_count_detailed(smart, faction)
         local invasion_force_size = smart_terrain_warfare.invasions[smart.id] and smart_terrain_warfare.invasions[smart.id][2] or 0
         local guard_size_value = smart_terrain_warfare.guard_size or 0
         local guards = math.max(guard_size_value, stationary_sq_num)
-        local max_allowable_size = math.max((invasion_force_size + guards), smart.max_population)
         local current_occupancy = regular_squads + stationary_sq_num
         
         ImGui.Text("  Regular Squads: " .. tostring(regular_squads))
@@ -136,7 +135,7 @@ function render_faction_smart_info(smart, faction_owner)
         ImGui.Text("  Invasion Force Size: " .. tostring(invasion_force_size))
         ImGui.Text("  Guard Size Setting: " .. tostring(guard_size_value))
         ImGui.Text("  Effective Guards: " .. tostring(guards))
-        ImGui.Text("  Desired Size: " .. tostring(max_allowable_size))
+        ImGui.Text("  Desired Size: " .. tostring(invasion_force_size + guards + 1))
         ImGui.Text("  Current Occupancy: " .. tostring(current_occupancy))
         
         -- Defense Spawn Timer Information
@@ -163,22 +162,28 @@ function render_faction_smart_info(smart, faction_owner)
             ImGui.Text("  Timer Status: Not initialized")
         end
         
+        -- Manual spawn button
+        if ImGui.Button("Spawn Defense##" .. smart.id) then
+            smart_terrain_warfare.reset_defense_timer[smart.id] = true
+            smart_terrain_warfare.spawn_defense(smart, faction)
+        end
+        
         -- Spawn calculation details
         if warfare_options and warfare_options.options and warfare_options.options.factions and 
-           warfare_options.options.factions[faction_owner] and warfare_factions and 
-           warfare_factions.faction_information and warfare_factions.faction_information[faction_owner] then
+           warfare_options.options.factions[faction] and warfare_factions and 
+           warfare_factions.faction_information and warfare_factions.faction_information[faction] then
             
-            local min_respawn = warfare_options.options.factions[faction_owner].min_faction_respawn
-            local max_respawn = warfare_options.options.factions[faction_owner].max_faction_respawn
-            local base_count_modifier = warfare_options.options.factions[faction_owner].base_count_modifier
-            local faction_bases = warfare_factions.faction_information[faction_owner].base_count + base_count_modifier
+            local min_respawn = warfare_options.options.factions[faction].min_faction_respawn
+            local max_respawn = warfare_options.options.factions[faction].max_faction_respawn
+            local base_count_modifier = warfare_options.options.factions[faction].base_count_modifier
+            local faction_bases = warfare_factions.faction_information[faction].base_count + base_count_modifier
             local base_count_total = warfare.base_count or 1
             local lerp_factor = math.min(math.max(faction_bases / base_count_total, 0), 1)
             local calculated_respawn = warfare.lerp and warfare.lerp(min_respawn, max_respawn, lerp_factor) or min_respawn
             
             -- Monolith special case
             local final_respawn = calculated_respawn
-            if faction_owner == "monolith" and has_alife_info and has_alife_info("bar_deactivate_radar_done") then
+            if faction == "monolith" and has_alife_info and has_alife_info("bar_deactivate_radar_done") then
                 final_respawn = calculated_respawn * 2
             end
             
@@ -188,7 +193,7 @@ function render_faction_smart_info(smart, faction_owner)
             ImGui.Text("  Total Bases: " .. tostring(base_count_total))
             ImGui.Text("  Lerp Factor: " .. string.format("%.3f", lerp_factor))
             ImGui.Text("  Calculated Interval: " .. format_time_remaining(calculated_respawn * 60))
-            if faction_owner == "monolith" and has_alife_info and has_alife_info("bar_deactivate_radar_done") then
+            if faction == "monolith" and has_alife_info and has_alife_info("bar_deactivate_radar_done") then
                 ImGui.Text("  Monolith Penalty: 2x (Brain Scorcher off)")
                 ImGui.Text("  Final Interval: " .. format_time_remaining(final_respawn * 60))
             end
@@ -212,6 +217,11 @@ function render_faction_smart_info(smart, faction_owner)
                 table.insert(block_reasons, "Actor distance OK (" .. string.format("%.0f", smart.dist_to_actor) .. " >= " .. tostring(smart.respawn_radius) .. ")")
             end
         end
+
+        if not smart_terrain_warfare.base_has_vacancy(smart, faction) then
+            can_spawn = false
+            table.insert(block_reasons, "Base is full")
+        end
                 
         if #block_reasons > 0 then
             for _, reason in ipairs(block_reasons) do
@@ -220,6 +230,25 @@ function render_faction_smart_info(smart, faction_owner)
         end
         
         ImGui.Text("  Can Spawn Now: " .. (can_spawn and "Yes" or "No"))
+        
+        -- Process Squads Timer Information
+        ImGui.Text("Process Squads Timer:")
+        
+        if smart.process_squads_time and smart.next_process_squads_time then
+            local diff = game.get_game_time():diffSec(smart.process_squads_time)
+            local remaining = (smart.next_process_squads_time * 60) - diff
+            
+            local time_status = format_time_remaining(remaining)
+            if time_status == "Ready" then
+                ImGui.Text("  Process Status: Ready to Process")
+            else
+                ImGui.Text("  Process Status: " .. time_status .. " remaining")
+            end
+            ImGui.Text("  Process Interval: " .. format_time_remaining(smart.next_process_squads_time * 60))
+            ImGui.Text("  Random Range: 5m - 90m (reduced load)")
+        else
+            ImGui.Text("  Process Status: Not initialized")
+        end
     else
         ImGui.Text("Base Vacancy: Not a base")
     end
@@ -644,7 +673,8 @@ function render()
             local num_enemy_squads = 0
             local total_allied_power = 0
             local enemy_distance_sum = 0
-            
+            local squad_factions = {}
+
             for sid, _ in pairs(squads) do
                 local squad = sid and alife_object(sid)
                 if squad and squad.registered_with_warfare and 
@@ -663,6 +693,7 @@ function render()
                                                global_position.from(smart), 
                                                global_position.from(squad)
                                            )
+                        squad_factions[squad_faction] = true
                     -- Count allied squads
                     elseif squad_faction == faction_owner then
                         total_allied_power = total_allied_power + 
@@ -671,6 +702,14 @@ function render()
                 end
             end
             
+            local squad_factions_str = ""
+            for faction_name, _ in pairs(squad_factions) do
+                if squad_factions_str ~= "" then
+                    squad_factions_str = squad_factions_str .. ", "
+                end
+                squad_factions_str = squad_factions_str .. faction_name
+            end
+            ImGui.Text("  Enemy Factions Present: " .. squad_factions_str)
             ImGui.Text("  Enemy Squads Targeting: " .. tostring(num_enemy_squads))
             ImGui.Text("  Total Enemy Power: " .. string.format("%.1f", total_enemy_power))
             ImGui.Text("  Total Allied Power: " .. string.format("%.1f", total_allied_power))

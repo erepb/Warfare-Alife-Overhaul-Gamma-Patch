@@ -65,9 +65,9 @@ smart_owners = {}
 manual_point = nil
 dbg_hud = false
 
-local guard_size = 1							-- number of squads to keep at a base when an invasion is sent out
+guard_size = 1							-- number of squads to keep at a base when an invasion is sent out
 local currently_surge = false
-local reset_defense_timer = {}
+reset_defense_timer = {}
 local previous_owner = {}										-- have to use this, since using smart.last_owner messes with the pda icons
 
 defense_timers = {}
@@ -1218,7 +1218,7 @@ function process_overflow_squad(smart, squad, bases)
 	local faction = squad:get_squad_community()  -- Note that this is the squad's faction, NOT the faction of the smart owner
 	local movedSquad = false
 
-	if not (#bases > 0) then
+	if bases == nil or not (#bases > 0) then
 		bases = find_nearby_bases(smart, faction)
 	end
 
@@ -1633,7 +1633,7 @@ function process_targets(smart)
 
 				local diff = game.get_game_time():diffSec(invasions[smart.id][3])
 				local wait = invasions[smart.id][4] or 0
-				if (diff > (wait * 60)) then
+				if (diff >= (wait * 60)) then
 					-- check loner/ecolog target pop to see if invasion will grant control
 					local loner_squads = squad_count_defending(target, target.owning_faction)
 					local takeover_possible = false
@@ -2462,12 +2462,13 @@ end
 
 
 function spawn_defense(smart)
+	local faction = smart.owning_faction
 	if not (defense_timers[smart.id]) or reset_defense_timer[smart.id] or (game.get_game_time():diffSec(defense_timers[smart.id]) > (defense_next_update[smart.id]*60)) then
-		local min_respawn = warfare_options.options.factions[smart.owning_faction].min_faction_respawn
-		local max_respawn = warfare_options.options.factions[smart.owning_faction].max_faction_respawn
-		local faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier									-- base count plus modifier
+		local min_respawn = warfare_options.options.factions[faction].min_faction_respawn
+		local max_respawn = warfare_options.options.factions[faction].max_faction_respawn
+		local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier									-- base count plus modifier
 		local current_respawn = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
-		if smart.owning_faction == "monolith" and has_alife_info("bar_deactivate_radar_done") then
+		if faction == "monolith" and has_alife_info("bar_deactivate_radar_done") then
 			current_respawn = 2 * current_respawn  -- Once the Brain Scorcher is deactivated, Monolith spawn at a much slower rate
 		end
 		defense_next_update[smart.id] = current_respawn
@@ -2480,18 +2481,24 @@ function spawn_defense(smart)
 		return
 	end
 
-	if (is_factions_enemies(smart.owning_faction, warfare.actor_faction) and smart.is_on_actor_level and smart.dist_to_actor) then 
+	if (is_factions_enemies(faction, warfare.actor_faction) and smart.is_on_actor_level and smart.dist_to_actor) then
 		if (smart.dist_to_actor < smart.respawn_radius) then
 			return
 		end
 	end
 
+	if not base_has_vacancy(smart, faction) then
+		return
+	end
+
 	local current_level = smart.level_id
-	local section = faction_expansions.get_spawn_section(smart.owning_faction, max_resource_count[smart.owning_faction], current_level)
-	--printf("spawning %s squad on %s with resource count of %s", smart.owning_faction, smart:name(), max_resource_count[smart.owning_faction])
+	local section = nil
+	--printf("spawning %s squad on %s with resource count of %s", faction, smart:name(), max_resource_count[faction])
 	-- army spawn quality depends on number of bases
-	if (warfare_options.options.factions[smart.owning_faction].use_bases_not_resources) then
-		section = faction_expansions.get_spawn_section(smart.owning_faction, faction_bases, current_level)
+	if (warfare_options.options.factions[faction].use_bases_not_resources) then
+		section = faction_expansions.get_spawn_section(faction, faction_bases, current_level)
+	else
+		section = faction_expansions.get_spawn_section(faction, max_resource_count[faction], current_level)
 	end
 	
 	local squad = utils_obj.create_squad(section, smart:name())
