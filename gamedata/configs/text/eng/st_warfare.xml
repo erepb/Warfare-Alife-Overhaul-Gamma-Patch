@@ -44,7 +44,7 @@
 		<text>squad is being deployed to: %s.</text>
 	</string>
 	<string id="st_wrfr_canc_req_backup">
-		<text>Cancel requsets for squads for this smart</text>
+		<text>Cancel requests for squads for this smart</text>
 	</string>
 	<string id="ui_mm_alife_warfare_faction_ignore_empty_targets">
 		<text>Ignore empty targets</text>

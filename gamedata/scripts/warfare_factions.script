@@ -116,7 +116,7 @@ function update_faction(faction)
         faction_information[faction].last_random_patrol = game.get_game_time()
     end
 
-    if (not faction_information[faction].timer or game.get_game_time():diffSec(faction_information[faction].timer) >= (faction_information[faction].next_update*6)) then
+    if (not faction_information[faction].timer or game.get_game_time():diffSec(faction_information[faction].timer) >= (faction_information[faction].next_update*60)) then
         printd(0, faction or "nil faction")
 
         local min_resurgence_wait_time = warfare_options.options.factions[faction].min_resurgence_wait_time
@@ -217,7 +217,7 @@ function update_faction(faction)
         end
 
         if (warfare_options.options.factions[faction].random_patrols) then
-            if (game.get_game_time():diffSec(faction_information[faction].last_random_patrol) > faction_information[faction].next_random_patrol*6) then
+            if (game.get_game_time():diffSec(faction_information[faction].last_random_patrol) > faction_information[faction].next_random_patrol*60) then
                 faction_information[faction].last_random_patrol = game.get_game_time()
                 faction_information[faction].next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time)
 
@@ -263,7 +263,7 @@ function update_faction(faction)
         end
 
         if (warfare_options.options.factions[faction].participate_in_warfare and (faction_information[faction].base_count + mod) < 1) then
-            if (game.get_game_time():diffSec(faction_information[faction].last_resurgence_attempt) > faction_information[faction].next_resurgence_attempt*6) then
+            if (game.get_game_time():diffSec(faction_information[faction].last_resurgence_attempt) > faction_information[faction].next_resurgence_attempt*60) then
                 faction_information[faction].last_resurgence_attempt = game.get_game_time()
                 faction_information[faction].next_resurgence_attempt = math.random(min_resurgence_wait_time, max_resurgence_wait_time)
 

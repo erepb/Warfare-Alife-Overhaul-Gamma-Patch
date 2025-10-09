@@ -1,0 +1,168 @@
+-- Get auto capture status information
+function get_auto_capture_status()
+    local status = {}
+    
+    -- Check if using old auto capture method
+    status.use_old_method = warfare_options.options.use_old_auto_capture or false
+    
+    -- Check actor faction eligibility
+    local actor_faction = warfare.actor_faction
+    status.actor_faction = actor_faction or "Unknown"
+    status.can_capture = not (actor_faction == "stalker" or actor_faction == "ecolog")
+    
+    -- Check if faction has bases
+    local base_count = 0
+    if actor_faction and warfare_factions.faction_information[actor_faction] then
+        base_count = warfare_factions.faction_information[actor_faction].base_count or 0
+    end
+    status.faction_base_count = base_count
+    status.has_bases = base_count > 0
+    
+    -- Check surge status
+    status.is_surge = currently_surge or false
+    
+    -- Check time restrictions (night/day)
+    local current_hour = level.get_time_hours()
+    status.current_hour = current_hour
+    status.is_night = (current_hour < 6 or current_hour > 20)
+    
+    -- Check auto capture settings
+    status.auto_capture_enabled = warfare_options.options.enable_auto_capture or false
+    status.max_capture_distance = warfare_options.options.auto_capture_max_distance or 0
+    status.wait_time = warfare_options.options.auto_capture_wait_time or 0
+    
+    -- Check manual capture status
+    status.has_manual_point = smart_terrain_warfare.manual_point ~= nil
+    if smart_terrain_warfare.manual_point then
+        status.manual_point_smart_id = smart_terrain_warfare.manual_point[1]
+        status.manual_point_start_time = smart_terrain_warfare.manual_point[2]
+        status.manual_point_base_id = smart_terrain_warfare.manual_point[3]
+        status.manual_point_squad_id = smart_terrain_warfare.manual_point[4]
+        status.manual_point_stage = smart_terrain_warfare.manual_point[5]
+
+        -- Calculate time elapsed
+        if smart_terrain_warfare.manual_point[2] then
+            status.time_elapsed = round_idp(game.get_game_time():diffSec(smart_terrain_warfare.manual_point[2]))
+        else
+            status.time_elapsed = 0
+        end
+    end
+    
+    -- Check PDA status
+    local obj_pda = db.actor:active_item()
+    status.has_active_pda = obj_pda and string.find(obj_pda:section(),"device_pda") and obj_pda:condition() >= obj_pda:power_critical()
+    
+    return status
+end
+
+function render()
+    local status = get_auto_capture_status()
+    
+    -- Auto Capture System Status
+    ImGui.Text("=== Auto Capture System Status ===")
+    ImGui.Separator()
+    
+    -- Configuration Settings
+    ImGui.Text("Configuration:")
+    ImGui.Text("  Use Old Method: " .. (status.use_old_method and "Yes" or "No"))
+    ImGui.Text("  Auto Capture Enabled: " .. (status.auto_capture_enabled and "Yes" or "No"))
+    ImGui.Text("  Max Capture Distance: " .. tostring(status.max_capture_distance))
+    ImGui.Text("  Wait Time: " .. tostring(status.wait_time) .. " minutes")
+    
+    ImGui.Spacing()
+    
+    -- Actor Status
+    ImGui.Text("Actor Status:")
+    ImGui.Text("  Faction: " .. tostring(status.actor_faction))
+    ImGui.Text("  Can Capture: " .. (status.can_capture and "Yes" or "No"))
+    ImGui.Text("  Faction Base Count: " .. tostring(status.faction_base_count))
+    ImGui.Text("  Has Bases: " .. (status.has_bases and "Yes" or "No"))
+    
+    ImGui.Spacing()
+    
+    -- Current Conditions
+    ImGui.Text("Current Conditions:")
+    ImGui.Text("  Current Hour: " .. string.format("%.1f", status.current_hour))
+    ImGui.Text("  Is Night: " .. (status.is_night and "Yes (6PM-6AM)" or "No"))
+    ImGui.Text("  Is Surge: " .. (status.is_surge and "Yes" or "No"))
+    ImGui.Text("  Has Active PDA: " .. (status.has_active_pda and "Yes" or "No"))
+    
+    ImGui.Spacing()
+    
+    -- Manual Capture Status
+    ImGui.Text("Manual Capture Status:")
+    ImGui.Text("  Has Active Request: " .. (status.has_manual_point and "Yes" or "No"))
+    
+    if status.has_manual_point then
+        ImGui.Text("  Target Smart ID: " .. tostring(status.manual_point_smart_id or "None"))
+        ImGui.Text("  Base ID: " .. tostring(status.manual_point_base_id or "None"))
+        ImGui.Text("  Squad ID: " .. tostring(status.manual_point_squad_id or "None"))
+        ImGui.Text("  Time Elapsed: " .. tostring(status.time_elapsed) .. " seconds")
+        
+        local stage_text = "Unknown"
+        if status.manual_point_stage == 1 then
+            stage_text = "Waiting to call squad (20s)"
+        elseif status.manual_point_stage == 0 then
+            stage_text = "Squad called, waiting for response"
+        elseif status.manual_point_stage == -1 then
+            stage_text = "Complete, move away to reset"
+        end
+        ImGui.Text("  Current Stage: " .. stage_text)
+        
+        -- Progress indicator based on stage
+        if status.manual_point_stage == 1 then
+            local progress = math.min(status.time_elapsed / 20, 1.0)
+            ImGui.Text("  Progress: " .. string.format("%.1f%%", progress * 100))
+        elseif status.manual_point_stage == 0 then
+            local wait_seconds = (status.wait_time or 0) * 60
+            local progress = math.min(status.time_elapsed / wait_seconds, 1.0)
+            ImGui.Text("  Progress: " .. string.format("%.1f%%", progress * 100))
+        end
+    end
+    
+    ImGui.Spacing()
+    
+    -- Eligibility Check
+    ImGui.Text("Auto Capture Eligibility:")
+    local eligible = true
+    local reasons = {}
+    
+    if not status.can_capture then
+        eligible = false
+        table.insert(reasons, "Faction cannot capture (Loner/Ecologist)")
+    end
+    
+    if not status.has_bases and not status.use_old_method then
+        eligible = false
+        table.insert(reasons, "No faction bases available")
+    end
+    
+    if status.is_surge then
+        eligible = false
+        table.insert(reasons, "Surge in progress")
+    end
+    
+    if status.is_night and not status.has_manual_point then
+        eligible = false
+        table.insert(reasons, "Night time (auto capture disabled)")
+    end
+    
+    if not status.has_active_pda then
+        eligible = false
+        table.insert(reasons, "No active PDA")
+    end
+    
+    if not status.auto_capture_enabled and not status.has_manual_point then
+        eligible = false
+        table.insert(reasons, "Auto capture disabled in options")
+    end
+    
+    ImGui.Text("  Status: " .. (eligible and "ELIGIBLE" or "NOT ELIGIBLE"))
+    
+    if not eligible then
+        ImGui.Text("  Reasons:")
+        for i, reason in ipairs(reasons) do
+            ImGui.Text("    - " .. reason)
+        end
+    end
+end

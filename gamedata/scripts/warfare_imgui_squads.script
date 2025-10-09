@@ -49,6 +49,87 @@ function get_squad_smart(squad)
     return ""
 end
 
+-- Get squad commander name
+function get_squad_commander(squad)
+    local commanderID = squad:commander_id()
+    local commander = commanderID and alife_object(commanderID)
+    local commanderName = commander and commander.character_name and commander:character_name()
+    
+    if commanderName and IsStalker(commander) then
+        return commanderName
+    end
+    return ""
+end
+
+-- Sorting state variables
+local sort_column = -1
+local sort_ascending = true
+
+-- Get sortable value for a column
+function get_sortable_value(squad, column)
+    if column == 0 then -- Name
+        return ui_warfare_options_hints.get_name(squad:section_name()) or warfare_names.faction_names[squad.player_id] or ""
+    elseif column == 1 then -- Faction
+        return warfare_names.faction_names[squad:get_squad_community()] or ""
+    elseif column == 2 then -- Count
+        return squad:npc_count()
+    elseif column == 3 then -- Power
+        return sim_offline_combat.calculate_squad_power(squad)
+    elseif column == 4 then -- Commander
+        return get_squad_commander(squad)
+    elseif column == 5 then -- Current Smart
+        return get_squad_smart(squad)
+    elseif column == 6 then -- Relation
+        return get_squad_relation(squad)
+    elseif column == 7 then -- Patrol Owner
+        return get_patrol_owner(squad)
+    elseif column == 8 then -- Target
+        return get_target_info(squad)
+    elseif column == 9 then -- Action
+        return get_action_status(squad)
+    end
+    return ""
+end
+
+-- Sort squads by column
+function sort_squads(squads, column, ascending)
+    table.sort(squads, function(a, b)
+        local val_a = get_sortable_value(a, column)
+        local val_b = get_sortable_value(b, column)
+        
+        -- Handle numeric values
+        if type(val_a) == "number" and type(val_b) == "number" then
+            if ascending then
+                return val_a < val_b
+            else
+                return val_a > val_b
+            end
+        end
+        
+        -- Handle string values (case-insensitive)
+        local str_a = tostring(val_a)
+        local str_b = tostring(val_b)
+        
+        -- Empty strings always go to the end
+        if str_a == "" and str_b == "" then
+            return false -- Equal empty strings
+        elseif str_a == "" then
+            return false -- Empty string goes after non-empty
+        elseif str_b == "" then
+            return true -- Non-empty string goes before empty
+        end
+        
+        -- Normal string comparison (case-insensitive)
+        str_a = str_a:lower()
+        str_b = str_b:lower()
+        if ascending then
+            return str_a < str_b
+        else
+            return str_a > str_b
+        end
+    end)
+end
+
 function render()
     -- Add squads-related UI elements here
     local squads = {}
@@ -59,19 +140,50 @@ function render()
 		end
 	end
 
+    -- Apply sorting if a column is selected
+    if sort_column >= 0 then
+        sort_squads(squads, sort_column, sort_ascending)
+    end
+
     if ImGui.BeginTable("WarfareSquads", 10, 3, vector2(0, 0), 0) then
         -- 3 = Borders(1) + RowBg(2)
         ImGui.TableSetupColumn("Name", 2, 0, 0)
         ImGui.TableSetupColumn("Faction", 2, 0, 0)
         ImGui.TableSetupColumn("Count", 2, 0, 0)
         ImGui.TableSetupColumn("Power", 2, 0, 0)
+        ImGui.TableSetupColumn("Commander", 2, 0, 0)
         ImGui.TableSetupColumn("Current Smart", 2, 0, 0)
         ImGui.TableSetupColumn("Relation", 2, 0, 0)
         ImGui.TableSetupColumn("Patrol Owner", 2, 0, 0)
         ImGui.TableSetupColumn("Target", 2, 0, 0)
         ImGui.TableSetupColumn("Action", 2, 0, 0)
 
-        ImGui.TableHeadersRow()
+        -- Custom header row with sorting indicators
+        ImGui.TableNextRow(1, 0) -- ImGuiTableRowFlags_Headers
+        
+        local column_names = {
+            "Name", "Faction", "Count", "Power", "Commander",
+            "Current Smart", "Relation", "Patrol Owner", "Target", "Action"
+        }
+        
+        for col = 0, 9 do
+            ImGui.TableSetColumnIndex(col)
+            
+            local header_text = column_names[col + 1]
+            if sort_column == col then
+                header_text = header_text .. (sort_ascending and " ^" or " v")
+            end
+            
+            local avail = ImGui.GetContentRegionAvail()
+            if ImGui.Button(header_text, vector2(avail.x, 0)) then
+                if sort_column == col then
+                    sort_ascending = not sort_ascending
+                else
+                    sort_column = col
+                    sort_ascending = true
+                end
+            end
+        end
 
         for i = 1, #squads do
             local squad = squads[i]
@@ -88,6 +200,9 @@ function render()
 
             ImGui.TableNextColumn()
             ImGui.Text(tostring(sim_offline_combat.calculate_squad_power(squad)))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_squad_commander(squad))
 
             ImGui.TableNextColumn()
             ImGui.Text(get_squad_smart(squad))
