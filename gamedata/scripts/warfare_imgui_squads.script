@@ -1,0 +1,110 @@
+-- Get squad relation to actor
+function get_squad_relation(squad)
+    return sim_squad_warfare.get_squad_relation(squad.id) or "Unknown"
+end
+
+-- Get patrol owner name
+function get_patrol_owner(squad)
+    if squad.patrol_owner then
+        local owner = alife_object(squad.patrol_owner)
+        if owner then
+            return sim_squad_warfare.translate_smart_name(owner:name()) or owner:name()
+        end
+    end
+    return ""
+end
+
+-- Get target information
+function get_target_info(squad)
+    local atarget = squad.current_target_id
+    local ase_target = atarget and alife_object(atarget)
+    if ase_target then
+        if ase_target.id == AC_ID then
+            return "Actor"
+        end
+        local warfareName = sim_squad_warfare.translate_smart_name(ase_target:name()) or ase_target:name()
+        return warfareName
+    end
+    return ""
+end
+
+-- Get action status
+function get_action_status(squad)
+    if sim_offline_combat.opponents and sim_offline_combat.opponents[squad.id] then
+        return "In Combat"
+    elseif squad.current_action == 0 then
+        return "Moving"
+    elseif squad.current_action == 1 then
+        return "Attacking"
+    end
+    return "Idle"
+end
+
+function get_squad_smart(squad)
+    local smart_id = squad.smart_id
+    local smart = smart_id and alife_object(smart_id)
+    if smart then
+        return sim_squad_warfare.translate_smart_name(smart:name()) or smart:name()
+    end
+    return ""
+end
+
+function render()
+    -- Add squads-related UI elements here
+    local squads = {}
+    for id,v in pairs( SIMBOARD.squads ) do
+		local squad = alife_object(id)
+		if squad and simulation_objects.is_on_the_actor_level(squad) then
+			table.insert(squads, squad)
+		end
+	end
+
+    if ImGui.BeginTable("WarfareSquads", 10, 3, vector2(0, 0), 0) then
+        -- 3 = Borders(1) + RowBg(2)
+        ImGui.TableSetupColumn("Name", 2, 0, 0)
+        ImGui.TableSetupColumn("Faction", 2, 0, 0)
+        ImGui.TableSetupColumn("Count", 2, 0, 0)
+        ImGui.TableSetupColumn("Power", 2, 0, 0)
+        ImGui.TableSetupColumn("Current Smart", 2, 0, 0)
+        ImGui.TableSetupColumn("Relation", 2, 0, 0)
+        ImGui.TableSetupColumn("Patrol Owner", 2, 0, 0)
+        ImGui.TableSetupColumn("Target", 2, 0, 0)
+        ImGui.TableSetupColumn("Action", 2, 0, 0)
+
+        ImGui.TableHeadersRow()
+
+        for i = 1, #squads do
+            local squad = squads[i]
+            ImGui.TableNextRow()
+
+            ImGui.TableNextColumn()
+            ImGui.Text(ui_warfare_options_hints.get_name(squad:section_name()) or warfare_names.faction_names[squad.player_id])
+
+            ImGui.TableNextColumn()
+            ImGui.Text(warfare_names.faction_names[squad:get_squad_community()])
+
+            ImGui.TableNextColumn()
+            ImGui.Text(tostring(squad:npc_count()))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(tostring(sim_offline_combat.calculate_squad_power(squad)))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_squad_smart(squad))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_squad_relation(squad))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_patrol_owner(squad))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_target_info(squad))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_action_status(squad))
+        end
+
+        ImGui.EndTable()
+    end
+end
