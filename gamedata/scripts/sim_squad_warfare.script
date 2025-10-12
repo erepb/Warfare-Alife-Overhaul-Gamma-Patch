@@ -718,7 +718,7 @@ function get_warfare_info(squad)
         if (squad.patrol_table) then
             if (squad.patrol_table.arrive_time and squad.patrol_table.stay_time) then
                 local diff = game.get_game_time():diffSec(squad.patrol_table.arrive_time)
-                local remaining = (squad.patrol_table.stay_time*6) - diff
+                local remaining = (squad.patrol_table.stay_time*60) - diff
 
                 -- xQd, show the timer in hours and minutes
                 --remaining = round_idp(remaining / 60)
