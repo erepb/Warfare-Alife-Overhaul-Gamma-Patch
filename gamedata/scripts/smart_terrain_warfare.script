@@ -478,7 +478,7 @@ function get_night_activity_flag(smart)
 		return
 	end
 
-	if (game.get_game_time():diffSec(night_flag_timer[smart.id]) >= night_flag_next_update[smart.id]*60) then
+	if (game.get_game_time():diffSec(night_flag_timer[smart.id]) >= night_flag_next_update[smart.id]  * 6) then
 		night_flag_timer[smart.id] = game.get_game_time()
 		night_flag_next_update[smart.id] = math.random(30, 90)
 	else
@@ -678,7 +678,7 @@ function process_manual_capture(smart)
 		
 		-- STEP 3: respond to the player, spawn a squad, set target, and increase spawn timer
 		elseif (manual_point[5] == 0) then
-			if (diff >= (warfare_options.options.auto_capture_wait_time*60)) then
+			if (diff >= (warfare_options.options.auto_capture_wait_time  * 6)) then
 				local closest_base = manual_point[3] and alife_object(manual_point[3])
 				local targeting_squad = manual_point[4] and alife_object(manual_point[4])
 				
@@ -879,7 +879,7 @@ function process_base_squads(smart)
 	Inputs:
 		smart: base smart terrain
 ]]
-	if not (smart.process_squads_time) or (game.get_game_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*60) then
+	if not (smart.process_squads_time) or (game.get_game_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time  * 6) then
 		smart.process_squads_time = game.get_game_time()
 		smart.next_process_squads_time = math.random(5, 90)		-- default 1 to 5, made longer to ease script load
 	else
@@ -1030,7 +1030,7 @@ function process_resource_squads(smart)
 	Inputs:
 		smart: resource smart terrain
 ]]
-	if not (smart.process_squads_time) or (game.get_game_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*60) then
+	if not (smart.process_squads_time) or (game.get_game_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time  * 6) then
 		smart.process_squads_time = game.get_game_time()
 		smart.next_process_squads_time = math.random(5, 30)		-- default 1 to 5, made longer to ease script load
 	else
@@ -1094,7 +1094,7 @@ function process_territory_squads(smart)
 	Inputs:
 		smart: territory smart terrain
 ]]
-	if not (smart.process_squads_time) or (game.get_game_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*60) then
+	if not (smart.process_squads_time) or (game.get_game_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time  * 6) then
 		smart.process_squads_time = game.get_game_time()
 		smart.next_process_squads_time = math.random(5, 30)		-- default 1 to 5, made longer to ease script load
 	else
@@ -1287,7 +1287,7 @@ end
 -- WARNING:
 -- This function is being phased out for the new behavior functions above
 function process_squads_old(smart)
-	if not (smart.process_squads_time) or (game.get_game_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*60) then
+	if not (smart.process_squads_time) or (game.get_game_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time  * 6) then
 		smart.process_squads_time = game.get_game_time()
 		smart.next_process_squads_time = math.random(5, 15)				-- default 1 to 5, made longer to ease script load
 	else
@@ -1391,7 +1391,7 @@ end
 
 
 function surge_behavior(smart)
-	if not (surge_checker1[smart.id]) or (game.get_game_time():diffSec(surge_checker1[smart.id]) >= surge_checker2[smart.id]*60) then
+	if not (surge_checker1[smart.id]) or (game.get_game_time():diffSec(surge_checker1[smart.id]) >= surge_checker2[smart.id]  * 6) then
 		surge_checker1[smart.id] = game.get_game_time()
 		surge_checker2[smart.id] = math.random(1, 5)
 	else
@@ -1520,7 +1520,7 @@ function process_targets(smart)
 		return
 	end
 
-	if (game.get_game_time():diffSec(smart.process_targets_time) >= smart.next_process_targets_time*60) then
+	if (game.get_game_time():diffSec(smart.process_targets_time) >= smart.next_process_targets_time  * 6) then
 		smart.process_targets_time = game.get_game_time()
 		smart.next_process_targets_time = math.random(3, 15)		-- default 1 to 10, changed to ease script load
 	else
@@ -1633,7 +1633,7 @@ function process_targets(smart)
 
 				local diff = game.get_game_time():diffSec(invasions[smart.id][3])
 				local wait = invasions[smart.id][4] or 0
-				if (diff >= (wait * 60)) then
+				if (diff >= (wait  * 6)) then
 					-- check loner/ecolog target pop to see if invasion will grant control
 					local loner_squads = squad_count_defending(target, target.owning_faction)
 					local takeover_possible = false
@@ -2152,7 +2152,7 @@ function process_invasion_defense(smart)
 		return
 	end
 
-	if (game.get_game_time():diffSec(invasion_defense_timers[smart.id]) >= invasion_defense_next_update[smart.id]*60) then
+	if (game.get_game_time():diffSec(invasion_defense_timers[smart.id]) >= invasion_defense_next_update[smart.id]  * 6) then
 		invasion_defense_timers[smart.id] = game.get_game_time()
 		invasion_defense_next_update[smart.id] = math.random(3, 15)
 	else
@@ -2434,7 +2434,7 @@ end
 
 -- The maximum resource count per day is used as the official count
 function update_resources(smart)
-	if not (smart.resource_timer) or game.get_game_time():diffSec(smart.resource_timer) > (smart.resource_next_update*60) then
+	if not (smart.resource_timer) or game.get_game_time():diffSec(smart.resource_timer) > (smart.resource_next_update  * 6) then
 		smart.resource_timer = game.get_game_time()
 		smart.resource_next_update = 5
 	else
@@ -2463,7 +2463,7 @@ end
 
 function spawn_defense(smart)
 	local faction = smart.owning_faction
-	if not (defense_timers[smart.id]) or reset_defense_timer[smart.id] or (game.get_game_time():diffSec(defense_timers[smart.id]) > (defense_next_update[smart.id]*60)) then
+	if not (defense_timers[smart.id]) or reset_defense_timer[smart.id] or (game.get_game_time():diffSec(defense_timers[smart.id]) > (defense_next_update[smart.id]  * 6)) then
 		local min_respawn = warfare_options.options.factions[faction].min_faction_respawn
 		local max_respawn = warfare_options.options.factions[faction].max_faction_respawn
 		local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier									-- base count plus modifier
@@ -2477,7 +2477,7 @@ function spawn_defense(smart)
 			reset_defense_timer[smart.id] = nil											-- timer reset only occurs when a base changes owners
 		end
 	else
-		--printf("not ready to spawn squad at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(defense_timers[smart.id]) .. " out of " .. (defense_next_update[smart.id]*60))
+		--printf("not ready to spawn squad at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(defense_timers[smart.id]) .. " out of " .. (defense_next_update[smart.id]  * 6))
 		return
 	end
 
@@ -2528,7 +2528,7 @@ function spawn_patrols(smart)
 		end
 
 		return
-	elseif (game.get_game_time():diffSec(patrol_timers[smart.id]) > (patrol_next_update[smart.id]*60)) then
+	elseif (game.get_game_time():diffSec(patrol_timers[smart.id]) > (patrol_next_update[smart.id]  * 6)) then
 		patrol_timers[smart.id] = game.get_game_time()
 		patrol_next_update[smart.id] = 10
 
@@ -2727,7 +2727,7 @@ function process_patrols(smart)
 		return
 	end
 
-	if (game.get_game_time():diffSec(smart.process_patrols_timer) > (smart.next_process_patrols_update*60)) then
+	if (game.get_game_time():diffSec(smart.process_patrols_timer) > (smart.next_process_patrols_update  * 6)) then
 		smart.process_patrols_timer = game.get_game_time()
 		smart.next_process_patrols_update = math.random(30, 90)
 	else
@@ -2789,7 +2789,7 @@ function process_patrols(smart)
 						local min_idle = warfare_options.options.factions[squad:get_squad_community()].min_patrol_rest_time or 0
 						local max_idle = warfare_options.options.factions[squad:get_squad_community()].max_patrol_rest_time	or 0
 						patrol_squads[smart.id][squad_id].stay_time = math.random(min_idle, max_idle)
-					elseif (find_target or game.get_game_time():diffSec(sobj.arrive_time) >= (sobj.stay_time*60)) then
+					elseif (find_target or game.get_game_time():diffSec(sobj.arrive_time) >= (sobj.stay_time  * 6)) then
 						local night_chance = warfare_options.options.factions[smart.owning_faction].night_activity_chance
 						local isNight = (level.get_time_hours() < 6 or level.get_time_hours() > 20)
 
@@ -2837,7 +2837,7 @@ function process_loners(smart)
 		return
 	end
 
-	if (game.get_game_time():diffSec(loner_timer[smart.id]) >= loners_next_update[smart.id]*60) and not currently_surge then
+	if (game.get_game_time():diffSec(loner_timer[smart.id]) >= loners_next_update[smart.id]  * 6) and not currently_surge then
 		loner_timer[smart.id] = game.get_game_time()
 		loners_next_update[smart.id] = math.random(30, 90)
 	else
@@ -3235,7 +3235,7 @@ function process_ecolog(smart)
 		return
 	end
 
-	if (game.get_game_time():diffSec(ecolog_timer[smart.id]) >= ecolog_next_update[smart.id]*60) and not currently_surge then
+	if (game.get_game_time():diffSec(ecolog_timer[smart.id]) >= ecolog_next_update[smart.id]  * 6) and not currently_surge then
 		ecolog_timer[smart.id] = game.get_game_time()
 		ecolog_next_update[smart.id] = math.random(60, 180)
 	else
@@ -3490,14 +3490,14 @@ function spawn_mutants(smart)
 		spawn_mutant_next_update[smart.id] = math.random(min_respawn, max_respawn)
 		spawn_mutant_timers[smart.id] = game.get_game_time()			-- these timers and the update timers now get saved, and don't reset upon game load!
 		return
-	elseif (game.get_game_time():diffSec(spawn_mutant_timers[smart.id]) > (spawn_mutant_next_update[smart.id]*60)) then
+	elseif (game.get_game_time():diffSec(spawn_mutant_timers[smart.id]) > (spawn_mutant_next_update[smart.id]  * 6)) then
 		--printf("time to spawn mutants on location: " .. smart:name())
 		local min_respawn = warfare_options.options.monster_min_faction_respawn
 		local max_respawn = warfare_options.options.monster_max_faction_respawn
 		spawn_mutant_next_update[smart.id] = math.random(min_respawn, max_respawn)
 		spawn_mutant_timers[smart.id] = game.get_game_time()
 	else
-		--printf("not ready to spawn mutants at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(spawn_mutant_timers[smart.id]) .. " out of " .. (spawn_mutant_next_update[smart.id]*60))
+		--printf("not ready to spawn mutants at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(spawn_mutant_timers[smart.id]) .. " out of " .. (spawn_mutant_next_update[smart.id]  * 6))
 		return
 	end
 	
@@ -3565,13 +3565,13 @@ end
 
 -- Will be used for handling mutant behavior, choosing new targets etc.
 function process_mutants(smart)
-	if not (process_mutant_timers[smart.id]) or (game.get_game_time():diffSec(process_mutant_timers[smart.id]) >= (process_mutant_next_update[smart.id]*60)) then
+	if not (process_mutant_timers[smart.id]) or (game.get_game_time():diffSec(process_mutant_timers[smart.id]) >= (process_mutant_next_update[smart.id]  * 6)) then
 		process_mutant_timers[smart.id] = game.get_game_time()
 		local min_respawn = warfare_options.options.monster_min_faction_respawn
 		local max_respawn = warfare_options.options.monster_max_faction_respawn
 		process_mutant_next_update[smart.id] = 2*math.random(min_respawn, max_respawn)
 	else
-		--printf("not ready to change mutant target at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(process_mutant_timers[smart.id]) .. " out of " .. (process_mutant_next_update[smart.id]*60))
+		--printf("not ready to change mutant target at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(process_mutant_timers[smart.id]) .. " out of " .. (process_mutant_next_update[smart.id]  * 6))
 		return
 	end
 	
@@ -3604,7 +3604,7 @@ function process_mutants(smart)
 			if (faction == "monster") and (not warfare.ignore[squad:section_name()]) and (not sim_offline_combat.stationary_squads[squad:section_name()]) then			
 				if (squad.arrive_time and squad.wait_time) then		
 					-- force a mutant squad to move off if they exceed the terrain capacity
-					if (game.get_game_time():diffSec(squad.arrive_time) >= squad.wait_time*60) or (mutant_squad_count > smart.max_population) then
+					if (game.get_game_time():diffSec(squad.arrive_time) >= squad.wait_time  * 6) or (mutant_squad_count > smart.max_population) then
 						local max_active = warfare_options.options.monster_max_squads_per_level		
 						
 						local targets = {}
@@ -4244,7 +4244,7 @@ function get_warfare_info(smart)
 		local next_defense = defense_next_update[smart.id]
 		
 		local diff = game.get_game_time():diffSec(defense_timer)
-		local remaining = (next_defense*60) - diff
+		local remaining = (next_defense  * 6) - diff
 		-- xQd, show the timer in hours and minutes
 		--remaining = round_idp(remaining / 60)
 		if remaining <= 3600 then -- show in minutes if less than an hour left
@@ -4252,7 +4252,7 @@ function get_warfare_info(smart)
 		else 					  -- otherwise show in hours and minutes
 			local remaining_hrs_round = math.floor((remaining / 60)/60)
 			local remaining_hrs_float = (remaining / 60)/60
-			local remaining_mins_diff = round_idp((remaining_hrs_float - remaining_hrs_round) * 60)
+			local remaining_mins_diff = round_idp((remaining_hrs_float - remaining_hrs_round)  * 6)
 			remaining = strformat(str_wrfr[13] , remaining_hrs_round, remaining_mins_diff)
 		end
 		props = props .. " \\n" .. clr_gr .. str_wrfr[11] .. ": " .. clr_y .. remaining
@@ -4266,7 +4266,7 @@ function get_warfare_info(smart)
 		local next_patrol = patrol_next_update[smart.id]
 		
 		local diff = game.get_game_time():diffSec(patrol_timer)
-		local remaining = (next_patrol*60) - diff
+		local remaining = (next_patrol  * 6) - diff
 		-- xQd, show the timer in hours and minutes
 		--remaining = round_idp(remaining / 60)
 		if remaining <= 3600 then -- show in minutes if less than an hour left
@@ -4274,7 +4274,7 @@ function get_warfare_info(smart)
 		else 					  -- otherwise show in hours and minutes
 			local remaining_hrs_round = math.floor((remaining / 60)/60)
 			local remaining_hrs_float = (remaining / 60)/60
-			local remaining_mins_diff = round_idp((remaining_hrs_float - remaining_hrs_round) * 60)
+			local remaining_mins_diff = round_idp((remaining_hrs_float - remaining_hrs_round)  * 6)
 			remaining = strformat(str_wrfr[13] , remaining_hrs_round, remaining_mins_diff)
 		end
 		props = props .. " \\n" .. clr_gr .. str_wrfr[12] .. ": ".. clr_y .. remaining
@@ -5295,7 +5295,7 @@ function lvl_will_spawn_defense_soon(smart)
 		-- add any allied base to list
 		if other and other.owning_faction and (other.owning_faction == warfare.actor_faction) and other.props and (other.props.base > 0) and other.id ~= smart.id then
             if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[other.id] and smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[other.id] then
-				if ((smart_terrain_warfare.defense_next_update[other.id]*60) - (game.get_game_time():diffSec(smart_terrain_warfare.defense_timers[other.id]))) < 9000 then
+				if ((smart_terrain_warfare.defense_next_update[other.id]  * 6) - (game.get_game_time():diffSec(smart_terrain_warfare.defense_timers[other.id]))) < 9000 then
                     local distance = smart_terrain_warfare.fetch_smart_distance(smart,other)
                     if distance > 20 then
                         return true
@@ -5364,7 +5364,7 @@ function check_unique_npcs(smart)
 		return
 	end
 
-	if (game.get_game_time():diffSec(smart.last_unique_check) >= (smart.next_unique_check*60)) then
+	if (game.get_game_time():diffSec(smart.last_unique_check) >= (smart.next_unique_check  * 6)) then
 		smart.last_unique_check = game.get_game_time()
 		local min_respawn = 45
 		local max_respawn = 75

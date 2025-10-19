@@ -23,6 +23,7 @@ end
 
 -- Common function to format seconds into "h m" or "m" format
 function format_time_remaining(seconds)
+    seconds = seconds / 6
     if seconds <= 0 then
         return "Ready"
     elseif seconds <= 3600 then
@@ -46,7 +47,7 @@ function get_defense_timer(smart)
     local next_defense = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] or 10
 
     local diff = game.get_game_time():diffSec(defense_timer)
-    local remaining = (next_defense * 60) - diff
+    local remaining = (next_defense  * 6) - diff
 
     return format_time_remaining(remaining)
 end
@@ -67,7 +68,7 @@ function get_patrol_timer(smart)
     local next_patrol = smart_terrain_warfare.patrol_next_update[smart.id] or 10
 
     local diff = game.get_game_time():diffSec(patrol_timer)
-    local remaining = (next_patrol * 60) - diff
+    local remaining = (next_patrol  * 6) - diff
 
     return format_time_remaining(remaining)
 end
@@ -117,6 +118,102 @@ function get_smart_faction(smart)
     return ""
 end
 
+-- Function to get unique check timer remaining
+function get_unique_check_timer(smart)
+    if not smart.last_unique_check then
+        return "Not initialized"
+    end
+    
+    if not smart.next_unique_check then
+        return "Invalid timer"
+    end
+    
+    local diff = game.get_game_time():diffSec(smart.last_unique_check)
+    local remaining = (smart.next_unique_check  * 6) - diff
+    
+    return format_time_remaining(remaining)
+end
+
+-- Function to get unique squad information for a smart terrain
+function get_unique_squad_info(smart)
+    local smart_name = smart:name()
+    local faction = smart.owning_faction
+    
+    if not faction or faction == "" or faction == "none" then
+        return nil -- No faction, no unique squads
+    end
+    
+    -- Handle killer -> merc conversion
+    if faction == "killer" then
+        faction = "merc"
+    end
+    
+    local trader = faction .. "_sim_squad_trader"
+    local mechanic = faction .. "_sim_squad_mechanic"
+    local medic = faction .. "_sim_squad_medic"
+    local barman = faction .. "_sim_squad_barman"
+    
+    local unique_info = {
+        trader_count = 0,
+        mechanic_count = 0,
+        medic_count = 0,
+        barman_count = 0,
+        max_traders = 0,
+        max_mechanics = 0,
+        max_medics = 0,
+        max_barmen = 0,
+        has_requirements = false
+    }
+    
+    -- Check if this smart has unique squad requirements
+    if smart_terrain_warfare.uniques and smart_terrain_warfare.uniques[smart_name] then
+        local tbl = smart_terrain_warfare.uniques[smart_name]
+        unique_info.max_traders = tbl[1] or 0
+        unique_info.max_mechanics = tbl[2] or 0
+        unique_info.max_medics = tbl[3] or 0
+        unique_info.max_barmen = tbl[4] or 0
+        unique_info.has_requirements = true
+    end
+    
+    -- Count current unique squads
+    local squads = SIMBOARD.smarts[smart.id] and SIMBOARD.smarts[smart.id].squads
+    if squads then
+        for sid, _ in pairs(squads) do
+            local s = sid and alife_object(sid)
+            if s then
+                local sq_name = s:name()
+                
+                -- Check for mechanics
+                if string.find(sq_name, mechanic) or string.find(sq_name, "tech") or
+                   string.find(sq_name, "mechanic") or string.find(sq_name, "mechan") or
+                   string.find(sq_name, "yar") then
+                    unique_info.mechanic_count = unique_info.mechanic_count + 1
+                    
+                -- Check for barmen
+                elseif string.find(sq_name, barman) or string.find(sq_name, "barman") or
+                       string.find(sq_name, "barmen") or string.find(sq_name, "barkeep") or
+                       string.find(sq_name, "barkeeper") or string.find(sq_name, "povar") then
+                    unique_info.barman_count = unique_info.barman_count + 1
+                    
+                -- Check for traders
+                elseif string.find(sq_name, trader) or string.find(sq_name, "trader") or
+                       string.find(sq_name, "trade") or string.find(sq_name, "sakharov") or
+                       string.find(sq_name, "ashot") or string.find(sq_name, "scientist") or
+                       string.find(sq_name, "petrenko") then
+                    unique_info.trader_count = unique_info.trader_count + 1
+                    
+                -- Check for medics
+                elseif string.find(sq_name, medic) or string.find(sq_name, "medic") or
+                       string.find(sq_name, "doctor") or string.find(sq_name, "medik") then
+                    unique_info.medic_count = unique_info.medic_count + 1
+                end
+            end
+        end
+    end
+    
+    return unique_info
+end
+
 -- Function to display information for faction-controlled smarts
 function render_faction_smart_info(smart, faction)
     -- Base Vacancy Information (Detailed)
@@ -149,7 +246,7 @@ function render_faction_smart_info(smart, faction)
             ImGui.Text("  Timer Status: Pending Reset")
         elseif defense_timer_val and next_update_val then
             local diff = game.get_game_time():diffSec(defense_timer_val)
-            local remaining = (next_update_val * 60) - diff
+            local remaining = (next_update_val  * 6) - diff
             
             local time_status = format_time_remaining(remaining)
             if time_status == "Ready" then
@@ -157,7 +254,7 @@ function render_faction_smart_info(smart, faction)
             else
                 ImGui.Text("  Spawn Status: " .. time_status .. " remaining")
             end
-            ImGui.Text("  Spawn Interval was: " .. format_time_remaining(next_update_val * 60))
+            ImGui.Text("  Spawn Interval was: " .. format_time_remaining(next_update_val  * 6))
         else
             ImGui.Text("  Timer Status: Not initialized")
         end
@@ -166,6 +263,78 @@ function render_faction_smart_info(smart, faction)
         if ImGui.Button("Spawn Defense##" .. smart.id) then
             smart_terrain_warfare.reset_defense_timer[smart.id] = true
             smart_terrain_warfare.spawn_defense(smart, faction)
+        end
+        
+        -- Unique Squads Information
+        ImGui.Text("Unique Squads Status:")
+        
+        -- Unique Check Timer Information
+        ImGui.Text("Unique Check Timer:")
+        local unique_timer = get_unique_check_timer(smart)
+        ImGui.Text("  Next Check: " .. unique_timer)
+        
+        if smart.last_unique_check and smart.next_unique_check then
+            ImGui.Text("  Check Interval: " .. format_time_remaining(smart.next_unique_check  * 6))
+            ImGui.Text("  Interval Range: 45m - 75m (random)")
+        else
+            ImGui.Text("  Timer Details: Not available")
+        end
+        
+        -- Reset unique timer button
+        if ImGui.Button("Reset Unique Timer##" .. smart.id) then
+            smart.next_unique_check = 0
+        end
+        
+        local unique_info = get_unique_squad_info(smart)
+        if unique_info and unique_info.has_requirements then
+            ImGui.Text("  Traders: " .. tostring(unique_info.trader_count) .. " / " .. tostring(unique_info.max_traders))
+            ImGui.Text("  Mechanics: " .. tostring(unique_info.mechanic_count) .. " / " .. tostring(unique_info.max_mechanics))
+            ImGui.Text("  Medics: " .. tostring(unique_info.medic_count) .. " / " .. tostring(unique_info.max_medics))
+            ImGui.Text("  Barmen: " .. tostring(unique_info.barman_count) .. " / " .. tostring(unique_info.max_barmen))
+            
+            -- Status indicators
+            local traders_ok = unique_info.trader_count >= unique_info.max_traders
+            local mechanics_ok = unique_info.mechanic_count >= unique_info.max_mechanics
+            local medics_ok = unique_info.medic_count >= unique_info.max_medics
+            local barmen_ok = unique_info.barman_count >= unique_info.max_barmen
+            
+            local all_fulfilled = traders_ok and mechanics_ok and medics_ok and barmen_ok
+            ImGui.Text("  Requirements Met: " .. (all_fulfilled and "Yes" or "No"))
+            
+            if not all_fulfilled then
+                ImGui.Text("  Missing:")
+                if not traders_ok and unique_info.max_traders > 0 then
+                    ImGui.Text("    - " .. tostring(unique_info.max_traders - unique_info.trader_count) .. " Trader(s)")
+                end
+                if not mechanics_ok and unique_info.max_mechanics > 0 then
+                    ImGui.Text("    - " .. tostring(unique_info.max_mechanics - unique_info.mechanic_count) .. " Mechanic(s)")
+                end
+                if not medics_ok and unique_info.max_medics > 0 then
+                    ImGui.Text("    - " .. tostring(unique_info.max_medics - unique_info.medic_count) .. " Medic(s)")
+                end
+                if not barmen_ok and unique_info.max_barmen > 0 then
+                    ImGui.Text("    - " .. tostring(unique_info.max_barmen - unique_info.barman_count) .. " Barmen")
+                end
+            end
+        elseif unique_info then
+            ImGui.Text("  No unique squad requirements for this smart")
+            if unique_info.trader_count > 0 or unique_info.mechanic_count > 0 or unique_info.medic_count > 0 or unique_info.barman_count > 0 then
+                ImGui.Text("  But has some unique squads present:")
+                if unique_info.trader_count > 0 then
+                    ImGui.Text("    Traders: " .. tostring(unique_info.trader_count))
+                end
+                if unique_info.mechanic_count > 0 then
+                    ImGui.Text("    Mechanics: " .. tostring(unique_info.mechanic_count))
+                end
+                if unique_info.medic_count > 0 then
+                    ImGui.Text("    Medics: " .. tostring(unique_info.medic_count))
+                end
+                if unique_info.barman_count > 0 then
+                    ImGui.Text("    Barmen: " .. tostring(unique_info.barman_count))
+                end
+            end
+        else
+            ImGui.Text("  No faction - no unique squads")
         end
         
         -- Spawn calculation details
@@ -187,56 +356,26 @@ function render_faction_smart_info(smart, faction)
                 final_respawn = calculated_respawn * 2
             end
             
-            ImGui.Text("  Min Respawn Time: " .. format_time_remaining(min_respawn * 60))
-            ImGui.Text("  Max Respawn Time: " .. format_time_remaining(max_respawn * 60))
+            ImGui.Text("  Min Respawn Time: " .. format_time_remaining(min_respawn  * 6))
+            ImGui.Text("  Max Respawn Time: " .. format_time_remaining(max_respawn  * 6))
             ImGui.Text("  Faction Bases: " .. tostring(faction_bases))
             ImGui.Text("  Total Bases: " .. tostring(base_count_total))
             ImGui.Text("  Lerp Factor: " .. string.format("%.3f", lerp_factor))
-            ImGui.Text("  Calculated Interval: " .. format_time_remaining(calculated_respawn * 60))
+            ImGui.Text("  Calculated Interval: " .. format_time_remaining(calculated_respawn  * 6))
             if faction == "monolith" and has_alife_info and has_alife_info("bar_deactivate_radar_done") then
                 ImGui.Text("  Monolith Penalty: 2x (Brain Scorcher off)")
-                ImGui.Text("  Final Interval: " .. format_time_remaining(final_respawn * 60))
+                ImGui.Text("  Final Interval: " .. format_time_remaining(final_respawn  * 6))
             end
         else
             ImGui.Text("  Calculation Data: Not available")
         end
-        
-        -- Spawn blocking conditions
-        ImGui.Text("Spawn Blocking Conditions:")
-        local can_spawn = true
-        local block_reasons = {}
-        
-        -- Check if actor is too close (for enemy factions)
-        if smart.owning_faction and warfare.actor_faction and 
-           game_relations.is_factions_enemies(smart.owning_faction, warfare.actor_faction) and 
-           smart.is_on_actor_level and smart.dist_to_actor and smart.respawn_radius then
-            if smart.dist_to_actor < smart.respawn_radius then
-                can_spawn = false
-                table.insert(block_reasons, "Actor too close (" .. string.format("%.0f", smart.dist_to_actor) .. " < " .. tostring(smart.respawn_radius) .. ")")
-            else
-                table.insert(block_reasons, "Actor distance OK (" .. string.format("%.0f", smart.dist_to_actor) .. " >= " .. tostring(smart.respawn_radius) .. ")")
-            end
-        end
 
-        if not smart_terrain_warfare.base_has_vacancy(smart, faction) then
-            can_spawn = false
-            table.insert(block_reasons, "Base is full")
-        end
-                
-        if #block_reasons > 0 then
-            for _, reason in ipairs(block_reasons) do
-                ImGui.Text("  " .. reason)
-            end
-        end
-        
-        ImGui.Text("  Can Spawn Now: " .. (can_spawn and "Yes" or "No"))
-        
         -- Process Squads Timer Information
         ImGui.Text("Process Squads Timer:")
         
         if smart.process_squads_time and smart.next_process_squads_time then
             local diff = game.get_game_time():diffSec(smart.process_squads_time)
-            local remaining = (smart.next_process_squads_time * 60) - diff
+            local remaining = (smart.next_process_squads_time  * 6) - diff
             
             local time_status = format_time_remaining(remaining)
             if time_status == "Ready" then
@@ -244,7 +383,7 @@ function render_faction_smart_info(smart, faction)
             else
                 ImGui.Text("  Process Status: " .. time_status .. " remaining")
             end
-            ImGui.Text("  Process Interval: " .. format_time_remaining(smart.next_process_squads_time * 60))
+            ImGui.Text("  Process Interval: " .. format_time_remaining(smart.next_process_squads_time  * 6))
             ImGui.Text("  Random Range: 5m - 90m (reduced load)")
         else
             ImGui.Text("  Process Status: Not initialized")
@@ -281,7 +420,7 @@ function render_mutant_smart_info(smart)
     
     if spawn_timer and next_update then
         local diff = game.get_game_time():diffSec(spawn_timer)
-        local remaining = (next_update * 60) - diff
+        local remaining = (next_update  * 6) - diff
         
         local time_status = format_time_remaining(remaining)
         if time_status == "Ready" then
@@ -289,7 +428,7 @@ function render_mutant_smart_info(smart)
         else
             ImGui.Text("  Spawn Status: " .. time_status .. " remaining")
         end
-        ImGui.Text("  This Spawn Interval: " .. format_time_remaining(next_update * 60))
+        ImGui.Text("  This Spawn Interval: " .. format_time_remaining(next_update  * 6))
     else
         ImGui.Text("  Timer Status: Not initialized")
     end
@@ -299,8 +438,8 @@ function render_mutant_smart_info(smart)
         local min_respawn = warfare_options.options.monster_min_faction_respawn
         local max_respawn = warfare_options.options.monster_max_faction_respawn
         
-        ImGui.Text("  Min Spawn Time: " .. format_time_remaining(min_respawn * 60))
-        ImGui.Text("  Max Spawn Time: " .. format_time_remaining(max_respawn * 60))
+        ImGui.Text("  Min Spawn Time: " .. format_time_remaining(min_respawn  * 6))
+        ImGui.Text("  Max Spawn Time: " .. format_time_remaining(max_respawn  * 6))
     else
         ImGui.Text("  Configuration: Not available")
     end
@@ -378,6 +517,9 @@ function render_mutant_smart_info(smart)
         ImGui.Text("  " .. reason)
     end
     
+    -- Unique Squads Information (not applicable for mutant territory)
+    ImGui.Text("Unique Squads: Not applicable (Mutant Territory)")
+
     -- Current mutants on this smart
     local squads = SIMBOARD.smarts[smart.id] and SIMBOARD.smarts[smart.id].squads
     if squads then
@@ -411,7 +553,7 @@ function render_mutant_smart_info(smart)
     
     if process_timer and process_next_update then
         local diff = game.get_game_time():diffSec(process_timer)
-        local remaining = (process_next_update * 60) - diff
+        local remaining = (process_next_update  * 6) - diff
         
         local time_status = format_time_remaining(remaining)
         if time_status == "Ready" then
@@ -419,12 +561,12 @@ function render_mutant_smart_info(smart)
         else
             ImGui.Text("  Process Status: " .. time_status .. " remaining")
         end
-        ImGui.Text("  Process Interval: " .. format_time_remaining(process_next_update * 60))
+        ImGui.Text("  Process Interval: " .. format_time_remaining(process_next_update  * 6))
         
         if warfare_options and warfare_options.options then
             local min_base = warfare_options.options.monster_min_faction_respawn
             local max_base = warfare_options.options.monster_max_faction_respawn
-            ImGui.Text("  Base Range: " .. format_time_remaining(min_base * 60) .. " - " .. format_time_remaining(max_base * 60))
+            ImGui.Text("  Base Range: " .. format_time_remaining(min_base  * 6) .. " - " .. format_time_remaining(max_base  * 6))
             ImGui.Text("  Multiplier: 2x (process is 2x slower than spawn)")
         end
     else
@@ -455,7 +597,7 @@ function render_mutant_smart_info(smart)
                         local wait_remaining = 0
                         if squad.arrive_time then
                             local time_here = game.get_game_time():diffSec(squad.arrive_time)
-                            wait_remaining = math.max(0, (squad.wait_time * 60) - time_here)
+                            wait_remaining = math.max(0, (squad.wait_time  * 6) - time_here)
                         end
                         table.insert(mutant_behavior, {
                             section = squad:section_name(),
@@ -658,10 +800,10 @@ function render()
         
         if defense_timer_val and next_update_val then
             local diff = game.get_game_time():diffSec(defense_timer_val)
-            local remaining = (next_update_val * 60) - diff
+            local remaining = (next_update_val  * 6) - diff
             
             ImGui.Text("  Defense Check: " .. format_time_remaining(remaining))
-            ImGui.Text("  Next Check Interval: " .. format_time_remaining(next_update_val * 60))
+            ImGui.Text("  Next Check Interval: " .. format_time_remaining(next_update_val  * 6))
         else
             ImGui.Text("  Defense Check: Not initialized")
         end

@@ -21,29 +21,31 @@ function calculate_smart_types(smart)
     return table.concat(types, ", ")
 end
 
--- Function to get defense timer remaining
-function get_defense_timer(smart)
-    if not smart_terrain_warfare.defense_timers or not smart_terrain_warfare.defense_timers[smart.id] then
-        return ""
+-- Function to get spawn timer remaining
+function get_spawn_timer(smart)
+    -- Check for faction spawn timer (defense timer) first
+    if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id] then
+        local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
+        local next_defense = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] or 10
+
+        local diff = game.get_game_time():diffSec(defense_timer)
+        local remaining = (next_defense  * 6) - diff
+
+        return warfare_imgui_smart_info.format_time_remaining(remaining)
     end
-
-    local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
-    local next_defense = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] or 10
-
-    local diff = game.get_game_time():diffSec(defense_timer)
-    local remaining = (next_defense * 60) - diff
-
-    if remaining <= 0 then
-        return "Ready"
-    elseif remaining <= 3600 then
-        -- show in minutes if less than an hour left
-        return string.format("%dm", math.floor(remaining / 60))
-    else
-        -- show in hours and minutes
-        local hours = math.floor(remaining / 3600)
-        local minutes = math.floor((remaining % 3600) / 60)
-        return string.format("%dh %dm", hours, minutes)
+    
+    -- Check for mutant spawn timer if no defense timer found
+    local spawn_timer = smart_terrain_warfare.spawn_mutant_timers and smart_terrain_warfare.spawn_mutant_timers[smart.id]
+    local next_update = smart_terrain_warfare.spawn_mutant_next_update and smart_terrain_warfare.spawn_mutant_next_update[smart.id]
+    
+    if spawn_timer and next_update then
+        local diff = game.get_game_time():diffSec(spawn_timer)
+        local remaining = (next_update  * 6) - diff
+        
+        return warfare_imgui_smart_info.format_time_remaining(remaining)
     end
+    
+    return ""
 end
 
 -- Function to get patrol timer remaining
@@ -62,19 +64,9 @@ function get_patrol_timer(smart)
     local next_patrol = smart_terrain_warfare.patrol_next_update[smart.id] or 10
 
     local diff = game.get_game_time():diffSec(patrol_timer)
-    local remaining = (next_patrol * 60) - diff
+    local remaining = (next_patrol  * 6) - diff
 
-    if remaining <= 0 then
-        return "Ready"
-    elseif remaining <= 3600 then
-        -- show in minutes if less than an hour left
-        return string.format("%dm", math.floor(remaining / 60))
-    else
-        -- show in hours and minutes
-        local hours = math.floor(remaining / 3600)
-        local minutes = math.floor((remaining % 3600) / 60)
-        return string.format("%dh %dm", hours, minutes)
-    end
+    return warfare_imgui_smart_info.format_time_remaining(remaining)
 end
 
 -- Function to get target smarts count
@@ -114,19 +106,33 @@ function get_invasion_info(smart)
     return string.format("Unknown (%d)", squad_count)
 end
 
--- Function to get defense timer raw value for sorting
-function get_defense_timer_number(smart)
-    local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
-    if not smart_terrain_warfare.defense_next_update or not smart_terrain_warfare.defense_next_update[smart.id] then
-        return 0
+-- Function to get spawn timer raw value for sorting
+function get_spawn_timer_number(smart)
+    -- Check for faction spawn timer (defense timer) first
+    if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id] and 
+       smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] then
+        
+        local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
+        local next_defense = smart_terrain_warfare.defense_next_update[smart.id]
+
+        local diff = game.get_game_time():diffSec(defense_timer)
+        local remaining = (next_defense  * 6) - diff
+
+        return remaining > 0 and remaining or 0
     end
-
-    local next_defense = smart_terrain_warfare.defense_next_update[smart.id]
-
-    local diff = game.get_game_time():diffSec(defense_timer)
-    local remaining = (next_defense * 60) - diff
-
-    return remaining > 0 and remaining or 0
+    
+    -- Check for mutant spawn timer if no defense timer found
+    local spawn_timer = smart_terrain_warfare.spawn_mutant_timers and smart_terrain_warfare.spawn_mutant_timers[smart.id]
+    local next_update = smart_terrain_warfare.spawn_mutant_next_update and smart_terrain_warfare.spawn_mutant_next_update[smart.id]
+    
+    if spawn_timer and next_update then
+        local diff = game.get_game_time():diffSec(spawn_timer)
+        local remaining = (next_update  * 6) - diff
+        
+        return remaining > 0 and remaining or 0
+    end
+    
+    return 0
 end
 
 -- Function to get patrol timer raw value for sorting
@@ -139,7 +145,7 @@ function get_patrol_timer_number(smart)
     local next_patrol = smart_terrain_warfare.patrol_next_update[smart.id] or 10
 
     local diff = game.get_game_time():diffSec(patrol_timer)
-    local remaining = (next_patrol * 60) - diff
+    local remaining = (next_patrol  * 6) - diff
 
     return remaining > 0 and remaining
 end
@@ -162,8 +168,8 @@ function get_sortable_value(smart, column)
         return smart.defense_count or 0
     elseif column == 5 then -- Max Pop
         return smart.max_population or 0
-    elseif column == 6 then -- Defense Timer
-        return get_defense_timer_number(smart)
+    elseif column == 6 then -- Spawn Timer
+        return get_spawn_timer_number(smart)
     elseif column == 7 then -- Patrol Timer
         return get_patrol_timer_number(smart)
     elseif column == 8 then -- Targets
@@ -264,7 +270,7 @@ function render()
         ImGui.TableSetupColumn("Faction", 2, 0, 0)
         ImGui.TableSetupColumn("Defense", 2, 0, 0)
         ImGui.TableSetupColumn("Max Pop", 2, 0, 0)
-        ImGui.TableSetupColumn("Defense Timer", 2, 0, 0)
+        ImGui.TableSetupColumn("Spawn Timer", 2, 0, 0)
         ImGui.TableSetupColumn("Patrol Timer", 2, 0, 0)
         ImGui.TableSetupColumn("Targets", 2, 0, 0)
         ImGui.TableSetupColumn("Invasion", 2, 0, 0)
@@ -275,7 +281,7 @@ function render()
         
         local column_names = {
             "ID", "Name", "Type", "Faction", "Defense", "Max Pop",
-            "Defense Timer", "Patrol Timer", "Targets", "Invasion", "Under Attack"
+            "Spawn Timer", "Patrol Timer", "Targets", "Invasion", "Under Attack"
         }
         
         for col = 0, 10 do
@@ -325,7 +331,7 @@ function render()
             ImGui.Text(tostring(smart.max_population or 0))
 
             ImGui.TableNextColumn()
-            ImGui.Text(get_defense_timer(smart))
+            ImGui.Text(get_spawn_timer(smart))
 
             ImGui.TableNextColumn()
             ImGui.Text(get_patrol_timer(smart))

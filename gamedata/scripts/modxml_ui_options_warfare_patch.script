@@ -222,3 +222,70 @@ function ui_options.init_opt_coder()
         end
     end
 end
+
+local old_register_track = ui_options.UIOptions.Register_Track
+function ui_options.UIOptions.Register_Track(self, xml, handler, path, opt, v, flags)
+    local h = old_register_track(self, xml, handler, path, opt, v, flags)
+    if not path:find("alife/warfare") or not is_time_opt(opt) then
+        return h
+    end
+    local id = ui_options.cc(path , opt)
+    local value, formatted = set_track_value(self, id)
+    --printf("Initial track value set: %s = %s (%s)", id, value, formatted)
+    return h
+end
+
+local old_callback_track = ui_options.UIOptions.Callback_Track
+function ui_options.UIOptions.Callback_Track(self, ctrl, path, opt, v, value)
+    old_callback_track(self, ctrl, path, opt, v, value)
+    if not path:find("alife/warfare") or not is_time_opt(opt) then
+        return
+    end
+    local id = ui_options.cc(path , opt)
+    local value, formatted = set_track_value(self, id)
+    ---printf("Track value updated: %s = %s (%s)", id, value, formatted)
+end
+
+function set_track_value(self, id)
+    local track = self._Track[id]
+    if not track then
+        return
+    end
+
+    local value = track.value
+    local txt = track.txt
+    local formatted = second_to_time_string(value)
+    txt:SetText(formatted)
+    return value, formatted
+end
+
+function is_time_opt(opt)
+    if opt:find("_time") then
+        return true
+    end
+    local time_opts = {
+        "min_faction_respawn",
+        "max_faction_respawn",
+    }
+    for _, v in ipairs(time_opts) do
+        if opt:find(v) then
+            return true
+        end
+    end
+    return false
+end
+
+function second_to_time_string(seconds)
+    local hrs = math.floor(seconds / 3600)
+    local mins = math.floor((seconds % 3600) / 60)
+    local secs = seconds % 60
+
+    local v = string.format("%ss", secs)
+    if hrs > 0 then
+        v = string.format("%dh %dm %ss", hrs, mins, secs)
+    elseif mins > 0 then
+        v = string.format("%dm %ss", mins, secs)
+    end
+
+    return v
+end

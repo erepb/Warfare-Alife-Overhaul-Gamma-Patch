@@ -114,7 +114,7 @@ function render()
             local progress = math.min(status.time_elapsed / 20, 1.0)
             ImGui.Text("  Progress: " .. string.format("%.1f%%", progress * 100))
         elseif status.manual_point_stage == 0 then
-            local wait_seconds = (status.wait_time or 0) * 60
+            local wait_seconds = (status.wait_time or 0)  * 6
             local progress = math.min(status.time_elapsed / wait_seconds, 1.0)
             ImGui.Text("  Progress: " .. string.format("%.1f%%", progress * 100))
         end
