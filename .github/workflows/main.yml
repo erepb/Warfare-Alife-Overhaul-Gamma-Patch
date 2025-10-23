@@ -21,24 +21,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Prepare fomod structure
+      - name: Prepare build structure
         run: |
-          mkdir -p to_build
+          mkdir -p build_temp
           rsync -av \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='.gitattributes' \
             --exclude='README.md' \
             --exclude='version' \
-            ./* to_build/
-          
+            ./* build_temp/
+      
           echo "? files to build:"
-          ls -la to_build/
+          ls -la build_temp/
 
       - name: Create 7z archive
         uses: edgarrc/action-7z@v1
         with:
-          args: 7z a -t7z -mx=9 warfare-alife-overhaul-gamma-patch-${{ github.event.inputs.version }}.7z ./to_build
+          args: 7z a -t7z -mx=9 warfare-alife-overhaul-gamma-patch-${{ github.event.inputs.version }}.7z ./build_temp/gamedata -r
 
       - name: Clean up
         run: rm -rf fomod
