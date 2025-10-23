@@ -21,19 +21,33 @@ function get_smart_types_string(smart)
     return table.concat(types, ", ")
 end
 
--- Common function to format seconds into "h m" or "m" format
+-- Common function to format seconds into "h m s" or "m s" or "s" format
 function format_time_remaining(seconds)
     seconds = seconds / 6
     if seconds <= 0 then
         return "Ready"
+    elseif seconds < 60 then
+        -- show in seconds if less than a minute left
+        return string.format("%ds", math.floor(seconds))
     elseif seconds <= 3600 then
-        -- show in minutes if less than an hour left
-        return string.format("%dm", math.floor(seconds / 60))
+        -- show in minutes and seconds if less than an hour left
+        local minutes = math.floor(seconds / 60)
+        local remaining_seconds = math.floor(seconds % 60)
+        if remaining_seconds > 0 then
+            return string.format("%dm %ds", minutes, remaining_seconds)
+        else
+            return string.format("%dm", minutes)
+        end
     else
-        -- show in hours and minutes
+        -- show in hours, minutes, and seconds
         local hours = math.floor(seconds / 3600)
         local minutes = math.floor((seconds % 3600) / 60)
-        return string.format("%dh %dm", hours, minutes)
+        local remaining_seconds = math.floor(seconds % 60)
+        if remaining_seconds > 0 then
+            return string.format("%dh %dm %ds", hours, minutes, remaining_seconds)
+        else
+            return string.format("%dh %dm", hours, minutes)
+        end
     end
 end
 
@@ -503,6 +517,20 @@ function render_mutant_smart_info(smart)
     ImGui.Text("Spawn Blocking Conditions:")
     local block_reasons = {}
     
+    -- Resource location night-only check
+    if smart.props.resource > 0 then
+        local current_hour = level.get_time_hours()
+        local is_night = (current_hour < 6 or current_hour > 20)
+        if not is_night then
+            table.insert(block_reasons, "Resource location: Day time (spawn blocked until night)")
+        else
+            table.insert(block_reasons, "Resource location: Night time (spawn allowed)")
+        end
+    else
+        table.insert(block_reasons, "Time restriction: None (spawns anytime)")
+    end
+    
+    -- Actor proximity check
     if smart.is_on_actor_level and smart.dist_to_actor and smart.respawn_radius then
         if smart.dist_to_actor < smart.respawn_radius then
             table.insert(block_reasons, "Actor too close (" .. string.format("%.0f", smart.dist_to_actor) .. " < " .. tostring(smart.respawn_radius) .. ")")
@@ -631,7 +659,7 @@ function render_mutant_smart_info(smart)
         ImGui.Text("  Waiting for departure: " .. tostring(waiting_mutants))
         
         if #mutant_behavior > 0 then
-            ImGui.Text("Individual Mutant Status:")
+            ImGui.Text("Mutant Squad Status:")
             for _, behavior in ipairs(mutant_behavior) do
                 local status_text = "    " .. behavior.section .. ": " .. behavior.status
                 if behavior.wait_time then
