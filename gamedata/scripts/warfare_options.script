@@ -146,7 +146,9 @@ function update_settings()
 		options.factions[faction].max_random_squad_count		    = ui_options.get("alife/warfare/"..faction.."/max_random_squad_count")
 
 		options.factions[faction].min_faction_respawn 			    = ui_options.get("alife/warfare/"..faction.."/min_faction_respawn")             
-		options.factions[faction].max_faction_respawn 			    = ui_options.get("alife/warfare/"..faction.."/max_faction_respawn")       
+		-- options.factions[faction].max_faction_respawn 			    = ui_options.get("alife/warfare/"..faction.."/max_faction_respawn")
+        options.factions[faction].max_faction_respawn = options.factions[faction].min_faction_respawn * 140
+        ui_options.set("alife/warfare/"..faction.."/max_faction_respawn", options.factions[faction].max_faction_respawn)
 
 		options.factions[faction].random_patrols				    = ui_options.get("alife/warfare/"..faction.."/random_patrols")
 		options.factions[faction].max_random_patrols			    = ui_options.get("alife/warfare/"..faction.."/max_random_patrols")
@@ -165,8 +167,10 @@ function update_settings()
 		options.factions[faction].min_patrol_squads 			    = ui_options.get("alife/warfare/"..faction.."/min_patrol_squads")                
 		options.factions[faction].max_patrol_squads 			    = ui_options.get("alife/warfare/"..faction.."/max_patrol_squads")                
 		options.factions[faction].min_patrol_time				    = ui_options.get("alife/warfare/"..faction.."/min_patrol_time")					 
-		options.factions[faction].max_patrol_time				    = ui_options.get("alife/warfare/"..faction.."/max_patrol_time")				
-		options.factions[faction].patrol_hunt_chance			    = ui_options.get("alife/warfare/"..faction.."/patrol_hunt_chance")	 
+		-- options.factions[faction].max_patrol_time				    = ui_options.get("alife/warfare/"..faction.."/max_patrol_time")
+		options.factions[faction].max_patrol_time = options.factions[faction].min_patrol_time * 140
+		ui_options.set("alife/warfare/"..faction.."/max_patrol_time", options.factions[faction].max_patrol_time)
+		options.factions[faction].patrol_hunt_chance			    = ui_options.get("alife/warfare/"..faction.."/patrol_hunt_chance")
 		options.factions[faction].min_patrol_rest_time			    = ui_options.get("alife/warfare/"..faction.."/min_patrol_rest_time")			 
 		options.factions[faction].max_patrol_rest_time			    = ui_options.get("alife/warfare/"..faction.."/max_patrol_rest_time")		
 
