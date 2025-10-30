@@ -454,8 +454,8 @@ function init_opt_base()
 				{ id= "psi_storm_task"    	 	,type= "check"    ,val= 1	,def= true	   },
 
 			},},
-			{ id= "warfare"      ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}  ,gr={
-				{ id= "general"  	,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"} ,gr={
+			{ id= "warfare"      ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}  ,gr={
+				{ id= "general"  	,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"} ,gr={
 					{ id= "slide_warfare"		 ,type= "slide"	  ,link= "ui_options_slider_warfare"	 ,text= "ui_mm_title_warfare"		,size= {512,50}		},
 
 					{ id= "all_out_war"    	 	                            ,type= "check"    ,val= 1	,def= false	             	                    				},
@@ -518,7 +518,7 @@ function init_opt_base()
 					{ id= "purge_zone_percentage"    	 	 		        ,type= "track"    ,val= 2	,def= 50	  ,min= 0     ,max= 100        ,step= 1  	        },
 					{ id= "debug_logging"    	 	 		                ,type= "check"    ,val= 1	,def= false	                                                    },
 				},},
-				{ id= "azazel"   	,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"} ,gr={
+				{ id= "azazel"   	,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"} ,gr={
 					{ id= "slide_warfare"		 		 ,type= "slide"	  ,link= "ui_options_slider_warfare"	 ,text= "ui_mm_title_warfare_azazel"		,size= {512,50}		},
 
 					{ id="state"	                   		,type= "check"    ,val= 1	,def= true  },
@@ -547,7 +547,7 @@ function init_opt_base()
 					{ id="enemy_respawn_min_dist"          ,type= "track"    ,val= 2	,def= 0   ,min= 0     ,max= 100        ,step= 1 },
 					{ id="enemy_respawn_max_dist"          ,type= "track"    ,val= 2	,def= 0   ,min= 0     ,max= 100        ,step= 1 },
 				},},
-				{ id= "stalker"  	,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction"	,apply_to_all=true ,gr={
+				{ id= "stalker"  	,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction"	,apply_to_all=true ,gr={
 					{ id= "slide_warfare"		 		 ,type= "slide"	  ,link= "ui_options_slider_warfare"	 ,text= "ui_mm_title_warfare_faction"		,size= {512,50}		},
 
 					{ id="participate_in_warfare"	              ,type= "check"    ,val= 1	,def= true 	                                                      ,hint="alife_warfare_faction_participate_in_warfare"	                },
@@ -705,18 +705,18 @@ function init_opt_coder()
 	-- Auto-complete factions options for warfare
 	local t = {}
 	copy_table(t, options[5].gr[3].gr[3].gr)
-	options[5].gr[3].gr[4] = { id= "bandit"    ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[5] = { id= "csky"      ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[6] = { id= "army"      ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[7] = { id= "freedom"   ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[8] = { id= "dolg"      ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[9] = { id= "ecolog"    ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[10] = { id= "killer"   ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[11] = { id= "monolith" ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[12] = { id= "renegade" ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[13] = { id= "greh"     ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[14] = { id= "isg"      ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
-	options[5].gr[3].gr[15] = { id= "zombied"  ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[4] = { id= "bandit"    ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[5] = { id= "csky"      ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[6] = { id= "army"      ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[7] = { id= "freedom"   ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[8] = { id= "dolg"      ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[9] = { id= "ecolog"    ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[10] = { id= "killer"   ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[11] = { id= "monolith" ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[12] = { id= "renegade" ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[13] = { id= "greh"     ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[14] = { id= "isg"      ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
+	options[5].gr[3].gr[15] = { id= "zombied"  ,sh=true ,presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_erepb","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}, id_gr= "warfare_faction", apply_to_all=true ,gr=t	}
 
 	------------------------------------------------------------------------
 	-- Auto-complete options for radio music

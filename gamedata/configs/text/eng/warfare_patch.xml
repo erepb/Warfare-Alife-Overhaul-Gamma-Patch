@@ -3,6 +3,9 @@
 <string id="ui_mm_prst_warfare_alifeoverhaul">
 		<text>Alife Overhaul - Default (1x)</text>
 	</string>
+	<string id="ui_mm_prst_warfare_alifeoverhaul_erepb">
+		<text>Alife Overhaul - Erepb</text>
+	</string>
 	<string id="ui_mm_prst_warfare_alifeoverhaul_faster">
 		<text>Alife Overhaul - Fast (2x)</text>
 	</string>

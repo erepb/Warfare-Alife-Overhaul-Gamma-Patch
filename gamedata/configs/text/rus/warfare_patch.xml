@@ -3,6 +3,9 @@
     <string id="ui_mm_prst_warfare_alifeoverhaul">
         <text>Настройки Alife - По умолчанию (1x)</text>
     </string>
+    <string id="ui_mm_prst_warfare_alifeoverhaul_erepb">
+        <text>Настройки Alife - Erepb</text>
+    </string>
     <string id="ui_mm_prst_warfare_alifeoverhaul_faster">
         <text>Настройки Alife - Быстро (2x)</text>
     </string>
