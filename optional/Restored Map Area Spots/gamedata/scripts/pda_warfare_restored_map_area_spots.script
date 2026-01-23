@@ -13,7 +13,7 @@ end
 local pda_on_game_start = pda.on_game_start
 function pda.on_game_start()
     local function on_game_load()
-        if (not alife_storage_manager.get_state().enable_warfare_mode) then
+        if (alife_storage_manager.get_state().enable_warfare_mode) then
             CreateTimeEvent(0, "ScanForSpots", 2, pda.discover_spots)
         end
     end
