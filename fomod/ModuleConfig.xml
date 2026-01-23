@@ -87,6 +87,26 @@
                         </plugin>
                     </plugins>
                 </group>
+                <group name="Patches" type="SelectAny">
+                    <!--<designer.metadata.do.not.edit> {"name":"Patches"}-->
+                    <plugins order="Ascending">
+                        <plugin name="ZCP">
+                            <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
+                            <description>
+                                Compatibility with ZCP
+
+                                Prevents it from adjusting size and extra spawning
+                            </description>
+                            <files>
+                                <folder source="patches\ZCP"
+                                        destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                    </plugins>
+                </group>
             </optionalFileGroups>
         </installStep>
     </installSteps>
