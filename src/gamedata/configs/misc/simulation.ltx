@@ -1,5 +1,5 @@
-;--============= Created by Tronex ==================
-;--Last Edit: 2023/05/19 - Vintar
+;--============= Edited by Tronex ==================
+;--Last Edit: 2018/1/26
 ; Starting spawns
 ; [smart_section]
 ; squad_section = spawn_count
@@ -78,8 +78,10 @@ monolith_sim_squad_veteran              = 1
 ;;----------<< Agroprom >>----------|
 
 [agr_smart_terrain_1_2]
+per_yant_blood_agr_smart_terrain_1_2                   = 1
 
 [agr_smart_terrain_1_3]
+ecolog_sim_squad_advanced_1e_2ls                     = 1
 
 [agr_smart_terrain_1_6];mlr
 agr_1_6_medic_army_mlr_squad
@@ -90,14 +92,12 @@ agr_smart_terrain_1_6_army_trader_stalker_squad
 army_sim_squad_advanced                 = 2
 army_sim_squad_novice                   = 1
 army_sim_squad_veteran                  = 1
-ecolog_sim_squad_veteran				= 1
 
 [agr_smart_terrain_1_6_near_1]
 army_sim_squad_advanced                 = 1
 army_sim_squad_novice                   = 1
 army_sim_squad_sniper                   = 1
 army_sim_squad_veteran                  = 1
-ecolog_sim_squad_advanced				= 1
 
 [agr_smart_terrain_1_6_near_2]
 agr_smart_terrain_1_6_near_2_military_colonel_kovalski_squad
@@ -109,14 +109,16 @@ army_sim_squad_veteran                  = 1
 [agr_smart_terrain_2_2]
 
 [agr_smart_terrain_4_4]
+ecolog_sim_squad_veteran				= 1
 stalker_sim_squad_advanced              = 1
+
 
 [agr_smart_terrain_4_4_near_1]
 stalker_sim_squad_novice              = 1
-stalker_sim_squad_novice              = 1
+ecolog_sim_squad_advanced				= 1
 
 [agr_smart_terrain_4_4_near_2]
-stalker_sim_squad_advanced              = 1
+csky_sim_squad_advanced					= 1
 
 [agr_smart_terrain_4_4_near_3]
 
@@ -146,16 +148,16 @@ agr_u_bandits_boss_squad
 
 [bar_dolg_bunker]
 bar_dolg_leader_squad
-duty_sim_squad_advanced                 = 3
-duty_sim_squad_novice                   = 3
-duty_sim_squad_veteran                  = 2
+duty_sim_squad_advanced                 = 1
+duty_sim_squad_novice                   = 1
+duty_sim_squad_veteran                  = 1
 
 [bar_dolg_general];mlr
 bar_dolg_general_petrenko_stalker_squad
 bar_dolg_general_zoneguard_stalker_squad
-duty_sim_squad_advanced                 = 3
-duty_sim_squad_novice                   = 3
-duty_sim_squad_veteran                  = 2
+duty_sim_squad_advanced                 = 1
+duty_sim_squad_novice                   = 1
+duty_sim_squad_veteran                  = 1
 dolg_medic_squad
 
 [bar_visitors];mlr
@@ -167,8 +169,9 @@ bar_visitors_barman_stalker_trader_squad
 bar_visitors_cardan_tech_squad
 bar_visitors_garik_stalker_guard_squad
 bar_visitors_zhorik_stalker_guard2_squad
-stalker_sim_squad_novice                = 4
-stalker_sim_squad_veteran               = 2
+ecolog_sim_squad_advanced              = 1
+stalker_sim_squad_novice                = 2
+stalker_sim_squad_veteran               = 1
 
 [bar_zastava]
 bar_duty_security_squad_leader_squad
@@ -267,7 +270,9 @@ bandit_sim_squad_novice                 = 1
 [ds_kem1]
 
 [ds_kem2]
+army_sim_squad_advanced                 = 1
 army_sim_squad_novice                   = 1
+army_sim_squad_veteran                  = 1
 
 [ds_kem3]
 ds_kem3_bloodsucker_red                          = 1
@@ -291,7 +296,6 @@ devushka_squad
 escape_novice_visiters_village = 1
 stalker_sim_squad_novice      = 1
 stalker_sim_squad_novice      = 1
-stalker_sim_squad_novice      = 1
 
 [esc_smart_terrain_2_14]
 
@@ -313,7 +317,7 @@ army_south_mechan_mlr_squad
 [esc_smart_terrain_5_12]
 
 [esc_smart_terrain_5_2]
-bandit_sim_squad_novice           = 1
+;army_sim_squad_advanced                 = 1
 
 [esc_smart_terrain_5_4]
 
@@ -323,7 +327,7 @@ bandit_sim_squad_novice           = 1
 esc_smart_terrain_5_7_loner_mechanic_stalker_squad
 ;ferma_stalker_esc_smart_terrain_5_7                = 1
 stalker_sim_squad_novice        = 1
-stalker_sim_squad_novice        = 1
+stalker_sim_squad_advanced		= 1
 escape_main_base_trader_mlr
 ;escape_main_base_mlr_guards = 1
 ;escape_main_base_mlr_guards2 = 1
@@ -427,7 +431,7 @@ jup_a6_stalker_medik_squad
 jup_b10_stalker_drunk_squad
 ;jup_b19_freedom_yar_squad
 jup_b25_alex_squad
-freedom_sim_squad_veteran        = 1
+;freedom_sim_squad_veteran        = 1
 jup_a6_freedom_guard_squad_1
 stalker_sim_squad_veteran       = 1
 zat_a2_stalker_mechanic_squad
@@ -474,11 +478,13 @@ jup_b47_merc_guard_squad
 jup_b6_scientist_group
 
 [jup_b47]
+jup_a9_dogs_normal
 
 [jup_a10_smart_terrain]
 simulation_bloodsucker_red              = 2
 
 [jup_b8_smart_terrain]
+jup_b8_psy_dog_squad
 
 [jup_sim_1]
 
@@ -572,19 +578,21 @@ lx8_tushkano_2_squad
 [mar_smart_terrain_10_10]
 
 [mar_smart_terrain_10_5]
-army_sim_squad_novice                 = 1
+army_sim_squad_advanced                 = 1
+army_sim_squad_sniper                   = 1
 
 [mar_smart_terrain_10_7]
 
 [mar_smart_terrain_11_11]
-renegade_sim_squad_advanced               = 1
-renegade_sim_squad_novice                 = 1
+renegade_sim_squad_advanced                 = 1
+renegade_sim_squad_novice                   = 1
 
 [mar_smart_terrain_11_3]
 
 [mar_smart_terrain_12_2]
-renegade_sim_squad_advanced                 = 1
-renegade_sim_squad_novice                   = 1
+csky_sim_squad_advanced                 = 1
+csky_sim_squad_novice                   = 1
+stalker_sim_squad_novice                = 1
 
 [mar_smart_terrain_3_10]
 
@@ -610,7 +618,7 @@ csky_sim_squad_veteran                  = 1
 
 [mar_smart_terrain_6_11]
 csky_sim_squad_advanced                 = 1
-csky_sim_squad_advanced                 = 1
+csky_sim_squad_novice                   = 1
 
 [mar_smart_terrain_6_4]
 
@@ -636,9 +644,7 @@ renegade_sim_squad_novice                   = 1
 [mar_smart_terrain_base];mlr
 guid_marsh_mlr_squad                    = 1
 csky_sim_squad_veteran                  = 1
-csky_sim_squad_advanced					= 2
 csky_sim_squad_novice                   = 1
-stalker_sim_squad_novice                = 1
 mar_base_owl_stalker_trader_squad
 mar_base_stalker_barmen_squad
 mar_base_stalker_tech_squad
@@ -696,7 +702,7 @@ duty_sim_squad_veteran                  = 1
 
 [mil_smart_terrain_7_7]
 ;mil_freedom_barman_mlr_squad
-mil_freedom_guid_squad 
+mil_freedom_guid_squad
 mil_freedom_medic_squad
 mil_smart_terrain_7_7_freedom_leader_stalker_squad
 mil_smart_terrain_7_7_freedom_mechanic_stalker_squad
@@ -955,6 +961,8 @@ simulation_snork                        = 1
 [ros_smart_snork1]
 
 [ros_smart_stalker1]
+stalker_sim_squad_advanced              = 1
+stalker_sim_squad_veteran               = 1
 
 [ros_smart_stalker_killers1]
 merc_sim_squad_advanced                 = 1
@@ -1025,7 +1033,9 @@ army_sim_squad_advanced                 = 1
 ;;----------<< Dark Valley >>----------|
 
 [val_smart_terrain_1_2]
-army_sim_squad_novice                 = 1
+army_sim_squad_advanced                 = 1
+army_sim_squad_sniper                   = 1
+army_sim_squad_veteran                  = 1
 
 [val_smart_terrain_3_0]
 
@@ -1041,18 +1051,18 @@ stalker_sim_squad_novice                = 1
 
 [val_smart_terrain_7_3]
 val_smart_terrain_7_3_bandit_mechanic_stalker_squad
-bandit_sim_squad_advanced               = 2
+bandit_sim_squad_advanced               = 1
 bandit_sim_squad_novice                 = 1
 
 [val_smart_terrain_7_4]
-bandit_sim_squad_advanced               = 2
+bandit_sim_squad_advanced               = 1
 bandit_sim_squad_veteran                = 1
 val_smart_terrain_7_4_bandit_trader_stalker_squad
 
 [val_smart_terrain_7_5];mlr
 bandit_main_base_medic_mlr_squad
 zat_b7_bandit_boss_sultan_squad
-bandit_sim_squad_novice                 = 2
+bandit_sim_squad_novice                 = 1
 bandit_sim_squad_veteran                = 1
 guid_dv_mal_mlr_squad
 
@@ -1075,7 +1085,7 @@ bandit_sim_squad_novice                 = 1
 [warlab_common_consciousness_smart_terrain]
 warlab_pod_stalker_squad
 
-;;----------<< Yantar >>----------|
+;;----------<< Yanter >>----------|
 
 [yan_smart_terrain_2_4]
 zombied_sim_squad_advanced              = 1
@@ -1099,7 +1109,6 @@ ecolog_sim_squad_veteran              = 1
 [yan_smart_terrain_6_2]
 
 [yan_smart_terrain_6_4];mlr
-ecolog_sim_squad_advanced_1e_2ls        = 1
 ecolog_sim_squad_advanced               = 1
 ecolog_sim_squad_novice                 = 1
 ecolog_sim_squad_veteran                = 1
