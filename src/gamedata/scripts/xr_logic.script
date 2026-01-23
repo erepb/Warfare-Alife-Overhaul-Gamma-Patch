@@ -19,7 +19,7 @@ local trade_names = {
 	["army"] 		= "items\\trade\\trade_military.ltx",
 	["freedom"] 	= "items\\trade\\trade_freedom.ltx",
 	["dolg"] 		= "items\\trade\\trade_duty.ltx",
-	["ecolog"] 		= "items\\trade\\trade_ecolog_sakharov.ltx",
+	["ecolog"] = "items\\trade\\trade_ecolog_sakharov.ltx",
 	["killer"] 		= "items\\trade\\trade_mercenary.ltx",
 	["monolith"] 	= "items\\trade\\trade_monolith.ltx",
 	["renegade"] 	= "items\\trade\\trade_renegade.ltx",
@@ -125,7 +125,7 @@ function configure_schemes(npc, ini, ini_filename, stype, section_logic, gulag_n
 	st.ini_filename = actual_ini_filename
 	st.section_logic = section_logic
 
-	-- Инициализация торговли
+	-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 	if (stype == modules.stype_trader or stype == modules.stype_stalker) then
 		if npc and (npc:alive()) then
 			local trade_ini = actual_ini:r_string_ex(section_logic,"trade")
@@ -147,7 +147,7 @@ function configure_schemes(npc, ini, ini_filename, stype, section_logic, gulag_n
 	return st.ini
 end
 
--- Вызывается биндером с целью определить первую активную схему
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 function determine_section_to_activate(npc, ini, section_logic, actor)
 	if not (ini and ini:section_exist(section_logic)) then
 		return "nil"
@@ -160,7 +160,7 @@ function determine_section_to_activate(npc, ini, section_logic, actor)
 		end
 	end
 
-	-- Распарсить строку выбора активной секции с учетом команд, заключенных в %%
+	-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ %%
 	local active_section_cond = cfg_get_condlist(ini, section_logic, "active", npc)
 	if not (active_section_cond) then
 		return "nil"
@@ -176,22 +176,22 @@ function determine_section_to_activate(npc, ini, section_logic, actor)
 end
 
 ------------------------------------------------------------------------------------------------------------
--- ВНОСЯ ИЗМЕНЕНИЯ В ЭТУ ФУНКЦИЮ, НЕ ЗАБЫВАЙТЕ ДОБАВЛЯТЬ СООТВЕТСТВУЮЩИЕ СТРОКИ И В enable_generic_schemes
+-- пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅ enable_generic_schemes
 ------------------------------------------------------------------------------------------------------------
 function disable_generic_schemes(npc, stype)
 	modules.disable_generic_schemes(npc,stype)
 end
 
 ------------------------------------------------------------------------------------------------------------
--- ВНОСЯ ИЗМЕНЕНИЯ В ЭТУ ФУНКЦИЮ, НЕ ЗАБЫВАЙТЕ ДОБАВЛЯТЬ СООТВЕТСТВУЮЩИЕ СТРОКИ И В disable_generic_schemes
+-- пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅ disable_generic_schemes
 ------------------------------------------------------------------------------------------------------------
 function enable_generic_schemes(ini, npc, stype, section)
 	modules.enable_generic_schemes(npc,ini,section,stype)
 end
 
--- Существует два способа вызова функции: с передаванием секции или без нее
--- В обоих случаях передавать gulag_name ОБЯЗАТЕЛЬНО
--- Если section не передана, то она берется из работы переданного гулага.
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅ
+-- пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ gulag_name пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+-- пїЅпїЅпїЅпїЅ section пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 function activate_by_section(npc, ini, section, gulag_name, loading)
 	--printf("LOGIC[%s]: Object '%s': activate_by_section: looking for section '%s'", tostring(time_global()), npc:name(), section)
 	if not (ini) then
@@ -255,15 +255,15 @@ function activate_by_section(npc, ini, section, gulag_name, loading)
 		return
 	end
 
-	-- Загрузить оверрайды:
+	-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:
 	db.storage[npc_id].overrides = cfg_get_overrides(ini, section, npc, db.storage[npc_id].overrides)
 
-	-- Сбросить общие схемы:
+	-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ:
 	reset_generic_schemes_on_scheme_switch(npc, scheme, section)
 
 
-	-- schemes[scheme] даст имя файла (модуля), в котором реализована схема
-	-- _G[] даст указатель на неймспейс (таблицу) этого модуля
+	-- schemes[scheme] пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅ), пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
+	-- _G[] пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ) пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	local filename = schemes[scheme]
 	if filename == nil then
  		printe("!ERROR: xr_logic: scheme '%s' is not registered in modules.script", scheme)
@@ -281,7 +281,7 @@ function activate_by_section(npc, ini, section, gulag_name, loading)
 	db.storage[npc_id].active_scheme = scheme
 
 	if db.storage[npc_id].stype == modules.stype_stalker then
-		-- чтобы избежать дальнейшего движения по пути при установке рестрикторов
+		-- пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 		npc:inactualize_patrol_path() -- Alundaio: Necessary to clear path data or npc can get stuck on generic schemes
 		npc:set_path_type(game_object.level_path)
 		utils_obj.send_to_nearest_accessible_vertex(npc, npc:level_vertex_id(),"xr_logic")
@@ -293,9 +293,9 @@ function activate_by_section(npc, ini, section, gulag_name, loading)
 end
 
 --[[
--- Предназначение:
---	Производит сброс состояния объекта (снимает коллбеки, отключает разговор) непосредственно перед включением
---	новой схемы.
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ:
+--	пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ) пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+--	пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ.
 	]] --
 
 function reset_generic_schemes_on_scheme_switch(npc, scheme, section)
@@ -353,7 +353,7 @@ function unsubscribe_action_from_events(npc, storage, new_action)
 	storage.actions[new_action] = nil
 end
 
--- st - storage активной схемы
+-- st - storage пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 function issue_event(npc, st, event_fn, ...)
 	if not st or not st.actions then
 		return
@@ -376,7 +376,7 @@ function issue_event(npc, st, event_fn, ...)
 --	end
 end
 
---' Функция проверяет выполняется ли у активной схемы заданная функция
+--' пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 function check_action(npc, st, event_fn, p)
 	if not st or not st.actions then
 		return true
@@ -530,8 +530,8 @@ function pick_section_from_condlist(obj, npc, condlist) -- New
 	return
 end
 
--- Выполняет переключение на указанную секцию, если задана.
--- Если section == nil, остается работать старая секция.
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
+-- пїЅпїЅпїЅпїЅ section == nil, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.
 function switch_to_section(npc, ini, section)
 	if section == "" or section == nil then
 		return false
@@ -653,7 +653,7 @@ function is_active(npc, st)
  		printf("npc '%s': st.section is nil, active section is '%s'",npc:name(), utils_data.to_str(db.storage[npc:id()].active_section))
 		return false
 	end
-	-- Текущая секция активна и не сработало ни одно из условий переключения на другие секции
+	-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 	return st.section == db.storage[npc:id()].active_section
 end
 
@@ -663,8 +663,8 @@ function abort_syntax_error_in_cond(section,field,c)
 	abort("section '%s': field '%s': syntax error in switch condition [%s]",section,field,c)
 end
 
--- На входе имеем пустой массив и строку вида "  +infop1  -infop2 +infop3 ... "
--- Заполнить массив:
+-- пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ "  +infop1  -infop2 +infop3 ... "
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ:
 -- { "infop_name" = true/false }.
 function parse_infop1(rslt, str)
 	--printf("_bp: parse_infop: %s", utils_data.to_str(str))
@@ -719,7 +719,7 @@ function parse_infop(rslt, str)
 			infop_name = string.sub(s, 2)
 			params = nil
 
-			-- парсим параметры функций
+			-- пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 			at = string.find(infop_name, "%(")
 			if at then
 				if string.sub(infop_name, -1) ~= ")" then
@@ -754,9 +754,9 @@ function parse_infop(rslt, str)
 	end
 end
 
--- Распарсивает строку src вида:
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ src пїЅпїЅпїЅпїЅ:
 -- {+infop1} section1 %-infop2%, {+infop3 -infop4} section2 ...
--- в таблицу:
+-- пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ:
 -- {
 --   1 = { infop_check = { 1 = {"infop1" = true} }, infop_set = { 1 = {"infop2" = false } }, section = "section1" },
 --   2 = { infop_check = { 1 = {"infop3" = true}, 2 = {"infop4" = false} }, infop_set = {}, section = "section2" },
@@ -1026,8 +1026,8 @@ end
 
 
 
--- Возвращает ссылку на оверрайды, зарегистрированные в активной на данный момент секции,
--- либо nil, если ни одна из секций не активна, или оверрайдов нет.
+-- пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ,
+-- пїЅпїЅпїЅпїЅ nil, пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ.
 function generic_scheme_overrides(npc)
 	return db.storage[npc:id()].overrides
 end
