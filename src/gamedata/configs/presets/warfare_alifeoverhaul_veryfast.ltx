@@ -36,9 +36,9 @@
         alife/warfare/general/monster_max_squads_per_level        = 40
 		alife/warfare/general/monster_max_squads_per_level_lab    = 7
         alife/warfare/general/monster_min_faction_respawn         = 80
-		alife/warfare/general/monster_rare_chance_lab			  = 75
-        alife/warfare/general/monster_rare_chance_north 		  = 10
-        alife/warfare/general/monster_rare_chance_south 		  = 3
+		alife/warfare/general/monster_rare_chance_lab			  = 35
+        alife/warfare/general/monster_rare_chance_north 		  = 15
+        alife/warfare/general/monster_rare_chance_south 		  = 5
         alife/warfare/general/novice_squad_price                  = 10000
         alife/warfare/general/offline_combat_distance             = 50
         alife/warfare/general/offline_news_display_percentage     = 100
@@ -146,7 +146,7 @@
         alife/warfare/army/min_resurgence_wait_time               = 600
 		alife/warfare/army/min_smart_targets_per_base             = 1
         alife/warfare/army/night_activity_chance                  = 3
-        alife/warfare/army/offline_power_multiplier               = 1.0
+        alife/warfare/army/offline_power_multiplier               = 1.5
         alife/warfare/army/participate_in_warfare                 = true
         alife/warfare/army/patrol_hunt_chance                     = 0
         alife/warfare/army/random_patrols                         = false
@@ -204,7 +204,7 @@
         alife/warfare/bandit/lvl_zaton_priority                   = 0
         alife/warfare/bandit/max_active_squads                    = 500
         alife/warfare/bandit/max_active_squads_per_target         = 100
-        alife/warfare/bandit/max_faction_respawn                  = 4900
+        alife/warfare/bandit/max_faction_respawn                  = 4400
         alife/warfare/bandit/max_invasion_depart_time             = 10
         alife/warfare/bandit/max_invasion_size                    = 1.5
         alife/warfare/bandit/max_patrol_idle_time                 = 60
@@ -213,11 +213,11 @@
         alife/warfare/bandit/max_patrol_time                      = 3000
         alife/warfare/bandit/max_random_patrol_time               = 25000
         alife/warfare/bandit/max_random_patrols                   = 5
-        alife/warfare/bandit/max_random_squad_count               = 5
+        alife/warfare/bandit/max_random_squad_count               = 6
         alife/warfare/bandit/max_resurgence_wait_time             = 10000
         alife/warfare/bandit/max_smart_targets_per_base           = 5
         alife/warfare/bandit/min_active_squads                    = 3
-        alife/warfare/bandit/min_faction_respawn                  = 70
+        alife/warfare/bandit/min_faction_respawn                  = 44
         alife/warfare/bandit/min_invasion_depart_time             = 0
         alife/warfare/bandit/min_invasion_size                    = 0.5
         alife/warfare/bandit/min_patrol_idle_time                 = 15
@@ -225,7 +225,7 @@
         alife/warfare/bandit/min_patrol_squads                    = 0
         alife/warfare/bandit/min_patrol_time                      = 3000
         alife/warfare/bandit/min_random_patrol_time               = 1500
-        alife/warfare/bandit/min_random_squad_count               = 3
+        alife/warfare/bandit/min_random_squad_count               = 4
         alife/warfare/bandit/min_resurgence_wait_time             = 600
 		alife/warfare/bandit/min_smart_targets_per_base           = 2
         alife/warfare/bandit/night_activity_chance                = 2
@@ -868,7 +868,7 @@
         alife/warfare/monolith/lvl_zaton_priority                 = 0
         alife/warfare/monolith/max_active_squads                  = 500
         alife/warfare/monolith/max_active_squads_per_target       = 100
-        alife/warfare/monolith/max_faction_respawn                = 10500
+        alife/warfare/monolith/max_faction_respawn                = 10000
         alife/warfare/monolith/max_invasion_depart_time           = 10
         alife/warfare/monolith/max_invasion_size                  = 1.4
         alife/warfare/monolith/max_patrol_idle_time               = 60
@@ -881,7 +881,7 @@
         alife/warfare/monolith/max_resurgence_wait_time           = 200000
         alife/warfare/monolith/max_smart_targets_per_base         = 1
         alife/warfare/monolith/min_active_squads                  = 3
-        alife/warfare/monolith/min_faction_respawn                = 300
+        alife/warfare/monolith/min_faction_respawn                = 100
         alife/warfare/monolith/min_invasion_depart_time           = 0
         alife/warfare/monolith/min_invasion_size                  = 0.6
         alife/warfare/monolith/min_patrol_idle_time               = 15
@@ -892,7 +892,7 @@
         alife/warfare/monolith/min_random_squad_count             = 4
         alife/warfare/monolith/min_resurgence_wait_time           = 20000
 		alife/warfare/monolith/min_smart_targets_per_base         = 1
-        alife/warfare/monolith/night_activity_chance              = 8
+        alife/warfare/monolith/night_activity_chance              = 50
         alife/warfare/monolith/offline_power_multiplier           = 1.5
         alife/warfare/monolith/participate_in_warfare             = true
         alife/warfare/monolith/patrol_hunt_chance                 = 0
@@ -960,7 +960,7 @@
         alife/warfare/renegade/max_patrol_time                    = 3000
         alife/warfare/renegade/max_random_patrol_time             = 100
         alife/warfare/renegade/max_random_patrols                 = 50
-        alife/warfare/renegade/max_random_squad_count             = 5
+        alife/warfare/renegade/max_random_squad_count             = 8
         alife/warfare/renegade/max_resurgence_wait_time           = 5000
         alife/warfare/renegade/max_smart_targets_per_base         = 5
         alife/warfare/renegade/min_active_squads                  = 3
@@ -1041,9 +1041,9 @@
         alife/warfare/stalker/max_patrol_rest_time                = 800
         alife/warfare/stalker/max_patrol_squads                   = 0
         alife/warfare/stalker/max_patrol_time                     = 1500
-        alife/warfare/stalker/max_random_patrol_time              = 50
+        alife/warfare/stalker/max_random_patrol_time              = 25
         alife/warfare/stalker/max_random_patrols                  = 50
-        alife/warfare/stalker/max_random_squad_count              = 4
+        alife/warfare/stalker/max_random_squad_count              = 2
         alife/warfare/stalker/max_resurgence_wait_time            = 500
         alife/warfare/stalker/max_smart_targets_per_base          = 0
         alife/warfare/stalker/min_active_squads                   = 3
@@ -1054,7 +1054,7 @@
         alife/warfare/stalker/min_patrol_rest_time                = 10
         alife/warfare/stalker/min_patrol_squads                   = 0
         alife/warfare/stalker/min_patrol_time                     = 1500
-        alife/warfare/stalker/min_random_patrol_time              = 20
+        alife/warfare/stalker/min_random_patrol_time              = 10
         alife/warfare/stalker/min_random_squad_count              = 1
         alife/warfare/stalker/min_resurgence_wait_time            = 200
 		alife/warfare/stalker/min_smart_targets_per_base          = 0

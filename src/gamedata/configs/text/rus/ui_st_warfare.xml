@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="windows-1251"?>
+
+<!-- 
+	WARFARE STRINGS (RU)
+-->
+
+<string_table>
+	<string id="st_wrfr_opt_presets">
+		<text>Пресеты</text>
+	</string>
+	<string id="st_wrfr_opt_apply_to_all">
+		<text>Применить ко всем</text>
+	</string>
+	<string id="st_wrfr_opt_general">
+		<text>Общие</text>
+	</string>
+	<string id="st_wrfr_opt_azazel_respawn">
+		<text>Респаун «Азазель»</text>
+	</string>
+	<string id="st_wrfr_opt_rand_settings">
+		<text>Случайные настройки</text>
+	</string>
+
+	<string id="st_wrfr_influnence_points">
+		<text>Очки влияния</text>
+	</string>
+	<string id="st_wrfr_release_control_faction">
+		<text>Передать управление группировкой</text>
+	</string>
+	<string id="st_wrfr_take_control_faction">
+		<text>Взять управление группировкой</text>
+	</string>
+	<string id="st_wrfr_show_points">
+		<text>Показать точки / Смарт-террейны</text>
+	</string>
+	<string id="st_wrfr_hide_points">
+		<text>Скрыть точки / Смарт-террейны</text>
+	</string>
+	<string id="st_wrfr_display_faction_info">
+		<text>Информация о группировке</text>
+	</string>
+	<string id="st_wrfr_unselect_squad">
+		<text>Снять выделение с отряда</text>
+	</string>
+	<string id="st_wrfr_select_squad">
+		<text>Выбрать отряд</text>
+	</string>
+	<string id="st_wrfr_unselect_point">
+		<text>Снять выделение с точки</text>
+	</string>
+	<string id="st_wrfr_select_point">
+		<text>Выбрать точку</text>
+	</string>
+	<string id="st_wrfr_select_obj">
+		<text>Выбранный объект</text>
+	</string>
+	<string id="st_wrfr_add_influ">
+		<text>Добавить влияние</text>
+	</string>
+	<string id="st_wrfr_remove_influ">
+		<text>Убрать влияние</text>
+	</string>
+
+	<string id="st_wrfr_cap_point">
+		<text>Захватить точку</text>
+	</string>
+	<string id="st_wrfr_buy_novice_squad">
+		<text>Нанять отряд новичков</text>
+	</string>
+	<string id="st_wrfr_buy_adv_squad">
+		<text>Нанять опытный отряд</text>
+	</string>
+	<string id="st_wrfr_buy_veteran_squad">
+		<text>Нанять отряд ветеранов</text>
+	</string>
+	<string id="st_wrfr_buy_heli">
+		<text>Вызвать вертолет</text>
+	</string>
+	<string id="st_wrfr_declare_war">
+		<text>Объявить войну</text>
+	</string>
+	<string id="st_wrfr_possess_leader">
+		<text>Вселиться в лидера отряда</text>
+	</string>
+	<string id="st_wrfr_follow">
+		<text>Следовать</text>
+	</string>
+	<string id="st_wrfr_attack">
+		<text>Атаковать</text>
+	</string>
+	<string id="st_wrfr_target">
+		<text>Цель</text>
+	</string>
+	<string id="st_wrfr_move_here">
+		<text>Идти сюда</text>
+	</string>
+	<string id="st_wrfr_send_squad">
+		<text>Отправить отряд</text>
+	</string>
+	<string id="st_wrfr_send_all_squad">
+		<text>Отправить все отряды</text>
+	</string>
+	<string id="st_wrfr_take_squad">
+		<text>Взять отряд под контроль</text>
+	</string>
+	<string id="st_wrfr_take_all_squads">
+		<text>Взять все отряды под контроль</text>
+	</string>
+	<string id="st_wrfr_attack_with_all">
+		<text>Атаковать всеми силами</text>
+	</string>
+	<string id="st_wrfr_send_heli_to_point">
+		<text>Отправить вертолет к точке</text>
+	</string>
+	<string id="st_wrfr_send_heli_to_squad">
+		<text>Отправить вертолет к отряду</text>
+	</string>
+	<string id="st_wrfr_remove_heli">
+		<text>Отозвать вертолет</text>
+	</string>
+	<string id="st_wrfr_heli_route">
+		<text>Вертолет в пути</text>
+	</string>
+	<string id="st_wrfr_order_1">
+		<text>Отправка: %s направляется в %s</text>
+	</string>
+	<string id="st_wrfr_order_2">
+		<text>Отправка: %s атакует %s</text>
+	</string>
+	<string id="st_wrfr_order_3">
+		<text>%s теперь следует за %s</text>
+	</string>
+	<string id="st_wrfr_order_4">
+		<text>Один защитный отряд из состава %s теперь сопровождает игрока.</text>
+	</string>
+	<string id="st_wrfr_order_5">
+		<text>Все защитные отряды из состава %s теперь сопровождают игрока.</text>
+	</string>
+	<string id="st_wrfr_order_6">
+		<text>Один защитный отряд из состава %s отправлен атаковать отряд %s.</text>
+	</string>
+	<string id="st_wrfr_order_7">
+		<text>Все защитные отряды из состава %s отправлены атаковать отряд %s.</text>
+	</string>
+	<string id="st_wrfr_order_8">
+		<text>Один защитный отряд из состава %s отправлен сопровождать отряд %s.</text>
+	</string>
+	<string id="st_wrfr_order_9">
+		<text>Все защитные отряды из состава %s отправлены сопровождать отряд %s.</text>
+	</string>
+	<string id="st_wrfr_order_10">
+		<text>Добавление %s в список целей отряда %s</text>
+	</string>
+	<string id="st_wrfr_order_11">
+		<text>Один отряд из %s отправлен в атаку на %s.</text>
+	</string>
+	<string id="st_wrfr_order_12">
+		<text>Все отряды из %s отправлены в атаку на %s.</text>
+	</string>
+	<string id="st_wrfr_order_13">
+		<text>Выдвижение одного отряда из %s для атаки %s.</text>
+	</string>
+	<string id="st_wrfr_order_14">
+		<text>Выдвижение всех отрядов из %s для атаки %s.</text>
+	</string>
+	<string id="st_wrfr_order_15">
+		<text>Один отряд из %s направлен в %s.</text>
+	</string>
+	<string id="st_wrfr_order_16">
+		<text>Все отряды из %s направлены в %s.</text>
+	</string>
+	<string id="st_wrfr_order_17">
+		<text>Вертолет направлен в %s.</text>
+	</string>
+	<string id="st_wrfr_heli_removed">
+		<text>Вертолет отозван</text>
+	</string>
+	<string id="st_wrfr_heli_already_spawned">
+		<text>Вертолет уже вызван на локацию!</text>
+	</string>
+
+	<string id="st_wrfr_smrt_auto_capture">
+		<text>Автоматический захват: %s!</text>
+	</string>
+	<string id="st_wrfr_prop_base">
+		<text>База</text>
+	</string>
+	<string id="st_wrfr_prop_resource">
+		<text>Ресурс</text>
+	</string>
+	<string id="st_wrfr_prop_territory">
+		<text>Территория</text>
+	</string>
+	<string id="st_wrfr_prop_lair">
+		<text>Логово</text>
+	</string>
+	<string id="st_wrfr_prop_faction">
+		<text>Группировка</text>
+	</string>
+	<string id="st_wrfr_prop_curr_popu">
+		<text>Текущая численность</text>
+	</string>
+	<string id="st_wrfr_prop_max_popu">
+		<text>Макс. численность</text>
+	</string>
+	<string id="st_wrfr_prop_resource_count">
+		<text>Количество ресурсов</text>
+	</string>
+	<string id="st_wrfr_prop_time_capture">
+		<text>До захвата осталось</text>
+	</string>
+	<string id="st_wrfr_prop_next_defense">
+		<text>Новый отряд через</text>
+	</string>
+	<string id="st_wrfr_prop_next_patrol">
+		<text>Новый патруль через</text>
+	</string>
+	<string id="st_wrfr_prop_time_culc_hr">
+		<text>%s ч. + %s мин.</text>
+	</string>
+	<string id="st_wrfr_prop_time_culc_min">
+		<text>%s мин.</text>
+	</string>
+	<string id="st_wrfr_prop_target">
+		<text>Цель</text>
+	</string>
+	<string id="st_wrfr_prop_invasion_size">
+		<text>Размер вторжения</text>
+	</string>
+	<string id="st_wrfr_prop_targets">
+		<text>--Цели--</text>
+	</string>
+	<string id="st_wrfr_prop_invasion">
+		<text>--Вторжение--</text>
+	</string>
+	<string id="st_wrfr_smart_count_warning">
+		<text>На смарте (%s) находится %s отрядов!</text>
+	</string>
+
+	<string id="st_wrfr_heli">
+		<text>Вертолет</text>
+	</string>
+	<string id="st_wrfr_you">
+		<text>вы</text>
+	</string>
+	<string id="st_wrfr_mutant">
+		<text>мутант</text>
+	</string>
+	<string id="st_wrfr_none">
+		<text>нет</text>
+	</string>
+
+	<string id="st_wrfr_sim_1">
+		<text>Отряд: %s</text>
+	</string>
+	<string id="st_wrfr_sim_2">
+		<text>Участники</text>
+	</string>
+	<string id="st_wrfr_sim_3">
+		<text>Секция</text>
+	</string>
+	<string id="st_wrfr_sim_4">
+		<text>ID</text>
+	</string>
+	<string id="st_wrfr_sim_5">
+		<text>В бою</text>
+	</string>
+	<string id="st_wrfr_sim_6">
+		<text>В пути к цели</text>
+	</string>
+	<string id="st_wrfr_sim_7">
+		<text>Ожидание у цели</text>
+	</string>
+	<string id="st_wrfr_sim_8">
+		<text>Общая мощь</text>
+	</string>
+	<string id="st_wrfr_sim_9">
+		<text>Мощь</text>
+	</string>
+	<string id="st_wrfr_sim_10">
+		<text>Владеет базой</text>
+	</string>
+	<string id="st_wrfr_sim_11">
+		<text>Время бездействия</text>
+	</string>
+	<string id="st_wrfr_sim_12">
+		<text>Уровень цели</text>
+	</string>
+</string_table>
