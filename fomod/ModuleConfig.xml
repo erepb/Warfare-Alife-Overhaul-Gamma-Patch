@@ -89,7 +89,9 @@
                             <description>
                                 Contains all patches for Gamma modpack compatibility.
 
-                                If you select this, select ZCP in the next page
+                                If you select this, select these mods in the next page:
+                                ZCP
+                                LTTZ
                             </description>
                             <files>
                                 <folder source="patches\GAMMA Warfare Patch"
@@ -107,12 +109,27 @@
                         <plugin name="ZCP">
                             <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
                             <description>
-                                Compatibility with ZCP
+                                Compatibility with ZCP (Needed for Gamma)
 
                                 Prevents it from adjusting size and extra spawning
                             </description>
                             <files>
                                 <folder source="patches\ZCP"
+                                        destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="LTTZ">
+                            <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
+                            <description>
+                                Compatibility with LTTZ (Needed for Gamma)
+
+                                Adds squads from LTTZ
+                            </description>
+                            <files>
+                                <folder source="patches\Patch for LTTZ Directors Cut"
                                         destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
                             </files>
                             <typeDescriptor>
