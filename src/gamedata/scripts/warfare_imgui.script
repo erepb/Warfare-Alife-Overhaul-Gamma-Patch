@@ -1,0 +1,104 @@
+-- Menu and window name constants
+local WARFARE_MENU_NAME = "Warfare"
+local SQUADS_MENU_ITEM = "Squads"
+local SMARTS_MENU_ITEM = "Smarts"
+local AUTO_CAPTURE_MENU_ITEM = "Auto Capture"
+local SMART_INFO_MENU_ITEM = "Smart Info"
+local SQUADS_WINDOW_TITLE = "Warfare - Squads"
+local SMARTS_WINDOW_TITLE = "Warfare - Smarts"
+local AUTO_CAPTURE_WINDOW_TITLE = "Warfare - Auto Capture"
+local SMART_INFO_WINDOW_TITLE = "Warfare - Smart Info"
+
+if ImGui.Groups == nil then
+    printf("script _imgui_groups.script not loaded, disabling warfare_imgui.script")
+    return
+end
+
+squads_window_visible = false
+smarts_window_visible = false
+auto_capture_window_visible = false
+smart_info_window_visible = false
+
+function on_game_start()
+    -- Add warfare menu items to dedicated Warfare group
+    ImGui.Groups.Warfare.Widget(function()
+        local _
+        _, squads_window_visible = ImGui.MenuItem(SQUADS_MENU_ITEM, nil, squads_window_visible, true)
+        _, smarts_window_visible = ImGui.MenuItem(SMARTS_MENU_ITEM, nil, smarts_window_visible, true)
+        _, auto_capture_window_visible = ImGui.MenuItem(AUTO_CAPTURE_MENU_ITEM, nil, auto_capture_window_visible, true)
+        _, smart_info_window_visible = ImGui.MenuItem(SMART_INFO_MENU_ITEM, nil, smart_info_window_visible, true)
+    end)
+
+    -- Register window rendering in the Unique group (renders every frame)
+    ImGui.Groups.Main.Widget(function()
+        if squads_window_visible then
+            render_squads_window()
+        end
+
+        if smarts_window_visible then
+            render_smarts_window()
+        end
+    end)
+
+    ImGui.Groups.Unique.Widget(function()
+        if auto_capture_window_visible then
+            render_auto_capture_window()
+        end
+
+        if smart_info_window_visible then
+            render_smart_info_window()
+        end
+    end)
+end
+
+function render_squads_window()
+    local expanded, visible = ImGui.Begin(SQUADS_WINDOW_TITLE, squads_window_visible, ImGuiWindowFlags.None)
+    squads_window_visible = visible
+
+    if expanded then
+        warfare_imgui_squads.render()
+    end
+    ImGui.End()
+end
+
+function render_smarts_window()
+    local expanded, visible = ImGui.Begin(SMARTS_WINDOW_TITLE, smarts_window_visible, ImGuiWindowFlags.None)
+    smarts_window_visible = visible
+
+    if expanded then
+        warfare_imgui_smarts.render()
+    end
+    ImGui.End()
+end
+
+function render_auto_capture_window()
+    local expanded, visible = ImGui.Begin(AUTO_CAPTURE_WINDOW_TITLE, auto_capture_window_visible, ImGuiWindowFlags.None)
+    auto_capture_window_visible = visible
+
+    if expanded then
+        warfare_imgui_auto_capture.render()
+    end
+    ImGui.End()
+end
+
+function render_smart_info_window()
+    local expanded, visible = ImGui.Begin(SMART_INFO_WINDOW_TITLE, smart_info_window_visible, ImGuiWindowFlags.None)
+    smart_info_window_visible = visible
+
+    if expanded then
+        warfare_imgui_smart_info.render()
+    end
+    ImGui.End()
+end
+
+--- Warfare, provides a dedicated menu for warfare mod functionality
+ImGui.Groups.Add("Warfare")
+
+local RenderWarfare = ImGui.Groups.Warfare.Render
+ImGui.Groups.MenuBar.Widget(function()
+    if ImGui.BeginMenu(WARFARE_MENU_NAME) then
+        RenderWarfare()
+        ImGui.EndMenu()
+    end
+end)
+

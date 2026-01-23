@@ -1,0 +1,351 @@
+function calculate_smart_types(smart)
+    local types = {}
+
+    if smart.props.base > 0 then
+        table.insert(types, "st_wrfr_prop_base")
+    end
+    if smart.props.resource > 0 then
+        table.insert(types, "st_wrfr_prop_resource")
+    end
+    if smart.props.territory > 0 then
+        table.insert(types, "st_wrfr_prop_territory")
+    end
+    if smart.props.lair > 0 then
+        table.insert(types, "st_wrfr_prop_lair")
+    end
+
+    for i, v in pairs(types) do
+        types[i] = game.translate_string(v)
+    end
+
+    return table.concat(types, ", ")
+end
+
+-- Function to get spawn timer remaining
+function get_spawn_timer(smart)
+    -- Check for faction spawn timer (defense timer) first
+    if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id] then
+        local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
+        local next_defense = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] or 10
+
+        local diff = game.get_game_time():diffSec(defense_timer)
+        local remaining = (next_defense  * 6) - diff
+
+        return warfare_imgui_smart_info.format_time_remaining(remaining)
+    end
+    
+    -- Check for mutant spawn timer if no defense timer found
+    local spawn_timer = smart_terrain_warfare.spawn_mutant_timers and smart_terrain_warfare.spawn_mutant_timers[smart.id]
+    local next_update = smart_terrain_warfare.spawn_mutant_next_update and smart_terrain_warfare.spawn_mutant_next_update[smart.id]
+    
+    if spawn_timer and next_update then
+        local diff = game.get_game_time():diffSec(spawn_timer)
+        local remaining = (next_update  * 6) - diff
+        
+        return warfare_imgui_smart_info.format_time_remaining(remaining)
+    end
+    
+    return ""
+end
+
+-- Function to get patrol timer remaining
+function get_patrol_timer(smart)
+    if not smart_terrain_warfare.patrol_timers or not smart_terrain_warfare.patrol_timers[smart.id] or not smart.owning_faction then
+        return ""
+    end
+
+    if not warfare_options or not warfare_options.options or not warfare_options.options.factions or
+            not warfare_options.options.factions[smart.owning_faction] or
+            (warfare_options.options.factions[smart.owning_faction].max_patrol_squads or 0) <= 0 then
+        return "Disabled"
+    end
+
+    local patrol_timer = smart_terrain_warfare.patrol_timers[smart.id]
+    local next_patrol = smart_terrain_warfare.patrol_next_update[smart.id] or 10
+
+    local diff = game.get_game_time():diffSec(patrol_timer)
+    local remaining = (next_patrol  * 6) - diff
+
+    return warfare_imgui_smart_info.format_time_remaining(remaining)
+end
+
+-- Function to get target smarts count
+function get_targets(smart)
+    if not smart.target_smarts then
+        return ""
+    end
+
+    local targets = {}
+    for target, _ in pairs(smart.target_smarts) do
+        local other = alife_object(target)
+
+        if (other) then
+            local otherWarfare = smart_terrain_warfare.translate_smart_name(other:name()) or other:name()
+            table.insert(targets, otherWarfare)
+        end
+    end
+
+    return table.concat(targets, ", ")
+end
+
+-- Function to get invasion information
+function get_invasion_info(smart)
+    if not smart_terrain_warfare.invasions or not smart_terrain_warfare.invasions[smart.id] then
+        return ""
+    end
+
+    local invasion_data = smart_terrain_warfare.invasions[smart.id]
+    local other = invasion_data[1] and alife_object(invasion_data[1])
+    local squad_count = invasion_data[2] or 0
+
+    if other then
+        local otherName = smart_terrain_warfare.translate_smart_name(other:name()) or other:name()
+        return string.format("%s (%d)", otherName, squad_count)
+    end
+
+    return string.format("Unknown (%d)", squad_count)
+end
+
+-- Function to get spawn timer raw value for sorting
+function get_spawn_timer_number(smart)
+    -- Check for faction spawn timer (defense timer) first
+    if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id] and 
+       smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] then
+        
+        local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
+        local next_defense = smart_terrain_warfare.defense_next_update[smart.id]
+
+        local diff = game.get_game_time():diffSec(defense_timer)
+        local remaining = (next_defense  * 6) - diff
+
+        return remaining > 0 and remaining or 0
+    end
+    
+    -- Check for mutant spawn timer if no defense timer found
+    local spawn_timer = smart_terrain_warfare.spawn_mutant_timers and smart_terrain_warfare.spawn_mutant_timers[smart.id]
+    local next_update = smart_terrain_warfare.spawn_mutant_next_update and smart_terrain_warfare.spawn_mutant_next_update[smart.id]
+    
+    if spawn_timer and next_update then
+        local diff = game.get_game_time():diffSec(spawn_timer)
+        local remaining = (next_update  * 6) - diff
+        
+        return remaining > 0 and remaining or 0
+    end
+    
+    return 0
+end
+
+-- Function to get patrol timer raw value for sorting
+function get_patrol_timer_number(smart)
+    if warfare_options.options.factions[smart.owning_faction].max_patrol_squads or 0 <= 0 then
+        return 0 -- Disabled state gets special sort value
+    end
+
+    local patrol_timer = smart_terrain_warfare.patrol_timers[smart.id]
+    local next_patrol = smart_terrain_warfare.patrol_next_update[smart.id] or 10
+
+    local diff = game.get_game_time():diffSec(patrol_timer)
+    local remaining = (next_patrol  * 6) - diff
+
+    return remaining > 0 and remaining
+end
+
+-- Sorting state variables
+local sort_column = -1
+local sort_ascending = true
+
+-- Get sortable value for a column
+function get_sortable_value(smart, column)
+    if column == 0 then -- ID
+        return smart:name()
+    elseif column == 1 then -- Name
+        return smart_terrain_warfare.translate_smart_name(smart:name()) or smart:name()
+    elseif column == 2 then -- Type
+        return calculate_smart_types(smart)
+    elseif column == 3 then -- Faction
+        return get_smart_faction(smart)
+    elseif column == 4 then -- Defense
+        return smart.defense_count or 0
+    elseif column == 5 then -- Max Pop
+        return smart.max_population or 0
+    elseif column == 6 then -- Spawn Timer
+        return get_spawn_timer_number(smart)
+    elseif column == 7 then -- Patrol Timer
+        return get_patrol_timer_number(smart)
+    elseif column == 8 then -- Targets
+        return get_targets(smart)
+    elseif column == 9 then -- Invasion
+        return get_invasion_info(smart)
+    elseif column == 10 then -- Under Attack
+        return smart_terrain_warfare.under_attack[smart.id] and "Yes" or ""
+    end
+    return ""
+end
+
+-- Sort smarts by column
+function sort_smarts(smarts, column, ascending)
+    table.sort(smarts, function(a, b)
+        local val_a = get_sortable_value(a, column)
+        local val_b = get_sortable_value(b, column)
+        
+        -- Handle numeric values
+        if type(val_a) == "number" and type(val_b) == "number" then
+            -- Special case: always put 0 values at the end
+            if val_a == 0 and val_b == 0 then
+                return false -- Equal zero values
+            elseif val_a == 0 then
+                return false -- Zero goes after non-zero
+            elseif val_b == 0 then
+                return true -- Non-zero goes before zero
+            end
+            
+            -- Normal numeric comparison for non-zero values
+            if ascending then
+                return val_a < val_b
+            else
+                return val_a > val_b
+            end
+        end
+        
+        -- Handle string values (case-insensitive)
+        local str_a = tostring(val_a)
+        local str_b = tostring(val_b)
+        
+        -- Check for empty/nil-like values (empty string, "None", nil converted to string)
+        local empty_a = str_a == ""
+        local empty_b = str_b == ""
+        
+        if empty_a and empty_b then
+            return false -- Equal empty values
+        elseif empty_a then
+            return false -- Empty value goes after non-empty
+        elseif empty_b then
+            return true -- Non-empty value goes before empty
+        end
+        
+        -- Normal string comparison (case-insensitive)
+        str_a = str_a:lower()
+        str_b = str_b:lower()
+        if ascending then
+            return str_a < str_b
+        else
+            return str_a > str_b
+        end
+    end)
+end
+
+function get_smart_faction(smart)
+    local faction = smart.owning_faction
+    if faction and faction ~= "" and faction ~= "none" then
+        return game.translate_string(faction)
+    end
+    return ""
+end
+
+function render()
+    -- Add smarts-related UI elements here
+    local level = game_graph():vertex(alife():actor().m_game_vertex_id):level_id()
+    local currentLevelSmartIds = warfare_levels.level_information[level].smarts
+    
+    -- Collect smart objects
+    local smarts = {}
+    for i = 1, #currentLevelSmartIds do
+        local smart_id = currentLevelSmartIds[i]
+        local smart = smart_id and alife_object(smart_id)
+        if smart then
+            table.insert(smarts, smart)
+        end
+    end
+    
+    -- Apply sorting if a column is selected
+    if sort_column >= 0 then
+        sort_smarts(smarts, sort_column, sort_ascending)
+    end
+
+    if ImGui.BeginTable("WarfareSmarts", 11, 3, vector2(0, 0), 0) then
+        -- 3 = Borders(1) + RowBg(2)
+        ImGui.TableSetupColumn("ID", 2, 0, 0) -- 2 = WidthFixed
+        ImGui.TableSetupColumn("Name", 2, 0, 0)
+        ImGui.TableSetupColumn("Type", 2, 0, 0)
+        ImGui.TableSetupColumn("Faction", 2, 0, 0)
+        ImGui.TableSetupColumn("Defense", 2, 0, 0)
+        ImGui.TableSetupColumn("Max Pop", 2, 0, 0)
+        ImGui.TableSetupColumn("Spawn Timer", 2, 0, 0)
+        ImGui.TableSetupColumn("Patrol Timer", 2, 0, 0)
+        ImGui.TableSetupColumn("Targets", 2, 0, 0)
+        ImGui.TableSetupColumn("Invasion", 2, 0, 0)
+        ImGui.TableSetupColumn("Under Attack", 2, 0, 0)
+
+        -- Custom header row with sorting indicators
+        ImGui.TableNextRow(1, 0) -- ImGuiTableRowFlags_Headers
+        
+        local column_names = {
+            "ID", "Name", "Type", "Faction", "Defense", "Max Pop",
+            "Spawn Timer", "Patrol Timer", "Targets", "Invasion", "Under Attack"
+        }
+        
+        for col = 0, 10 do
+            ImGui.TableSetColumnIndex(col)
+            
+            local header_text = column_names[col + 1]
+            if sort_column == col then
+                header_text = header_text .. (sort_ascending and " ^" or " v")
+            end
+            
+            local avail = ImGui.GetContentRegionAvail()
+            if ImGui.Button(header_text, vector2(avail.x, 0)) then
+                if sort_column == col then
+                    sort_ascending = not sort_ascending
+                else
+                    sort_column = col
+                    sort_ascending = true
+                end
+            end
+        end
+
+        for i = 1, #smarts do
+            local smart = smarts[i]
+            ImGui.TableNextRow()
+
+            ImGui.TableNextColumn()
+            ImGui.Text(smart:name())
+
+            ImGui.TableNextColumn()
+            local smart_display_name = smart_terrain_warfare.translate_smart_name(smart:name()) or smart:name()
+            local avail = ImGui.GetContentRegionAvail()
+            if ImGui.Button(smart_display_name .. "##" .. smart:name(), vector2(avail.x, 0)) then
+                warfare_imgui_smart_info.selected_smart_id = smart.id
+                warfare_imgui.smart_info_window_visible = true
+            end
+
+            ImGui.TableNextColumn()
+            ImGui.Text(calculate_smart_types(smart))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_smart_faction(smart))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(tostring(smart.defense_count or 0))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(tostring(smart.max_population or 0))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_spawn_timer(smart))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_patrol_timer(smart))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_targets(smart))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(get_invasion_info(smart))
+
+            ImGui.TableNextColumn()
+            ImGui.Text(smart_terrain_warfare.under_attack[smart.id] and "Yes" or "")
+        end
+
+        ImGui.EndTable()
+    end
+end
