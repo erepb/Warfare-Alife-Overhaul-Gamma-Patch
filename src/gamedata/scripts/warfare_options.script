@@ -196,7 +196,7 @@ function update_settings()
         warfare.need_all_out_war_applied = true
     end
 
-    --printf("end setup")
+    printf("end setup")
 end
 
 ENABLE_MUTANT_OFFLINE_COMBAT = true

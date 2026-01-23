@@ -360,7 +360,7 @@ function sim_squad_scripted.create_npc(self, spawn_smart, pos, lvid, gvid)
 
         self.smart_id = spawn_smart.id
     else
-        --printf('spawn smart: %s', spawn_smart)
+        printf('spawn smart: %s', spawn_smart)
         base_spawn_position = pos or self.position
         base_lvi = lvid or self.m_level_vertex_id
         base_gvi = gvid or self.m_game_vertex_id
@@ -397,7 +397,7 @@ function sim_squad_scripted.create_npc(self, spawn_smart, pos, lvid, gvid)
             -- check if trying to spawn trader/mechanic/medic/barman squad
             for i = 1, #random_spawn do
                 if string.find(random_spawn[i], "trader") or string.find(random_spawn[i], "mechanic") or string.find(random_spawn[i], "barman") or string.find(random_spawn[i], "medic") or string.find(random_spawn[i], "tech") or string.find(random_spawn[i], "informator") then
-                    --printf("Spawning trader/mechanic/medic/barman, squad size changed to 1")
+                    printf("Spawning trader/mechanic/medic/barman, squad size changed to 1")
                     count[1] = 1
                     count[2] = 1
                 end
@@ -419,7 +419,7 @@ function sim_squad_scripted.create_npc(self, spawn_smart, pos, lvid, gvid)
             end
         end
     elseif #spawn_sections == 0 then
-        --printf("You are trying to spawn an empty squad [%s]!!!", settings_id)
+        printf("You are trying to spawn an empty squad [%s]!!!", settings_id)
     end
 
     if not (spawn_smart) then

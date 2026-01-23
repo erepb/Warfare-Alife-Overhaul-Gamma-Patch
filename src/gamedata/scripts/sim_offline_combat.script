@@ -334,8 +334,8 @@ local function coordinator()
         end
     end
 
-    local stalker_pop_factor = ui_options.get("alife/general/alife_stalker_pop")
-    local monster_pop_factor = ui_options.get("alife/general/alife_mutant_pop")
+    local stalker_pop_factor = warfare.get_stalker_pop_factor()
+    local monster_pop_factor = warfare.get_monster_pop_factor()
     local pop_factor = (stalker_pop_factor + monster_pop_factor) / 2
 
     -- Options by mode

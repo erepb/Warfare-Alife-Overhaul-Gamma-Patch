@@ -275,8 +275,8 @@ end
 
 function set_max_population(smart)
     printd(0)
-    local stalker_pop_factor = ui_options.get("alife/general/alife_stalker_pop")
-    local monster_pop_factor = ui_options.get("alife/general/alife_mutant_pop")
+    local stalker_pop_factor = warfare.get_stalker_pop_factor()
+    local monster_pop_factor = warfare.get_monster_pop_factor()
 
     if (smart.props and (smart.props.base > 0 or smart.props.resource > 0 or smart.props.territory > 0)) then
         smart.max_population = round_idp(math.max(1, smart.default_max_population * stalker_pop_factor))
@@ -1907,7 +1907,6 @@ function spawn_defense(smart)
     --local size = invasions[smart.id] and invasions[smart.id][2] or 0
     --local totalSize = size + smart.max_population
 
-
     local section = faction_expansions.get_spawn_section(smart.owning_faction, smart.resource_count)
 
     -- army spawn quality depends on number of bases
@@ -2982,7 +2981,7 @@ function spawn_mutants(smart)
     end
 
     local current_level = smart.level_id
-    local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, monster_level_capacity[current_level] * ui_options.get("alife/general/alife_mutant_pop")))        -- max allowable squads is min of user setting or level-specific capacity
+    local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, monster_level_capacity[current_level] * warfare.get_monster_pop_factor()))        -- max allowable squads is min of user setting or level-specific capacity
     local rare_chance = warfare_options.options.monster_rare_chance_south
 
     if (current_level > 12) and (current_level < 32) then
@@ -4412,7 +4411,7 @@ function find_random_patrol_target(smart, faction, sid)
     -- only used for spawning
     if backup_target then
         if enable_debug then
-            --printf("spawning %s random patrol on %s", faction, target:name())
+            --printf("spawning %s random patrol on %s", faction, backup_target:name())
         end
         return backup_target.id
     end
@@ -4992,4 +4991,4 @@ function on_game_start()
     refresh_strings()
 
     RegisterScriptCallback("on_localization_change", refresh_strings)
-end 
+end

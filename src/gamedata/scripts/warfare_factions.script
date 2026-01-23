@@ -2,7 +2,7 @@
 
 =======================================================================================
 	Original creator: Werejew
-	Edit log: 
+	Edit log:
 	2020/11/07 - Vintar - Resurgence chance added to resurgence calculation
 	2021/02/19 - Vintar - stronger resurgence attempts, now uses fetch_smart_distance(), debug messages
 	2021/03/27 - Vintar - loners exempt from random patrol targeting. Random patrols no longer spawn too close to actor.
@@ -71,7 +71,7 @@ end
 			[faction] = value
 		},
 	}
-	
+
 ]]
 
 function update()
@@ -307,7 +307,7 @@ function update_faction(faction)
                                 attempted = true
 
                                 if (smart_terrain_warfare.enable_debug) then
-                                    --printf("Resurgence of %s is underway, targeting %s with %s squads", faction, target:name(), target_pop)
+                                    printf("Resurgence of %s is underway, targeting %s with %s squads", faction, target:name(), target_pop)
                                 end
 
                                 for _, ter in pairs(spawns) do

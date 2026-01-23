@@ -2,13 +2,13 @@
 
 =======================================================================================
 	Original creator: Werejew
-	Edit log: 
+	Edit log:
 	2020/09/22 - Vintar - loners no longer see other loner squads outside of fog of war (without PDA v2 or v3)
 	2021/02/13 - Vintar - added toggle capability for loner fog of war
 	2021/02/18 - Vintar - friendly random patrol squads are now labeled
 	2021/11/09 - Vintar - added goodwill on kill functionality
 
-	This file contains mostly retired functions, but still handles some squad-level stuff 
+	This file contains mostly retired functions, but still handles some squad-level stuff
 	such as PDA squad spots and Warfare squad registration
 =======================================================================================
 
@@ -233,11 +233,11 @@ function squad_warfare_update(squad)
             end--[[
 		else
 			local levelID = game_graph():vertex(squad.m_game_vertex_id):level_id()
-			
+
 			if (warfare_levels.level_information[levelID] and warfare_levels.level_information[levelID].smarts) then
 				for i,sm in pairs(warfare_levels.level_information[levelID].smarts) do
 					local smart = sm and alife_object(sm)
-					
+
 					if (smart) then
 						--printf(smart:name())
 						sim_squad_warfare.set_target(squad, smart.id)
@@ -250,7 +250,7 @@ function squad_warfare_update(squad)
     printd(1, squad:name())
 end
 
---[[	
+--[[
 random_patrols[squad.id] = {
 	target = smart.id,
 	stay_time = math.random(min_idle, max_idle),
@@ -784,7 +784,7 @@ function get_warfare_info(squad)
 end
 
 --[[
-	targets[#targets+1] = { dist/priority, other.id }	
+	targets[#targets+1] = { dist/priority, other.id }
 	targets = warfare.sort_priority_table(targets)
 ]]
 
@@ -941,7 +941,7 @@ function set_target(squad, target)
         squad.registered_with_warfare = true
         warfare.registered_squads[squad:get_squad_community()][squad.id] = target
 
-        --if (obj:clsid() == clsid.smart_terrain) then 
+        --if (obj:clsid() == clsid.smart_terrain) then
         if (obj:clsid() == clsid.smart_terrain) then
             obj:on_reach_target(squad)
         end
@@ -1000,4 +1000,4 @@ function on_game_start()
     refresh_strings()
 
     RegisterScriptCallback("on_localization_change", refresh_strings)
-end 
+end
