@@ -129,7 +129,7 @@ if _G.WARFARE then
 
     function clean_random_zombies(fractures_amount)
         for k, v in ipairs(faction_expansions.random_zombies) do
-            if v.find("simulation_zombie") ~= nil and v.find("simulation_snork") ~= nil then
+            if v:find("simulation_zombie") ~= nil and v:find("simulation_snork") ~= nil then
                 faction_expansions.random_zombies[k] = "simulation_fracture"
                 fractures_amount = fractures_amount - 1
             end
