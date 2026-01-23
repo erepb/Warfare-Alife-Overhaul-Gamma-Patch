@@ -28,8 +28,7 @@ function get_target_info(squad)
     return ""
 end
 
--- Get action status
-function get_action_status(squad)
+function get_action_state(squad)
     if sim_offline_combat.opponents and sim_offline_combat.opponents[squad.id] then
         return "In Combat"
     elseif squad.current_action == 0 then
@@ -38,6 +37,11 @@ function get_action_status(squad)
         return "Attacking"
     end
     return "Idle"
+end
+
+-- Get action status
+function get_action_status(squad)
+    return squad.current_action .. " (" .. get_action_state(squad) .. ")"
 end
 
 function get_squad_smart(squad)

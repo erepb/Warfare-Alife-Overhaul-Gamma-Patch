@@ -2950,6 +2950,22 @@ function process_ecolog(smart)
     end
 end
 
+function get_mutant_level_settings(level_id)
+    local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, monster_level_capacity[level_id] * warfare.get_monster_pop_factor()))        -- max allowable squads is min of user setting or level-specific capacity
+    local rare_chance = warfare_options.options.monster_rare_chance_south
+    if (level_id > 12) and (level_id < 32) then
+        -- levels 13 - 31 include all levels north of military warehouses/dead city/trucks cemetery. Also includes all labs. See level_targets.script for more info
+        if ((level_id > 19) and (level_id < 27)) or (level_id == 29) or (level_id == 31) then
+            -- labs will spawn scary mutants
+            max_active = round_idp(math.min(max_active, warfare_options.options.monster_max_squads_per_level_lab))            -- max monster squads in labs is min of level-allowed max and user setting
+            rare_chance = warfare_options.options.monster_rare_chance_lab
+        else
+            rare_chance = warfare_options.options.monster_rare_chance_north
+        end
+    end
+    return max_active, rare_chance
+end
+
 function spawn_mutants(smart)
     if (smart.props.base > 0) or (smart.props.resource > 0) or (smart.props.territory > 0) or (smart.props.lair < 1) then
         --printf("Cannot spawn mutants at base/resource/territory location: " .. smart:name())
@@ -2981,19 +2997,8 @@ function spawn_mutants(smart)
     end
 
     local current_level = smart.level_id
-    local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, monster_level_capacity[current_level] * warfare.get_monster_pop_factor()))        -- max allowable squads is min of user setting or level-specific capacity
-    local rare_chance = warfare_options.options.monster_rare_chance_south
 
-    if (current_level > 12) and (current_level < 32) then
-        -- levels 13 - 31 include all levels north of military warehouses/dead city/trucks cemetery. Also includes all labs. See level_targets.script for more info
-        if ((current_level > 19) and (current_level < 27)) or (current_level == 29) or (current_level == 31) then
-            -- labs will spawn scary mutants
-            max_active = round_idp(math.min(max_active, warfare_options.options.monster_max_squads_per_level_lab))            -- max monster squads in labs is min of level-allowed max and user setting
-            rare_chance = warfare_options.options.monster_rare_chance_lab
-        else
-            rare_chance = warfare_options.options.monster_rare_chance_north
-        end
-    end
+    local max_active, rare_chance = get_mutant_level_settings(current_level)
 
     local mutants_on_level = sim_offline_combat.get_num_squads_on_level(smart.level_id, "monster")
 
