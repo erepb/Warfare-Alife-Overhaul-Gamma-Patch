@@ -4,7 +4,7 @@
     EXTRA WARFARE STRINGS 
 -->
 
-<string_table>    
+<string_table>
     <string id="st_wrfr_request_squad_1">
         <text>База, запрашиваю отряд в %s, приём?</text>
     </string>
@@ -36,7 +36,7 @@
     <string id="st_wrfr_respond_affirmative_5">
         <text>Вас понял, отряд из %s уже выдвигается на ваше местоположение.</text>
     </string>
-    
+
     <string id="st_wrfr_respond_out_of_squads">
         <text>На данный момент свободных отрядов нет; направляем следующий отряд из %s к вам.</text>
     </string>
@@ -68,7 +68,7 @@
     <string id="st_wrfr_respond_ontheway_5">
         <text>Внимание, мы уже направляемся к %s.</text>
     </string>
-    
+
     <string id="st_wrfr_respond_negative_1">
         <text>Отрицательно, рядом с вами нет баз для подкрепления, конец связи.</text>
     </string>
@@ -91,7 +91,7 @@
     <string id="st_wrfr_invasion_defense_incoming">
         <text>Вражеские силы приближаются к %s.</text>
     </string>
-    
+
     <string id="st_wrfr_invasion_defense_clear_1">
         <text>База, силы противника, направленные к %s, уничтожены, конец связи.</text>
     </string>
@@ -107,7 +107,7 @@
     <string id="st_wrfr_invasion_defense_clear_5">
         <text>Приём, база, мы отбили силы, атаковавшие %s, конец связи.</text>
     </string>
-    
+
     <string id="st_wrfr_invasion_defense_fullyreinforced">
         <text>Вражеские силы приближаются к %s. Подкрепление уже выслано.</text>
     </string>

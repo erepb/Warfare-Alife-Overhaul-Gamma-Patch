@@ -614,3 +614,17 @@ function xr_logic.configure_schemes(npc, ini, ini_filename, stype, section_logic
 
     return st.ini
 end
+
+local global_position_from = global_position.from
+global_position.from = function(object_or_position, level_id)
+    if (level_id == nil) then
+        return global_position_from(object_or_position, level_id)
+    end
+    local offset = global_position.level_offsets[level_id]
+    if (not object_or_position) or (not offset) then
+        printf("!!! %s on level has invalid offset !!! %s", object_or_position, level_id)
+        return
+    end
+    local p = object_or_position
+    return vector():set(p.x + offset[1], p.y + offset[2], p.z + offset[3])
+end
