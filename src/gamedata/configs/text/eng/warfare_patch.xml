@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="windows-1251" ?>
+<string_table>
+    <string id="ui_mm_prst_warfare_alifeoverhaul">
+        <text>Alife Overhaul - Default (1x)</text>
+    </string>
+    <string id="ui_mm_prst_warfare_alifeoverhaul_faster">
+        <text>Alife Overhaul - Fast (2x)</text>
+    </string>
+    <string id="ui_mm_prst_warfare_alifeoverhaul_veryfast">
+        <text>Alife Overhaul - Rapid (5x)</text>
+    </string>
+    <string id="ui_mm_prst_warfare_alifeoverhaul_rapidtest">
+        <text>Alife Overhaul - Test (10x)</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_use_old_auto_capture">
+        <text>Use old auto-capture method</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_use_old_auto_capture_desc">
+        <text>When this option is enabled, autocapture will occur using the old method, where a squad is spawned on top
+            of your position for free once the capture time has elapsed.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_hide_lair_smarts">
+        <text>Hide lair smart terrains</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_hide_lair_smarts_desc">
+        <text>When enabled, the PDA will not display icons for smart terrains with no useful properties, such as purely
+            mutant lair terrains.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_actor_support_goodwill_base">
+        <text>Goodwill on kill: base</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_actor_support_goodwill_base_desc">
+        <text>When you kill an enemy, you will be granted this amount of goodwill with your faction plus a bonus based
+            on the victim's rank and the multiplier: goodwill = base + (enemy rank * rank multiplier). Loners receive
+            50% of this value.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_actor_support_goodwill_weight">
+        <text>Goodwill on kill: enemy rank multiplier</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_actor_support_goodwill_weight_desc">
+        <text>This setting affects the bonus amount of faction goodwill granted on kill based on the victim's rank. The
+            goodwill gained is equal to: goodwill = base + (enemy rank * rank multiplier)
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_monster_max_squads_per_level_lab">
+        <text>Max monster squads per level (laboratories)</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_monster_max_squads_per_level_lab_desc">
+        <text>This setting is the same as the "max monster squads per level" setting, but applies for all underground
+            and laboratory levels.
+        </text>
+    </string>
+
+    <string id="ui_mm_alife_warfare_general_territory_diplo_penalty">
+        <text>Contested terrains strain relations</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_territory_diplo_penalty_desc">
+        <text>When this setting is enabled, two neutral factions contesting a single point will become upset with each
+            other if one of them 'steals' the location from the other. This puts pressure on neutral factions that share
+            a border. Works best with a relations addon, or lowered death_value in dynamic_faction_relations.ltx
+        </text>
+    </string>
+
+    <string id="ui_mm_alife_warfare_general_monster_rare_chance_south">
+        <text>Rare mutant % chance (Southern Zone)</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_monster_rare_chance_south_desc">
+        <text>The percent chance that a mutant spawn in military warehouses/dead city/truck cemetery and south will be a
+            rare mutant (controller, chimera, etc). Default: 3
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_monster_rare_chance_north">
+        <text>Rare mutant % chance (Northern Zone)</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_monster_rare_chance_north_desc">
+        <text>The percent chance that a mutant spawn in Limansk/red forest/radar and north will be a rare mutant
+            (controller, chimera, etc). Default: 10
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_monster_rare_chance_lab">
+        <text>Rare mutant % chance (Laboratories)</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_monster_rare_chance_lab_desc">
+        <text>The percent chance that a mutant spawn in a laboratory will be a rare mutant (controller, chimera, etc).
+            Default: 50
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_prevent_mainbase_attacks">
+        <text>Disincentivise Attacks on Main Bases</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_prevent_mainbase_attacks_desc">
+        <text>When this setting is enabled, all factions will no longer attack main bases of other factions unless they
+            have no other available target. For example, the Freedom Base will no longer send an attack to the Duty Base
+            at the Bar until no other capturable locations exist within linked-level distance (Army Warehouses, Dead
+            City, Red Forest, Truck Cemetery). Enable this setting if you want to ensure that unique NPCs don't die from
+            early invasions. DISABLE this setting when using randomized starting locations!
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_offline_combat_distance">
+        <text>Offline Combat Distance (Warfare ONLY)</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_offline_combat_distance_desc">
+        <text>Maximum distance, in meters, that offline squads will engage in offline combat when "Full" offline combat
+            is used. Default: 50
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_overflow_overrides_manual_control">
+        <text>Automate overflow squad handling during manual control</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_overflow_overrides_manual_control_desc">
+        <text>Typically, when manual faction control is disabled, overflow squads (i.e. squads surpassing the smart
+            terrain limit) are automatically re-assigned. When manual faction control is enabled, overflow squads are no
+            longer handled automatically. Toggling this setting on restores the automated handling of these squads while
+            preserving the rest of the manual faction control functionality.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_extra_loner_fog_of_war">
+        <text>Extra fog of war for loner players</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_extra_loner_fog_of_war_desc">
+        <text>When this setting is active, players playing as 'free stalkers' will not be able to see loner squads or
+            outposts outside of their fog of war distance unless they use PDA v2 or PDA v3. This is similar to
+            non-Warfare vision. If this setting is disabled, bases and squads of free stalkers will be visible even with
+            PDA v1. This setting is only functional when fog of war is enabled.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_faction_use_bases_not_resources">
+        <text>Squad quality depends on base count (instead of resources)</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_use_bases_not_resources_desc">
+        <text>Normally, a faction's squad quality is calculated based on the number of resources it holds. When this
+            option is selected, this faction's squad quality will be calculated based on number of held bases instead.
+            Primarily meant to be used for factions that don't care about resources (ex: army).
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_offline_power_multiplier_desc">
+        <text>Squad power in offline combat is multiplied by this amount. If this is set to 2, for instance, squads that
+            are a part of this faction will deal twice as much damage as typical squads in offline combat.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_expansion_aggression_desc">
+        <text>The overall aggression and offensive responsiveness of a faction. More aggressive factions will send
+            squads to capture empty targets sooner, add additional targets to each of their bases faster, and plan
+            invasions to those targets sooner. Higher aggression will also cause a faction to prioritize carrying out
+            invasion plans sooner by sending squads from nearby bases, whereas less aggressive factions will be more
+            content to keep their squads at their current locations.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_night_activity_chance_desc">
+        <text>The chance that a faction will send out invasion forces or send patrol squads anywhere during the night
+            time. Night time is considered as between the hours of 8:00pm and 6:00am, or 20:00 and 6:00. Whether a smart
+            terrain can be active during nighttime is decided once per night per smart terrain. For free stalker and
+            ecologist factions, this sets the likelihood for a squad to visit another resource point instead of going
+            back to base for the night.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_min_faction_respawn_desc">
+        <text>This is how many in-game minutes it takes for a faction to spawn a squad from a base point if they own
+            only one base. As your faction gains more bases, each individual base will have a slightly longer spawn time
+            approaching that of the maximum respawn time. The actual respawn time of a given base is linearly
+            interpolated based on the min/max respawn values and the percentage of bases in the Zone you control.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_faction_respawn_desc">
+        <text>This is how many in-game minutes it takes for a faction to spawn a squad from a base point if they own all
+            the bases in the Zone. As your faction gains more bases, each individual base will have a slightly longer
+            spawn time approaching that of the maximum respawn time. The actual respawn time of a given base is linearly
+            interpolated based on the min/max respawn values and the percentage of bases in the Zone you control. For
+            reference, there are roughly 80 base points in the Zone.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_min_invasion_size_desc">
+        <text>The minimum invasion size factor. A random number between the minimum and maximum invasion size factors is
+            multiplied by the calculated invasion size to give the number of squads that a base will invade with. The
+            size of the invasion force is calculated using the max capacity of the target location, reinforcement
+            potential of any enemy locations near the target, the relative difference in squad power between the
+            factions, and these min/max factors. The invasion size cannot be more than twice the maximum capacity of the
+            origin base (ex: if a base with max capacity of 2 plans to invade a target with max capacity of 5, the
+            invasion can be no larger than 4 squads). If this limitation prevents a small base from planning an adequate
+            invasion, that base will instead contribute squads to a larger nearby base's invasion force.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_invasion_size_desc">
+        <text>The maximum invasion size factor. A random number between the minimum and maximum invasion size factors is
+            multiplied by the calculated invasion size to give the number of squads that a base will invade with. The
+            size of the invasion force is calculated using the max capacity of the target location, reinforcement
+            potential of any enemy locations near the target, the relative difference in squad power between the
+            factions, and these min/max factors. The invasion size cannot be more than twice the maximum capacity of the
+            origin base (ex: if a base with max capacity of 2 plans to invade a target with max capacity of 5, the
+            invasion can be no larger than 4 squads). If this limitation prevents a small base from planning an adequate
+            invasion, that base will instead contribute squads to a larger nearby base's invasion force. This value is
+            also used for defense to determine the desired power factor versus incoming enemy forces: a value of 1.5
+            means that the defending base will try to call reinforcements to get a power advantage 1.5x that of the
+            enemy invasion.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_min_patrol_squads_desc">
+        <text>The minimum patrol squad population factor. When a faction owns no bases, each base would (theoretically
+            since they don't own any) have min_patrol_squads * max_population amount of patrol squads.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_patrol_squads_desc">
+        <text>The maximum patrol squad population factor. When a faction owns every base, each base will have
+            max_patrol_squads * max_population amount of patrol squads.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_min_patrol_time_desc">
+        <text>This is how many in-game minutes it takes for a faction to spawn a patrol squad from a base point if they
+            own only one base. As your faction gains more bases, each individual base will have a slightly longer patrol
+            spawn time approaching that of the maximum patrol respawn time. The actual patrol respawn time of a given
+            base is linearly interpolated based on the min/max patrol respawn values and the percentage of bases in the
+            Zone you control.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_patrol_time_desc">
+        <text>This is how many in-game minutes it takes for a faction to spawn a patrol squad from a base point if they
+            own every base in the Zone. As your faction gains more bases, each individual base will have a slightly
+            longer patrol spawn time approaching that of the maximum patrol respawn time. The actual patrol respawn time
+            of a given base is linearly interpolated based on the min/max patrol respawn values and the percentage of
+            bases in the Zone you control. For reference, there are roughly 80 bases in the Zone.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_patrol_hunt_chance_desc">
+        <text>When a base is looking for a new target for a patrol squad, and if there is an enemy patrol squad on the
+            current level or a linked level, this is the chance that the base will assign the enemy patrol squad as a
+            target; if the squad is not assigned an enemy patrol squad as a target then it will be assigned a
+            territory/lair point near the base to patrol as usual.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_min_patrol_rest_time_desc">
+        <text>The minimum amount of time a patrol squad will wait at a territory/lair point. Night activity chance will
+            also affect whether or not they are sent to a new point.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_patrol_rest_time_desc">
+        <text>The maximum amount of time a patrol squad will wait at a territory/lair point. Night activity chance will
+            also affect whether or not they are sent to a new point.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_faction_resurgence_chance">
+        <text>Resurgence Chance</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_resurgence_chance_desc">
+        <text>When a faction owns zero bases, they are considered 'defeated'. Once defeated, they have a chance for a
+            'resurgence', where a large attack force appears in an attempt to capture a random enemy base on the map.
+            The timer for this attack depends on the minimum and maximum resurgence times. Additionally, there is a
+            chance that the resurgence attempt will be skipped over: a resurgence chance of 50 will skip half of all
+            resurgence attempts, while a resurgence chance of 0 will always skip attempts (as if the faction is
+            permanently defeated).
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_random_squad_count_desc">
+        <text>When enabled, every squad for this faction will have a random number of NPCs between
+            min_random_squad_count and max_random_squad_count.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_min_random_squad_count_desc">
+        <text>When random_squad_count is enabled, this is the minimum number of NPCs a squad will have for this
+            faction.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_random_squad_count_desc">
+        <text>When random_squad_count is enabled, this is the maximum number of NPCs a squad will have for this
+            faction.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_random_patrols_desc">
+        <text>Random patrols are squads that periodically target locations all over. They spawn preferentially on a
+            faction's owned points, otherwise they can spawn anywhere in the Zone. Their targeting is influenced by your
+            faction's priorities for base/resource/territory/levels. They can be temporarily commanded by you to move to
+            certain points, but will eventually pick their own target after some amount of idle time.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_random_patrols_desc">
+        <text>This is the absolute maximum amount of random patrols a faction can have at once.</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_min_random_patrol_time_desc">
+        <text>The lowest possible time for a new random patrol of this faction to spawn. The actual spawn time is
+            randomly chosen between this number and the maximum random patrol time.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_random_patrol_time_desc">
+        <text>The highest possible time for a new random patrol of this faction to spawn. The actual spawn time is
+            randomly chosen between this number and the minimum random patrol time.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_invasion_departure_chance_desc">
+        <text>The chance that an invasion will depart during the current process_targets update. This is called every 1
+            to 5 in-game minutes.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_base_priority_desc">
+        <text>How much the faction prioritises bases.</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_resource_priority_desc">
+        <text>How much the faction prioritises resource points.</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_flag_priority_desc">
+        <text>How much a base prioritises points that are flagged for their owning faction in the
+            gamedata/configs/misc/simulation_objects_props.ltx file. For instance if Clear Sky is looking at a territory
+            point, it will increase the priority for a point by 2 if in that file the point has csky = 1 defined for it.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_is_being_targeted_priority_desc">
+        <text>If a base is being targeted by another base, it will add this much priority to it in order to attempt to
+            counter the invasion.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_target_weaker_priority_desc">
+        <text>How much a base prioritises points which have less powerful squads present.</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_target_stronger_priority_desc">
+        <text>How much a base prioritises points which have more powerful squads present.</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_target_on_same_level_priority_desc">
+        <text>How much a base prioritises points which are on the same level as itself.</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_max_smart_targets_per_base_desc">
+        <text>The maximum possible number of targets a base can have at once. Bases will add extra targets beyond their
+            minimum number of targets based on their faction aggression setting. Higher faction aggressions cause bases
+            to add targets faster. This setting should be kept at or above the minimum smart targets per base.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_faction_min_smart_targets_per_base">
+        <text>Minimum smart targets per base</text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_min_smart_targets_per_base_desc">
+        <text>A base will always target at least this many locations. The base will send squads to empty targets, or
+            invade hostile targets.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_resource_count_modifier_desc">
+        <text>How many resource points are added to a faction's resource count. This can be negative. Higher numbers
+            cause stronger squads to spawn.
+        </text>
+    </string>
+    <string id="ui_mm_alife_warfare_stalker_base_count_modifier_desc">
+        <text>How many bases are added to a faction's owned base count. This can be negative. Higher numbers cause
+            longer base respawn times, approaching the value set by maximum respawn time.
+        </text>
+    </string>
+</string_table>
