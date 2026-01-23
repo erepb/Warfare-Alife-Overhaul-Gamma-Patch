@@ -10,7 +10,6 @@
 	2021/03/02 - Vintar - removed black smoke poltergeist
 	2023/05/21 - Vintar - removed tushkano
 	2023/12/06 - Vintar - split mutant spawns by level closeness to center
-	2024/08/05 - Vintar - fix crash on nil resource count
 
 	This file provides the chance for advanced/veteran squads to spawn instead of novice
 	squads, or picks a normal/rare mutant spawn section.
@@ -197,6 +196,7 @@ local random_mutants_north = {
 local random_rare_north = {
     "simulation_gigant",
     "simulation_gigant",
+    "simulation_gigant",
     "simulation_controller",
     "simulation_controller",
     "simulation_controller",
@@ -301,46 +301,43 @@ function get_section(faction, advanced_chance, veteran_chance)
             return (name .. "_sim_squad_novice")
         end
     elseif faction == "monster" then
-
-        if not (IsSurvivalMode()) then
-            current_level = veteran_chance -- using `veteran_chance` to store level number for mutants
-            -- Pick correct section by level
-            if current_level < 7 then
-                -- south level
+        current_level = veteran_chance -- using `veteran_chance` to store level number for mutants
+        -- Pick correct section by level
+        if current_level < 7 then
+            -- south level
+            if (r <= advanced_chance) then
+                -- 'advanced_chance' is actually rare_chance
+                return random_rare_south[math.random(#random_rare_south)]
+            else
+                return random_mutants_south[math.random(#random_mutants_south)]
+            end
+        elseif (current_level > 12) and (current_level < 32) then
+            -- north or lab level
+            if ((current_level > 19) and (current_level < 27)) or (current_level == 29) or (current_level == 31) then
+                -- labs will spawn scary mutants
                 if (r <= advanced_chance) then
-                    -- 'advanced_chance' is actually rare_chance
-                    return random_rare_south[math.random(#random_rare_south)]
+                    return random_rare_labs[math.random(#random_rare_labs)]
                 else
-                    return random_mutants_south[math.random(#random_mutants_south)]
-                end
-            elseif (current_level > 12) and (current_level < 32) then
-                -- north or lab level
-                if ((current_level > 19) and (current_level < 27)) or (current_level == 29) or (current_level == 31) then
-                    -- labs will spawn scary mutants
-                    if (r <= advanced_chance) then
-                        return random_rare_labs[math.random(#random_rare_labs)]
-                    else
-                        return random_mutants_labs[math.random(#random_mutants_labs)]
-                    end
-                else
-                    -- north level
-                    if (r <= advanced_chance) then
-                        return random_rare_north[math.random(#random_rare_north)]
-                    else
-                        return random_mutants_north[math.random(#random_mutants_north)]
-                    end
+                    return random_mutants_labs[math.random(#random_mutants_labs)]
                 end
             else
-                -- mid level
+                -- north level
                 if (r <= advanced_chance) then
-                    return random_rare_mid[math.random(#random_rare_mid)]
+                    return random_rare_north[math.random(#random_rare_north)]
                 else
-                    return random_mutants_mid[math.random(#random_mutants_mid)]
+                    return random_mutants_north[math.random(#random_mutants_north)]
                 end
             end
         else
-            return random_zombies[math.random(#random_zombies)]
+            -- mid level
+            if (r <= advanced_chance) then
+                return random_rare_mid[math.random(#random_rare_mid)]
+            else
+                return random_mutants_mid[math.random(#random_mutants_mid)]
+            end
         end
+    else
+        return random_zombies[math.random(#random_zombies)]
     end
 
     return nil
