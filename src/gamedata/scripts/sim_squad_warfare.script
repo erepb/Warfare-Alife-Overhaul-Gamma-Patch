@@ -138,7 +138,7 @@ function squad_on_update(squad)
 
         -- See if the squad has an entry in the registered squads table.
         if (warfare.registered_squads[faction] and warfare.registered_squads[faction][squad.id]) then
-            --printf("--- registering " .. squad:section_name() .. " with warfare")
+            printf("--- registering " .. squad:section_name() .. " with warfare")
             squad.registered_with_warfare = true
         end
     end
@@ -547,7 +547,7 @@ end
 function get_squad_relation(squad_id)
     local squad = squad_id and alife_object(squad_id)
 
-    if not squad then
+    if not squad or not squad.squad_members then
         return str_wrfr[18]
     end
 
@@ -923,7 +923,7 @@ function set_target(squad, target)
 
     if squad.stay_time then
         -- check if the squad has stay_time initialized(used to check if the squad are targeted by a "capture territory" task, so that the squad won't move resulting in failing of the task)
-        --printf("squad %s is from capture territory task, ignore it's target", squad:name())
+        printf("squad %s is from capture territory task, ignore it's target", squad:name())
         return
     end
 

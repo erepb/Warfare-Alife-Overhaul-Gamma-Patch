@@ -243,7 +243,7 @@ end
 
 local old_UINewGame_OnCheckSetStory = ui_mm_faction_select.UINewGame.OnCheckSetStory
 function ui_mm_faction_select.UINewGame:OnCheckSetStory()
-    --printf("UINewGame:OnCheckSetStory overridden")
+    printf("UINewGame:OnCheckSetStory overridden")
     if (not self.access) then
         return
     end
@@ -298,7 +298,7 @@ function ui_mm_faction_select.on_game_load(binder)
 
     local helm_name = "good_psy_helmet"
     alife_create_item(helm_name, db.actor)
-    --printf("giving psy helmet to Monolith/Sin/Zombied actor")
+    printf("giving psy helmet to Monolith/Sin/Zombied actor")
 end
 
 local old_actor_on_first_update = ui_mm_faction_select.actor_on_first_update

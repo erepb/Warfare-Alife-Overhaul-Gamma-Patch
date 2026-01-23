@@ -270,27 +270,27 @@ end
 
 -- callback for when npcs are created for a squad, done in create_squad for sim_board.
 function squad_on_npc_creation(squad, se_obj, spawn_smart)
-    ------printf("--- squad_on_npc_creation ---")
+    --printf("--- squad_on_npc_creation ---")
 
     printd(0, squad:name())
 
     -- Ignore any squads in the ignore list.
     if not (ignore[squad:section_name()]) then
         if (not squad.registered_with_warfare) then
-            ------printf("!!! registering " .. squad:section_name() .. " with warfare")
+            --printf("!!! registering " .. squad:section_name() .. " with warfare")
 
             -- get the squads faction
             local faction = squad:get_squad_community()
 
             if (registered_squads[faction]) then
-                ------printf("--- registering squad " .. squad:section_name() .. " for " .. faction .. " with target: " .. spawn_smart:name() .. " ---")
+                --printf("--- registering squad " .. squad:section_name() .. " for " .. faction .. " with target: " .. spawn_smart:name() .. " ---")
                 registered_squads[faction][squad.id] = spawn_smart.id
                 squad.assigned_target_id = spawn_smart.id
                 squad.registered_with_warfare = true
                 spawn_smart:on_reach_target(squad)
             end
         else
-            ------printf("--- Already registered squad ---")
+            --printf("--- Already registered squad ---")
         end
     end
 
@@ -461,14 +461,14 @@ function actor_on_update()
 end
 
 function initialize()
-    ------printf("--- initializing warfare ---")
+    --printf("--- initializing warfare ---")
 
     -- At this point this just serves to pause everything to ensure squads reach their "waiting at target" state before resource counts etc are calculated.
     initialized = true
 
     --[[for lvl,tbl in pairs(warfare_levels.level_information) do
         for f,p in pairs(tbl["faction_priority"]) do
-            ------printf(game.translate_string(alife():level_name(lvl)) .. " priority for " .. game.translate_string(f) .. " = " .. p)
+            --printf(game.translate_string(alife():level_name(lvl)) .. " priority for " .. game.translate_string(f) .. " = " .. p)
         end
     end]]
 end
