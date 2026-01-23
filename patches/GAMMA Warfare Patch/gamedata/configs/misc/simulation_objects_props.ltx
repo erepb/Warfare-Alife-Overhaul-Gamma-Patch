@@ -57,17 +57,17 @@ all_monster				= 0
 
 [default_resource]:default
 resource 	            = 1
-;territory	            = 1
+territory	            = 1
 ecolog		            = 1
-stalker 	            = 1 
+stalker 	            = 1
 csky		            = 1
 
 [default_base]:default
 base 		            = 1
 
 [default_lair]:default
-lair					= 1 
-;territory				= 1
+lair					= 1
+territory				= 1
 zoo_monster				= 1
 monster					= 1
 monster_predatory_day 	= 1
@@ -78,8 +78,8 @@ monster_zombied_night	= 1
 monster_special			= 1
 
 [weak_lair]:default
-lair					= 1 
-;territory				= 1
+lair					= 1
+territory				= 1
 zoo_monster				= 1
 monster					= 1
 monster_predatory_day 	= 1
@@ -110,25 +110,23 @@ sim_avail 	            = true
 ecolog		            = 1
 stalker		            = 1
 surge 		            = 1
-resource		= 1
 csky 		            = 2
 
-[mar_smart_terrain_doc]:default_territory
+[mar_smart_terrain_doc]:default_base
 sim_avail 	            = false
 
-[mar_smart_terrain_doc_2]:default_territory
+[mar_smart_terrain_doc_2]:default_base
 sim_avail 	            = false
 
 ;---------	SIMULATION	--------
-;NW fishing village, renegades
+;NW fishing village, bandits
 [mar_smart_terrain_3_3]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource				= 1
 bandit 		            = 1
 renegade				= 1
 
-[mar_smart_terrain_3_7]:default_resource
+[mar_smart_terrain_3_7]:weak_lair
 sim_avail 	            = true
 stalker 		        = 1
 csky			        = 1
@@ -137,8 +135,8 @@ ecolog			        = 1
 [mar_smart_terrain_3_10]:weak_lair
 sim_avail 	            = true
 
-;NW ruined village, military
-[mar_smart_terrain_4_5]:default_territory
+;NW village, military
+[mar_smart_terrain_4_5]:weak_lair
 sim_avail 	            = true
 surge 		            = 1
 bandit 		            = 1
@@ -161,10 +159,9 @@ bandit		            = 1
 csky		            = 1
 killer		            = 1
 surge 		            = 1
-resource		= 1
 renegade				= 1
 
-;Southwest, fishing village
+;South, fishing village
 [mar_smart_terrain_5_12]:default_base
 sim_avail 	= {+faction_base_defense_active} false, true
 stalker	                = 1
@@ -172,7 +169,7 @@ bandit		            = 1
 renegade				= 1
 csky		            = 1
 surge 		            = 1
-lair 		            = 1 
+lair 		            = 1
 
 
 [mar_smart_terrain_6_4]:weak_lair
@@ -188,9 +185,9 @@ sim_avail 	            = true
 sim_avail 	            = true
 
 ;South watchtower
-[mar_smart_terrain_6_11]:default_territory
+[mar_smart_terrain_6_11]:default_base
 sim_avail 	            = true
-lair 		            = 1 
+lair 		            = 1
 csky		            = 1
 bandit 		            = 1
 renegade				= 1
@@ -199,7 +196,7 @@ monster_predatory_day 	= 1
 monster_predatory_night = 1
 monster_vegetarian		= 1
 
-[mar_smart_terrain_7_3]:default_resource
+[mar_smart_terrain_7_3]:weak_lair
 sim_avail 	            = true
 bandit 			        = 1
 renegade				= 1
@@ -213,7 +210,7 @@ sim_avail 	            = true
 
 [mar_smart_terrain_8_8]:default_resource
 sim_avail 	            = true
-lair 		            = 1 
+lair 		            = 1
 bandit 			        = 1
 renegade				= 1
 ecolog			        = 1
@@ -232,7 +229,6 @@ renegade				= 1
 [mar_smart_terrain_8_11]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource		= 1
 bandit 			        = 1
 renegade				= 1
 stalker 		        = 1
@@ -242,7 +238,6 @@ csky			        = 1
 [mar_smart_terrain_10_5]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource		= 1
 army		            = 1
 army_heli	            = 1
 
@@ -251,47 +246,48 @@ sim_avail 	            = true
 
 [mar_smart_terrain_10_10]:default_resource
 sim_avail 	            = true
-lair 		            = 1 
+lair 		            = 1
 ecolog			        = 1
 stalker 		        = 1
 csky			        = 1
 
-[mar_smart_terrain_11_3]:weak_lair
+[mar_smart_terrain_11_3]:default_resource
 sim_avail 	            = true
-lair 		            = 1 
+lair 		            = 1
 
-;SE village, exit1 to Escape
+;NE village, exit1 to Escape
 [mar_smart_terrain_11_11]:default_base
 sim_avail 	            = true
 surge 		            = 1
 stalker		            = 1
-bandit		            = 1 
+bandit		            = 1
 renegade				= 1
 csky 		            = 1
-ecolog		            = 1 
+ecolog		            = 1
 killer		            = 1
 freedom		            = 1
 dolg		            = 1
 
 ;NE village, exit2 to Escape
-[mar_smart_terrain_12_2]:default_base
+[mar_smart_terrain_12_2]:default_resource
 sim_avail 	            = true
-resource	       = 1
+lair			        = 1
+base                    = 1
 surge 		            = 1
 stalker 		        = 1
 bandit 			        = 1
 renegade				= 1
 csky 		            = 1
-ecolog		            = 1 
+ecolog		            = 1
 
 ;--------- <<  ESCAPE >> ----------------
 ;---------	SIMULATION	--------
 ;sim smarties
 ;novice camp
 [esc_smart_terrain_2_12]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge		            = 1
-stalker		            = 1 
+stalker		            = 1
 csky		            = 1
 ecolog		            = 1
 monolith				= 0
@@ -303,21 +299,19 @@ lair                    = 1
 [esc_smart_terrain_3_16]:default_base
 sim_avail 	            = true
 surge		            = 1
-resource		= 1
 army_heli	            = 1
 army 			        = 1
 
 ;car repair
 [esc_smart_terrain_7_11]:default_base
 sim_avail 	            = true
-surge		            = 1 
+surge		            = 1
 bandit 		            = 1
-stalker 		        = 1
 
-;туннель
+;пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 [esc_smart_terrain_4_9]:default_lair
 sim_avail 	            = true
-surge 		            = 1 
+surge 		            = 1
 bandit 			        = 1
 stalker 		        = 1
 
@@ -330,17 +324,15 @@ army 		            = 1
 stalker 		        = 1
 bandit 			        = 1
 
-;Stalker farmhouse
+;farmhouse
 [esc_smart_terrain_5_7]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource			= 1
 stalker 		        = 1
 csky			        = 1
-bandit		            = 1
 
 ;mill
-[esc_smart_terrain_5_9]:default_base
+[esc_smart_terrain_5_9]:weak_lair
 sim_avail 	            = true
 surge 		            = 1
 bandit 		            = 1
@@ -348,7 +340,7 @@ freedom		            = 1
 killer		            = 1
 
 ;fox house
-[esc_smart_terrain_6_6]:default_base
+[esc_smart_terrain_6_6]:default_lair
 sim_avail 	            = true
 surge 		            = 1
 bandit 			        = 1
@@ -367,8 +359,9 @@ sim_avail 	            = true
 sim_avail 	            = true
 csky			        = 1
 stalker 		        = 1
+bandit 			        = 1
 
-[esc_smart_terrain_4_11]:default_territory
+[esc_smart_terrain_4_11]:weak_lair
 sim_avail 	            = true
 stalker 		        = 1
 monster					= 1
@@ -382,14 +375,16 @@ sim_avail 	            = true
 stalker 		        = 1
 
 
-[esc_smart_terrain_5_4]:default_resource ; weak_lair
+[esc_smart_terrain_5_4]:weak_lair
 sim_avail 	            = true
+bandit		            = 1
 
 [esc_smart_terrain_5_6]:weak_lair
 sim_avail 	            = true
+bandit		            = 1
 
 ;ruined rail bridge
-[esc_smart_terrain_6_8]:default_territory
+[esc_smart_terrain_6_8]:default_base
 sim_avail 	            = true
 surge 		            = 1
 all 		            = 0
@@ -398,13 +393,15 @@ bandit		            = 1
 
 [esc_smart_terrain_8_10]:default_lair
 sim_avail 	            = true
+bandit		            = 1
 
-[esc_smart_terrain_8_9]:default_resource
+[esc_smart_terrain_8_9]:weak_lair
 sim_avail 	            = true
 stalker 		        = 1
 
 [esc_smart_terrain_9_7]:default_lair
 sim_avail 	            = true
+bandit		            = 1
 
 [esc_smart_terrain_9_10]:weak_lair
 sim_avail 	            = true
@@ -428,16 +425,15 @@ dolg			        = 1
 stalker 		        = 1
 
 ;camp near tunnel
-[gar_smart_terrain_2_4]:default_resource
+[gar_smart_terrain_2_4]:weak_lair
 sim_avail 	            = true
 surge 		            = 1
 bandit 	                = 1
 
 ;hangar
 [gar_smart_terrain_3_5]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge 		            = 1
-resource		= 1
 stalker		            = 1
 dolg      	            = 1
 csky                    = 1
@@ -474,8 +470,9 @@ sim_avail 	            = true
 sim_avail 	            = true
 stalker 		        = 1
 
-[gar_smart_terrain_5_6]:default_resource
+[gar_smart_terrain_5_6]:default_lair
 sim_avail 	            = true
+resource 		        = 1
 stalker 		        = 1
 bandit 			        = 1
 ecolog			        = 1
@@ -498,15 +495,16 @@ csky			        = 1
 [gar_smart_terrain_6_6]:default_lair
 sim_avail 	            = true
 
-[gar_smart_terrain_6_7]:default_resource
+[gar_smart_terrain_6_7]:default_lair
 sim_avail 	            = true
 stalker 		        = 1
+resource 		        = 1
 
 [gar_smart_terrain_7_4]:default_lair
 sim_avail 	            = true
 ;stalker 		        = 1
 
-[gar_smart_terrain_8_3]:default_resource		;created by tronex, test
+[gar_smart_terrain_8_3]:weak_lair		;created by tronex, test
 sim_avail 	            = true
 bandit 			        = 1
 dolg			        = 1
@@ -521,15 +519,15 @@ sim_avail 	            = true
 [ds2_domik_st]:default_base
 sim_avail 	            = {+lttz_hb_spawned_ds_isg_leader_squad -lttz_hb_removed_ds_isg_leader_squad} false, true
 surge		            = 1
-stalker 	            = 1 
-csky		            = 1 
+stalker 	            = 1
+csky		            = 1
 bandit 		            = 1
 renegade				= 1
-dolg 		            = 1 
+dolg 		            = 1
 killer 		            = 1
 
 ;camp under rocks
-[ds2_lager_st]:default_territory
+[ds2_lager_st]:default_base
 sim_avail 	            = true
 surge		            = 1
 bandit		            = 1
@@ -566,11 +564,10 @@ surge                   = 1
 [ds_kem2]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource		= 1
-;;army		            = 1 
+;;army		            = 1
 army_heli	            = 1
 
-[ds_kem3]:default_resource
+[ds_kem3]:default_lair
 sim_avail 	            = true
 surge                   = 1
 killer			        = 1
@@ -578,7 +575,7 @@ bandit 			        = 1
 renegade				= 1
 stalker 		        = 1
 
-[ds_ptr]:default_resource
+[ds_ptr]:weak_lair
 sim_avail 	            = true
 surge                   = 1
 bandit 			        = 1
@@ -594,7 +591,7 @@ surge                   = 1
 sim_avail 	            = true
 surge                   = 1
 
-[ds_ptr4]:default_resource
+[ds_ptr4]:weak_lair
 sim_avail 	            = true
 surge                   = 1
 
@@ -602,14 +599,15 @@ surge                   = 1
 ;---------	SIMULATION	--------
 ;sim smarties
 ;exit to Yantar
-[agr_smart_terrain_1_2]:default_resource
+[agr_smart_terrain_1_2]:default_lair
 sim_avail 	            = true
 ecolog			        = 1
 stalker 		        = 1
 csky			        = 1
 
-[agr_smart_terrain_1_3]:default_resource
+[agr_smart_terrain_1_3]:default_lair
 sim_avail 	            = true
+resource 		        = 1
 ecolog			        = 1
 stalker 		        = 1
 csky			        = 1
@@ -617,10 +615,10 @@ freedom			        = 1
 
 ;bigger base, courtyard
 [agr_smart_terrain_1_6]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge		            = 1
-army		            = 1 
-lair 		            = 1 
+army		            = 1
+lair 		            = 1
 
 ;bigger base, gate
 [agr_smart_terrain_1_6_near_1]:default_base
@@ -646,17 +644,16 @@ killer			        = 1
 [agr_smart_terrain_4_4]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource		= 1
-stalker		            = 2 
-csky		            = 1 
+stalker		            = 2
+csky		            = 1
 ecolog		            = 1
 
 ;smaller base, courtyard
 [agr_smart_terrain_4_4_near_1]:default_base
 sim_avail 	            = true
 surge		            = 1
-stalker		            = 1 
-csky		            = 1 
+stalker		            = 1
+csky		            = 1
 ecolog		            = 1
 bandit 		            = 1
 freedom		            = 1
@@ -665,16 +662,16 @@ freedom		            = 1
 [agr_smart_terrain_4_4_near_2]:default_base
 sim_avail 	            = true
 surge                   = 1
-stalker		            = 1 
-csky		            = 1 
+stalker		            = 1
+csky		            = 1
 ecolog		            = 1
 
 ;smaller base, gate
 [agr_smart_terrain_4_4_near_3]:default_base
 sim_avail 	            = true
 surge                   = 1
-stalker		            = 1 
-csky		            = 1 
+stalker		            = 1
+csky		            = 1
 ecolog		            = 1
 bandit		            = 1
 freedom		            = 1
@@ -683,47 +680,44 @@ freedom		            = 1
 sim_avail 	            = true
 army		            = 1
 
-;NE campsite by rocks
 [agr_smart_terrain_5_2]:default_lair
 sim_avail 	            = true
 dolg			        = 1
 stalker 		        = 1
 
-;railcar camp near tunnel
-[agr_smart_terrain_5_3]:default_resource
+;camp near tunnel
+[agr_smart_terrain_5_3]:default_lair
 sim_avail 	            = true
 
-[agr_smart_terrain_5_4]:default_territory		;Created by Tronex, test
+[agr_smart_terrain_5_4]:default_lair		;Created by Tronex, test
 sim_avail 	            = true
 
-[agr_smart_terrain_5_7]:default_resource
+[agr_smart_terrain_5_7]:default_lair
 sim_avail 	            = true
 csky			        = 1
 dolg			        = 1
 stalker 		        = 1
 
 ;tunnel
-[agr_smart_terrain_6_4]:default_territory
-sim_avail 	            = true 
+[agr_smart_terrain_6_4]:default_base
+sim_avail 	            = true
 surge		            = 1
-stalker		            = 1 
-ecolog		            = 1 
+stalker		            = 1
+ecolog		            = 1
 csky		            = 1
 zombied                 = 1
 
-;Makeshift camp, SE level changer
-[agr_smart_terrain_6_6]:default_resource		;Created by Tronex, test
+[agr_smart_terrain_6_6]:weak_lair		;Created by Tronex, test
 sim_avail 	            = true
 
 ; camp at level changer to garbage
 ; TODO disable/replace bugged jobs
 [agr_smart_terrain_7_4]:default_lair
 sim_avail 				= false
-stalker					= 1 
-army					= 1 
-bandit					= 1 
+stalker					= 1
+army					= 1
+bandit					= 1
 
-;dangerous camp on east hill
 [agr_smart_terrain_7_5]:default_lair
 sim_avail 	            = true
 army		            = 1
@@ -736,7 +730,7 @@ bandit 			        = 1
 ;---------	AGROPROM UNDERGROUND SMART TERRAINS	--------
 [agr_u_bandits]:default_territory
 sim_avail               = {+agr_u_bandits_dead} true, false
-lair 		            = 1 
+lair 		            = 1
 stalker		            = 1
 ;army		            = 1
 bandit		            = 1
@@ -764,7 +758,6 @@ sim_avail               = {+agr_u_soldiers_dead +agru_end_poltergeist_squad_dead
 [val_smart_terrain_1_2]:default_base
 sim_avail 	            = true
 surge		            = 1
-resource		= 1
 army		            = 1
 army_heli	            = 1
 
@@ -777,8 +770,8 @@ bandit					= 1
 [val_smart_terrain_4_0]:default_base
 sim_avail 	            = true
 surge		            = 1
-stalker 	            = 1 
-ecolog		            = 1 
+stalker 	            = 1
+ecolog		            = 1
 csky		            = 1
 dolg		            = 1
 killer			        = 1
@@ -786,12 +779,12 @@ freedom			        = 1
 bandit 			        = 1
 renegade				= 1
 
-;camp at northern level changer to to garbage 
+;camp at northern level changer to to garbage
 [val_smart_terrain_5_7]:default_lair
 sim_avail 	            = true
 bandit					= 1
 
-;camp at southern level changer to to garbage 
+;camp at southern level changer to to garbage
 [val_smart_terrain_5_8]:default_lair
 sim_avail 	            = true
 bandit					= 1
@@ -813,7 +806,6 @@ sim_avail 	            = true
 [val_smart_terrain_7_3]:default_base
 sim_avail 	            = true
 surge		            = 1
-resource		= 1
 bandit		            = 2
 
 ;bigger base, SOC bandits, CS freedom, inside central building
@@ -821,30 +813,29 @@ bandit		            = 2
 sim_avail 	            = true
 surge		            = 1
 bandit		            = 1
-lair                    = 1 
+lair                    = 1
 
 ;bigger base, SOC bandits, CS freedom, courtyard
 [val_smart_terrain_7_5]:default_base
 sim_avail 	            = true
 surge		            = 1
-resource		= 1
 bandit		            = 1
 
 ;north island in lake
-[val_smart_terrain_7_8]:default_lair
+[val_smart_terrain_7_8]:default_territory
 sim_avail 	            = true
 
 ;camp near level changer to darkscape
-[val_smart_terrain_7_11]:default_territory
+[val_smart_terrain_7_11]:weak_lair
 sim_avail 	            = true
 bandit					= 1
 
 [val_smart_terrain_8_6]:default_territory
 sim_avail 	            = true
 bandit		            = 1
-stalker 	            = 1 
-killer 		            = 1 
-dolg 		            = 1 
+stalker 	            = 1
+killer 		            = 1
+dolg 		            = 1
 freedom 	            = 1
 zoo_monster				= 0
 monster					= 0
@@ -862,22 +853,22 @@ sim_avail 	            = true
 [val_smart_terrain_8_9]:default_lair
 sim_avail 	            = true
 
-[val_smart_terrain_9_10]:default_resource
+[val_smart_terrain_9_10]:default_lair
 sim_avail 	            = true
+resource 		        = 1
 stalker 		        = 1
 csky			        = 1
 
 [val_smart_terrain_9_2]:default_lair
 sim_avail 	            = {+faction_base_defense_active} false, true
 
-[val_smart_terrain_9_4]:default_base
-sim_avail 	            = true 
+[val_smart_terrain_9_4]:default_territory
+sim_avail 	            = true
 surge		            = 1
-resource		= 1
 bandit		            = 1
-stalker 	            = 1 
-killer 		            = 1 
-dolg 		            = 1 
+stalker 	            = 1
+killer 		            = 1
+dolg 		            = 1
 freedom 	            = 1
 zoo_monster				= 0
 monster					= 0
@@ -889,13 +880,13 @@ monster_zombied_night	= 0
 monster_special			= 0
 
 ;camp near x-18 building
-[val_smart_terrain_9_6]:default_lair
+[val_smart_terrain_9_6]:default_territory
 sim_avail 	            = true
 surge		            = 1
 bandit		            = 1
-stalker 	            = 1 
-killer 		            = 1 
-dolg 		            = 1 
+stalker 	            = 1
+killer 		            = 1
+dolg 		            = 1
 freedom 	            = 1
 
 ;---------	LAB X-18 SMART TERRAINS	--------
@@ -903,7 +894,7 @@ freedom 	            = 1
 sim_avail               = {+dar_military_scout_squad_killed} true, false
 army		            = 1
 ecolog		            = 1
-stalker 	            = 1 
+stalker 	            = 1
 territory 	            = 1
 
 [dar_control_poltergeist]:default_lair
@@ -925,7 +916,7 @@ sim_avail               = false
 sim_avail               = {+dar_military_scout_squad_killed} true, false
 ;army		            = 1
 ecolog		            = 1
-stalker 	            = 1 
+stalker 	            = 1
 territory 	            = 1
 
 
@@ -957,10 +948,9 @@ dolg		            = 1
 [bar_visitors]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource		= 1
 stalker		            = 1
-csky		            = 1 
-ecolog		            = 1 
+csky		            = 1
+ecolog		            = 1
 dolg		            = 1
 
 ;unique smarties, sim after guards die
@@ -987,24 +977,25 @@ stalker 		        = 1
 bandit 			        = 1
 dolg			        = 2
 
-[ros_smart_monster4]:default_resource
+[ros_smart_monster4]:default_lair
 sim_avail 	            = true
 territory	            = 0
-lair			        = 1
+resource 		        = 1
 ecolog			        = 1
 stalker 		        = 1
 
-[ros_smart_monster5]:default_resource
+[ros_smart_monster5]:default_lair
 sim_avail 	            = true
 territory	            = 0
 stalker 		        = 1
 dolg			        = 1
-lair	 		        = 1
+resource 		        = 1
 ecolog			        = 1
 
-[ros_smart_monster7]:default_resource		;edited so rare monsters don't come here
+[ros_smart_monster7]:weak_lair		;edited so rare monsters don't come here
 sim_avail 	            = true
-territory	            = 1  
+territory	            = 1
+resource 		        = 1
 ecolog			        = 1
 stalker 		        = 1
 
@@ -1023,59 +1014,61 @@ sim_avail 	            = true
 surge 		            = 1
 killer		            = 1
 
-[ros_smart_stalker1]:weak_lair ; default_territory
+[ros_smart_stalker1]:default_base
 sim_avail 	            = true
-stalker		            = 1 
-ecolog		            = 1 
+stalker		            = 1
+ecolog		            = 1
 csky		            = 1
 dolg		            = 1
 
 ;----------- << YANTAR >> ------------
 ;---------	SIMULATION	--------
 ;sim smarties
-[yan_smart_terrain_1_6]:default_resource
+[yan_smart_terrain_1_6]:default_lair
 sim_avail 	            = true
-lair	 		        = 1
+resource 		        = 1
 ecolog			        = 1
 stalker 		        = 1
 freedom			        = 1
 zombied			        = 1
 
 ;x-16 entrance yard, building
-[yan_smart_terrain_2_4]:default_territory
+[yan_smart_terrain_2_4]:default_lair
 sim_avail 	            = true
-lair		            = 1  
+territory	            = 1
 surge		            = 1
 
 ;x-16 entrance yard, gate
-[yan_smart_terrain_2_5]:default_resource
+[yan_smart_terrain_2_5]:default_lair
 sim_avail 	            = true
+territory	            = 1
 surge		            = 1
+resource 		        = 1
 ecolog			        = 1
 stalker 		        = 1
 freedom			        = 1
 
 ;x-16 entrance yard
-[yan_smart_terrain_3_4]:default_resource
+[yan_smart_terrain_3_4]:default_lair
 sim_avail 	            = true
+territory	            = 1
 surge		            = 1
 
 ;camp 2 near small tunnel
-[yan_smart_terrain_3_6]:default_territory
+[yan_smart_terrain_3_6]:default_base
 sim_avail 	            = true
 surge 		            = 1
-lair					= 1
 stalker		            = 1
-ecolog		            = 1 
+ecolog		            = 1
 csky		            = 1
 
-[yan_smart_terrain_4_2]:default_resource
+[yan_smart_terrain_4_2]:default_lair
 sim_avail 	            = true
 ecolog			        = 1
 stalker 		        = 1
 csky			        = 1
 freedom			        = 1
-lair	 		        = 1
+resource 		        = 1
 
 [yan_smart_terrain_4_4]:default_lair
 sim_avail 	            = {+faction_base_defense_active} false, true
@@ -1085,18 +1078,20 @@ zombied                 = 1
 [yan_smart_terrain_4_5]:default_lair
 sim_avail 	            = true
 
-[yan_smart_terrain_5_3]:default_resource
+[yan_smart_terrain_5_3]:default_lair
 sim_avail 	            = true
+territory	            = 1
+resource 		        = 1
 ecolog			        = 1
 stalker 		        = 1
 csky			        = 1
 
 ;camp near small tunnel
-[yan_smart_terrain_5_5]:default_lair
+[yan_smart_terrain_5_5]:default_base
 sim_avail 	            = {+faction_base_defense_active} false, true
 surge		            = 1
-stalker		            = 1 
-ecolog		            = 1 
+stalker		            = 1
+ecolog		            = 1
 csky		            = 1
 zombied                 = 1
 
@@ -1108,17 +1103,16 @@ csky			        = 1
 
 ;scientist base
 [yan_smart_terrain_6_4]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge		            = 1
-resource		= 1
-stalker		            = 1 
-ecolog		            = 1 
+stalker		            = 1
+ecolog		            = 1
 csky		            = 1
 zombied                 = 1
 
-[yan_smart_terrain_zombi_spawn]:default_territory
+[yan_smart_terrain_zombi_spawn]:default_lair
 sim_avail 	            = true
-lair		            = 1  
+territory	            = 1
 zombied			        = 1
 
 [yan_smart_terrain_snork_u]:default_lair
@@ -1128,7 +1122,7 @@ sim_avail               = {+yantar_tunnel_finish} true, false
 ;----------- << LAB X-16 SMARTIES >> ------------
 [x162_st_burer]:default_lair
 sim_avail               = {+yan_kill_brain_done} true, false
-monolith 	            = 1 
+monolith 	            = 1
 ecolog 		            = 1
 stalker		            = 1
 army 		            = 1
@@ -1136,7 +1130,7 @@ territory 	            = 1
 
 [x162_st_gigant]:default_lair
 sim_avail               = {+yan_kill_brain_done} true, false
-monolith 	            = 1 
+monolith 	            = 1
 ecolog 		            = 1
 stalker		            = 1
 army 		            = 1
@@ -1158,34 +1152,32 @@ sim_avail 	            = true
 [mil_smart_terrain_2_10]:default_base
 sim_avail 	            = true
 surge		            = 1
-resource		= 1
 freedom		            = 5
 dolg		            = 5
-monolith 	            = 1 
+monolith 	            = 1
 bandit 		            = 1
 
 ;SOC merc outpost to Dead City
-[mil_smart_terrain_2_2]:default_territory
+[mil_smart_terrain_2_2]:default_base
 sim_avail 	            = true
 killer		            = 5
 stalker		            = 1
-bandit		            = 1 
+bandit		            = 1
 csky		            = 1
-freedom		            = 1 
-dolg		            = 1 
+freedom		            = 1
+dolg		            = 1
 monolith	            = 0
 
 ;SOC empty farmhouse north
 [mil_smart_terrain_2_4]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource				= 1
 stalker		            = 1
 ecolog		            = 1
 csky		            = 1
 freedom		            = 1
 dolg		            = 2
-killer 		            = 2 
+killer 		            = 2
 bandit		            = 1
 renegade				= 1
 
@@ -1196,7 +1188,6 @@ monolith	            = 1
 ;SOC Freedom outpost to Radar, barrier
 [mil_smart_terrain_3_8]:default_base
 sim_avail 	            = true
-resource		= 1
 freedom		            = 5
 dolg 		            = 1
 monolith	            = 2
@@ -1207,13 +1198,14 @@ sim_avail 	            = true
 surge		            = 1
 
 ;SOC bloodsuckers village, water tower
-[mil_smart_terrain_4_3]:default_lair ; default_territory
+[mil_smart_terrain_4_3]:default_lair
 sim_avail 	            = true
 surge		            = 1
 freedom			        = 2
 stalker 		        = 1
+resource 		        = 1
 
-[mil_smart_terrain_4_5]:default_lair
+[mil_smart_terrain_4_5]:default_base
 sim_avail 	            = true
 surge 		            = 1
 stalker		            = 1
@@ -1222,8 +1214,9 @@ dolg		            = 2
 bandit		            = 1
 monolith 	            = 1
 
-[mil_smart_terrain_4_7]:default_territory
+[mil_smart_terrain_4_7]:default_lair
 sim_avail 	            = {+faction_base_defense_active} false, true
+territory	            = 1
 
 ;SOC Freedom outpost to Radar, wagon
 [mil_smart_terrain_4_8]:default_base
@@ -1237,7 +1230,7 @@ monolith 	            = 1
 
 ;SOC Freedom base, near kitchen
 [mil_smart_terrain_7_10]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge 		            = 1
 ;stalker	            = 1
 freedom		            = 5
@@ -1259,7 +1252,6 @@ monolith	            = 0
 [mil_smart_terrain_7_4]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource		= 1
 stalker		            = 1
 freedom		            = 1
 dolg		            = 5
@@ -1268,9 +1260,8 @@ monolith 	            = 0
 
 ;SOC Freedom base, main
 [mil_smart_terrain_7_7]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge 		            = 1
-resource				= 1
 ;stalker	            = 1
 ;csky		            = 1
 freedom		            = 5
@@ -1291,7 +1282,7 @@ dolg		            = 0
 ;bandit		            = 1
 monolith	            = 0
 
-[mil_smart_terrain_8_3]:default_resource ; weak_lair
+[mil_smart_terrain_8_3]:weak_lair
 sim_avail 	            = true
 freedom		            = 1
 monolith	            = 0
@@ -1299,20 +1290,19 @@ monolith	            = 0
 ;----------- << RED FOREST >> ------------
 ;---------	SIMULATION	--------
 ;Limansk enterance
-[red_bridge_bandit_smart_skirmish]:default_territory ;mlr
+[red_bridge_bandit_smart_skirmish]:default_base ;mlr
 sim_avail 	            = true
 ;all			        = 1
 
 ;Stancia1 exit camp
-[red_smart_terrain_3_1]:default_territory
+[red_smart_terrain_3_1]:default_base
 sim_avail 	            = true
 
-;underground mine шахта
-[red_smart_terrain_3_2]:default_base
+;underground mine пїЅпїЅпїЅпїЅпїЅ
+[red_smart_terrain_3_2]:default_resource
 sim_avail 	            = true
-;lair                    = 1 
+;lair                    = 1
 surge 		            = 1
-resource		= 1
 greh                    = 1
 
 
@@ -1323,8 +1313,7 @@ sim_avail 	            = true
 [red_smart_terrain_4_2]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource		= 1
-all			            = 1 
+all			            = 1
 army_heli	            = 1
 
 [red_smart_terrain_4_3]:default_lair
@@ -1332,7 +1321,7 @@ sim_avail 	            = true
 
 [red_smart_terrain_4_5]:default_lair
 sim_avail 	            = true
-;resource 		        = 2
+resource 		        = 2
 
 [red_smart_terrain_5_5]:default_lair
 sim_avail 	            = true
@@ -1341,9 +1330,9 @@ sim_avail 	            = true
 sim_avail 	            = true
 
 ;deeper forest - anomaly field with weird rocks
-[red_smart_terrain_6_3]:default_resource
+[red_smart_terrain_6_3]:default_lair
 sim_avail 	            = true
-lair	 		        = 1
+resource 		        = 2
 stalker 		        = 1
 ecolog			        = 2
 
@@ -1354,18 +1343,16 @@ sim_avail 	            = true
 [red_smart_terrain_bridge]:default_base
 sim_avail 	            = true
 surge 		            = 1
-resource		= 1
 all			            = 1
 
 ;deeper forest - near T72 tank
-[red_smart_terrain_monsters]:default_resource
+[red_smart_terrain_monsters]:default_lair
 sim_avail 	            = true
-lair	 		        = 1
+resource 		        = 2
 
 ;tunnel to deeper forest - little mine
-[red_smart_terrain_monsters_2]:default_resource ; default_lair
+[red_smart_terrain_monsters_2]:default_lair
 sim_avail 	            = true
-surge					= 1
 
 [red_smart_terrain_monsters_3]:default_lair
 sim_avail 	            = true
@@ -1376,18 +1363,17 @@ sim_avail 	            = true
 [lim_smart_terrain_1]:weak_lair		;trx edited
 sim_avail 	            = true
 surge		            = 1
-stalker 	            = 1 
-csky		            = 1  
+stalker 	            = 1
+csky		            = 1
 killer			        = 1
 bandit 			        = 1
 
 [lim_smart_terrain_10]:default_base
 sim_avail 	            = true
 surge 			        = 1
-resource				= 1
-stalker 		        = 1 
-csky			        = 1 
-ecolog			        = 1 
+stalker 		        = 1
+csky			        = 1
+ecolog			        = 1
 monolith		        = 1
 killer			        = 1
 monolith_heli	        = 1
@@ -1395,18 +1381,18 @@ monolith_heli	        = 1
 [lim_smart_terrain_3]:default_base
 sim_avail 	            = true
 surge 		            = 1
-stalker 	            = 1 
-csky		            = 1 
-ecolog		            = 1 
+stalker 	            = 1
+csky		            = 1
+ecolog		            = 1
 killer		            = 1
 
 [lim_smart_terrain_4]:default_base
 sim_avail 	            = true
 resource 	            = 1
 surge 		            = 1
-stalker 	            = 1 
-csky		            = 1 
-ecolog		            = 1 
+stalker 	            = 1
+csky		            = 1
+ecolog		            = 1
 monolith	            = 1
 killer		            = 1
 bandit 		            = 1
@@ -1414,9 +1400,9 @@ bandit 		            = 1
 [lim_smart_terrain_5]:default_base
 sim_avail 	            = true
 surge 		            = 1
-stalker 	            = 1 
-csky		            = 1 
-ecolog		            = 1 
+stalker 	            = 1
+csky		            = 1
+ecolog		            = 1
 monolith	            = 1
 killer		            = 1
 
@@ -1424,8 +1410,8 @@ killer		            = 1
 [lim_smart_terrain_6]:default_base
 sim_avail 	            = true
 surge 			        = 1
-stalker 		        = 1 
-csky			        = 1  
+stalker 		        = 1
+csky			        = 1
 monolith		        = 1
 monolith_heli	        = 1
 
@@ -1436,11 +1422,11 @@ sim_avail 	            = true
 sim_avail 	            = true
 
 ;construction site
-[lim_smart_terrain_9]:default_territory ; default_base
+[lim_smart_terrain_9]:default_base
 sim_avail 	            = true
 surge 			        = 1
-stalker 		        = 1 
-csky			        = 1  
+stalker 		        = 1
+csky			        = 1
 monolith		        = 1
 killer			        = 0
 monolith_heli	        = 1
@@ -1460,8 +1446,8 @@ monolith_heli	        = 1
 sim_avail 	            = true
 surge 		            = 1
 ;bandit		            = 1
-;army 		            = 1 
-;killer 		        = 1 
+;army 		            = 1
+;killer 		        = 1
 ;monolith 	            = 1
 
 [cit_bandits_2]:default_lair
@@ -1474,12 +1460,11 @@ sim_avail 	            = true
 sim_avail 	            = true
 
 [cit_killers]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge 		            = 1
-resource		= 1
 killer		            = 5
 
-[cit_killers_2]:default_resource
+[cit_killers_2]:default_lair
 sim_avail 	            = true
 killer			        = 1
 
@@ -1489,8 +1474,8 @@ sim_avail 	            = true
 lair			        = 1
 surge 		            = 1
 bandit		            = 1
-army 		            = 1 
-killer 		            = 2 
+army 		            = 1
+killer 		            = 2
 ;monolith 	            = 1
 zombied		            = 1
 
@@ -1504,27 +1489,25 @@ sim_avail				= true
 
 ;----------- << RADAR >> ------------
 ;---------	SIMULATION	--------
-[rad2_loner_0000]:default_lair
+[rad2_loner_0000]:default_base
 sim_avail 	            = true
 monolith	            = 1
 
--- monolith roadblock
-[rad2_loner_0001]:default_territory
+[rad2_loner_0001]:default_base
 sim_avail 	            = true
 surge                   = 1
-lair					= 1
 monolith	            = 1
 
-[rad2_loner_0002]:default_lair
+[rad2_loner_0002]:default_base
 sim_avail 	            = true
 monolith	            = 1
 
 [rad2_prip_teleport]:default_base
 sim_avail 	            = true
 surge 		            = 1
-stalker 	            = 1 
-csky		            = 0 
-ecolog		            = 0 
+stalker 	            = 1
+csky		            = 0
+ecolog		            = 0
 monolith	            = 1
 killer		            = 0
 
@@ -1534,9 +1517,9 @@ sim_avail				= false
 
 [rad_after_valley]:default_lair
 sim_avail 	            = true
+territory	            = 1
 zombied			        = 1
-
-[rad_antenna_camper]:default_territory
+[rad_antenna_camper]:default_base
 sim_avail 	            = true
 surge                   = 1
 
@@ -1556,14 +1539,14 @@ sim_avail 	            = true
 monolith	            = 0
 zombied			        = 1
 
-[rad_entrance]:default_territory	;trx edited
+[rad_entrance]:weak_lair	;trx edited
 sim_avail 	            = true
 surge 		            = 1
 zombied			        = 1
 
 [rad_pseudodogs]:default_lair
-sim_avail 	            = true 
-lair					= 1 
+sim_avail 	            = true
+lair					= 1
 zoo_monster				= 1
 monster					= 1
 monster_predatory_day 	= 1
@@ -1589,7 +1572,7 @@ surge 		            = 1
 monolith	            = 0
 zombied			        = 1
 
-[rad_valley_dogs]:default_lair
+[rad_valley_dogs]:default_base
 sim_avail 	            = true
 zombied			        = 1
 monolith	            = 1
@@ -1616,11 +1599,11 @@ sim_avail				= false
 ;----------- << BUNKER-LAB X-19 SMARTIES >> ------------
 [bun_krovosos_nest]:default_lair
 sim_avail 	            = true
-territory	            = 1 
+territory	            = 1
 
 [bun2_st_bloodsucker]:default_lair
 sim_avail 	            = {+bar_deactivate_radar_done} true, false
-monolith 	            = 1 
+monolith 	            = 1
 ecolog 		            = 1
 stalker		            = 1
 ;army		            = 1
@@ -1628,7 +1611,7 @@ territory 	            = 1
 
 [bun2_tushkano_lair]:default_lair
 sim_avail 	            = {+bar_deactivate_radar_done} true, false
-monolith 	            = 1 
+monolith 	            = 1
 ecolog 		            = 1
 stalker		            = 1
 ;army		            = 1
@@ -1655,10 +1638,10 @@ surge                   = 1
 
 [pri_smart_bloodsucker_lair1]:default_lair
 sim_avail 	            = true
-territory	            = 1 
+territory	            = 1
 surge                   = 1
 
-[pri_smart_controler_lair1]:default_base ; default_territory
+[pri_smart_controler_lair1]:default_lair
 sim_avail 	            = true
 surge 		            = 1
 
@@ -1666,7 +1649,7 @@ surge 		            = 1
 sim_avail 	            = true
 territory	            = 0
 
-[pri_smart_giant_lair1]:default_resource
+[pri_smart_giant_lair1]:default_lair
 sim_avail 	            = true
 surge 		            = 1
 
@@ -1679,7 +1662,7 @@ sim_avail 	            = true
 [pri_smart_monolith_stalker4]:default_lair
 sim_avail 	            = true
 
-[pri_smart_monolith_stalker6]:default_territory
+[pri_smart_monolith_stalker6]:default_base
 sim_avail 	            = true
 monolith		        = 1
 monolith_heli 	        = 1
@@ -1688,12 +1671,12 @@ monolith_heli 	        = 1
 sim_avail 	            = true
 territory	            = 0
 
-[pri_smart_neutral_stalker1]:default_lair ; default_territory
+[pri_smart_neutral_stalker1]:default_base
 sim_avail 	            = true
 stalker		            = 1
-dolg		            = 1 
-freedom		            = 1 
-ecolog		            = 1 
+dolg		            = 1
+freedom		            = 1
+ecolog		            = 1
 csky		            = 1
 
 [pri_smart_pseudodog_lair1]:default_lair
@@ -1708,25 +1691,24 @@ surge 		            = 1
 sim_avail 	            = true
 territory	            = 0
 
-; hotel polyssa
-[pri_smart_tushkano_lair1]:default_territory ; default_lair
+[pri_smart_tushkano_lair1]:default_lair
 sim_avail 	            = true
 surge                   = 1
 
 ; do not use, TODO some jobs to fix
-[hotel_poless_smart_alife]:default
+[hotel_poless_smart_alife]:default_lair
 sim_avail 	            = false
 
 ; do not use, snipers in inacessible buldings/roofs
 ; maybe useful for tasks or static squad but not for general use
 ; TODO also a couple of jobs to disable just in case (sitting on ground)
-[monolith_snipers_smart_1_mlr]:default_territory
+[monolith_snipers_smart_1_mlr]:default_lair
 sim_avail 	            = false
 
 
 ;----------- << STANCIA_1 >> ------------
 ;---------	SIMULATION	--------
-[aes_smart_terrain_monolit_blockpost]:default_territory
+[aes_smart_terrain_monolit_blockpost]:default_base
 sim_avail 	            = true
 monolith		        = 1
 monolith_heli	        = 1
@@ -1737,7 +1719,6 @@ sim_avail 	            = true
 [aes_smart_terrain_monolit_blockpost4]:default_base
 sim_avail 	            = true
 surge 			        = 1
-resource				= 1
 monolith		        = 1
 monolith_heli	        = 1
 
@@ -1755,7 +1736,7 @@ sim_avail 	            = true
 [aes_smart_terrain_monsters4]:default_lair
 sim_avail 	            = true
 
-[aes_smart_terran_soldier]:default_territory
+[aes_smart_terran_soldier]:default_base
 sim_avail 	            = true
 army 		            = 1
 army_heli	            = 1
@@ -1770,22 +1751,22 @@ army 		            = 1
 
 [sar_monolith_general]:default_territory
 sim_avail               = {+sar_secret_door_find} true, false
-monolith 	            = 1 
+monolith 	            = 1
 stalker		            = 1
 ;army		            = 1
 ecolog		            = 1
-lair 		            = 1 
+lair 		            = 1
 
 [sar_monolith_sklad]:default_territory
 sim_avail               = {+sar_secret_door_find} true, false
-lair                    = 1 
+lair                    = 1
 
 [sar_monolith_poltergeists]:default_lair
 sim_avail               = {+sar_secret_door_find} true, false
 
 [sar_monolith_bloodsuckers]:default_lair
 sim_avail               = {+sar_secret_door_find} true, false
-monolith 	            = 1 
+monolith 	            = 1
 stalker		            = 1
 ;army		            = 1
 ecolog		            = 1
@@ -1794,15 +1775,15 @@ territory	            = 1
 ;----------- << MONOLITH CONTROL >> ------------
 [sar_monolith_guard]:default_territory
 sim_avail               = {+sar_monolith_generator_find} true, false
-monolith 	            = 1 
+monolith 	            = 1
 stalker		            = 1
 ;army		            = 1
 ecolog		            = 1
-lair 		            = 1 
+lair 		            = 1
 
 [sar_monolith_zombies]:default_lair
 sim_avail               = {+sar_monolith_generator_find} true, false
-monolith 	            = 1 
+monolith 	            = 1
 stalker		            = 1
 ;army		            = 1
 ecolog		            = 1
@@ -1815,28 +1796,28 @@ sim_avail 	            = true
 monolith		        = 1
 monolith_heli	        = 1
 
-[aes2_monolith_camp2]:default_territory
+[aes2_monolith_camp2]:default_base
 sim_avail 	            = true
 monolith		        = 1
 monolith_heli	        = 1
 
-[aes2_monolith_camp3]:default_resource
+[aes2_monolith_camp3]:default_base
 sim_avail 	            = true
 monolith		        = 1
 monolith_heli	        = 1
 
-[aes2_monolith_camp4]:default_resource
+[aes2_monolith_camp4]:default_base
 sim_avail 	            = true
 monolith		        = 1
 monolith_heli	        = 1
 
-[aes2_monolith_snipers_1]:default_territory
+[aes2_monolith_snipers_1]:default_lair
 sim_avail 	            = true
 
 [aes2_monolith_snipers_2]:default_lair
 sim_avail 	            = true
 
-[aes2_monolith_snipers_3]:default_resource
+[aes2_monolith_snipers_3]:default_lair
 sim_avail 	            = true
 
 [aes2_monsters1]:default_lair
@@ -1851,13 +1832,11 @@ sim_avail 	            = true
 [gen_smart_terrain_lab_entrance]:default_base
 sim_avail 	            = true
 surge 			        = 1
-resource		= 1
 monolith		        = 1
 monolith_heli	        = 1
 
-[gen_smart_terrain_cemetery]:default_resource ; default_lair
+[gen_smart_terrain_cemetery]:default_lair
 sim_avail 	            = true
-lair 					= 1
 
 [gen_smart_terrain_forest]:default_lair
 sim_avail 	            = true
@@ -1868,14 +1847,14 @@ sim_avail 	            = true
 [gen_smart_terrain_lab_entrance_2]:default_lair
 sim_avail 	            = true
 
-[gen_smart_terrain_military]:default_resource
+[gen_smart_terrain_military]:default_lair
 sim_avail 	            = true
 
 [gen_smart_terrain_urod]:default_lair
 sim_avail 	            = true
 
 ;----------- << WARLAB >> ------------
-[warlab_common_consciousness_smart_terrain]:default_territory ; default_base
+[warlab_common_consciousness_smart_terrain]:default_base
 sim_avail               = false
 
 
@@ -1884,11 +1863,11 @@ sim_avail               = false
 
 ;base
 [zat_stalker_base_smart]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge 		            = 1
-stalker		            = 1 
-csky		            = 1 
-dolg 		            = 1 
+stalker		            = 1
+csky		            = 1
+dolg 		            = 1
 monolith	            = 0
 bandit		            = 0
 renegade		        = 0
@@ -1904,11 +1883,11 @@ sim_avail               = false
 [zat_b33]:default_lair
 sim_avail               =  false
 
-[zat_a23_smart_terrain]:default_lair ; default_territory
+[zat_a23_smart_terrain]:default_territory
 sim_avail               = false
 
-;Stalker Barge SW of Skadovsk
-[zat_b7]:default_base
+;surge
+[zat_b7]:default_territory
 sim_avail 	            = true
 surge                   = 1
 
@@ -1917,28 +1896,26 @@ sim_avail 	            = true
 surge                   = 1
 killer					= 1
 
-; secret cave
 [zat_b28]:default_lair
 sim_avail 	            = false
 surge                   = 1
 
 ;!!!
-[zat_b42_smart_terrain]:default_lair ; default_territory
+[zat_b42_smart_terrain]:default_territory
 sim_avail 	            = true
 surge                   = 1
 territory 	            = 1
 
-;Noahs barge
-[zat_b18]:default_base
+[zat_b18]:default
 sim_avail 	            = false
 surge                   = 1
 
 [zat_b101]:default_resource
 sim_avail 	            = true
 surge                   = 1
-territory	            = 1 
+territory	            = 1
 
-[zat_b38u]:default_lair ; default_territory
+[zat_b38u]:default_territory
 sim_avail               = false
 
 [zat_b38]:default_territory
@@ -1946,37 +1923,34 @@ sim_avail 	            = true
 surge                   = 1
 
 ;regular smarts
-[zat_b5_smart_terrain]:default_base ; default_territory
+[zat_b5_smart_terrain]:default_territory
 sim_avail 	            = true
 surge                   = 1
 
-[zat_b106_smart_terrain]:default_territory
+[zat_b106_smart_terrain]:default_lair
 sim_avail 	            = true
-lair					= 1
 
 [zat_b52]:default_territory
 sim_avail 	            = true
-territory	            = 1 
+territory	            = 1
 
-;Mercenary Substation Workshop
-[zat_b103_merc_smart]:default_base
+[zat_b103_merc_smart]:default_territory
 sim_avail 	            = true
 surge		            = 1
 
-[zat_b104_zombied]:default_territory
+[zat_b104_zombied]:default_lair
 sim_avail 	            = true
-lair					= 1
 
 [zat_b14_smart_terrain]:default_resource
 sim_avail 	            = true
 
 [zat_b20_smart_terrain]:default_resource
 sim_avail 	            = true
-territory	            = 1 
+territory	            = 1
 
 [zat_b53]:default_resource
 sim_avail 	            = true
-territory 	            = 1 
+territory 	            = 1
 
 [zat_b12]:default_lair
 sim_avail 	            = true
@@ -1996,106 +1970,133 @@ surge		            = 1
 [zat_b39]:default_resource
 sim_avail 	            = true
 territory 	            = 1
-lair		            = 1 
+lair		            = 1
 
 
 [zat_b56]:default_resource
 sim_avail 	            = true
 
-[zat_a1]:default_lair ; default_territory
+[zat_a1]:default_territory
 sim_avail 	            = true
+territory 	            = 1
 
 ;---------	SIMULATION	--------
 
 [zat_sim_1]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
-[zat_sim_2]:default_lair
+[zat_sim_2]:default_territory
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_3]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_4]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_5]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
-[zat_sim_6]:default_lair
+[zat_sim_6]:default_territory
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_7]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_8]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_9]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_10]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
-[zat_sim_11]:default_lair
+[zat_sim_11]:default_territory
 sim_avail 	            = true
+territory 	            = 1
 
-[zat_sim_12]:default_lair
+[zat_sim_12]:default_territory
 sim_avail 	            = true
+territory 	            = 1
 
-[zat_sim_13]:default_lair
+[zat_sim_13]:default_territory
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_14]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_15]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_16]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_17]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_18]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
-[zat_sim_19]:default_lair
+[zat_sim_19]:default_territory
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_20]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_21]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_22]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_23]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
 [zat_sim_24]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
-[zat_sim_25]:default_territory
+[zat_sim_25]:default_lair
 sim_avail 	            = true
-lair 	    	        = 1
+territory 	            = 1
 
 [zat_sim_26]:default_lair
 sim_avail 	            = true
+territory 	            = 1
 
-[zat_sim_27]:default_lair
+[zat_sim_27]:default_territory
+sim_avail 	            = true
+territory 	            = 1
+
+[zat_sim_28]:default_territory
 sim_avail 	            = true
 
-[zat_sim_28]:default_lair
+[zat_sim_29]:default_territory
 sim_avail 	            = true
 
-[zat_sim_29]:default_lair
-sim_avail 	            = true
-
-[zat_sim_30]:default_lair
+[zat_sim_30]:default_territory
 sim_avail 	            = true
 
 ;--------------------------------------------------------------------------------
@@ -2104,25 +2105,24 @@ sim_avail 	            = true
 [jup_a10_smart_terrain]:default_base
 sim_avail 	            = true
 surge		            = 1
-stalker		            = 1 
-bandit		            = 1 
-csky		            = 1 
-dolg 		            = 1 
+stalker		            = 1
+bandit		            = 1
+csky		            = 1
+dolg 		            = 1
 freedom 	            = 1
 renegade				= 1
 
-;Bandit Outpost
-[jup_a12]:default_base
+[jup_a12]:default_territory
 sim_avail 	            = true
 surge		            = 1
 bandit		            = 2
 renegade		        = 1
 
 [jup_a6]:default_base
-sim_avail 	            = true 
+sim_avail 	            = true
 surge 		            = 1
-stalker		            = 1 
-csky		            = 0 
+stalker		            = 1
+csky		            = 0
 ecolog		            = 1
 freedom 	            = 1
 monolith	            = 0
@@ -2132,20 +2132,19 @@ dolg		            = 0
 [jup_b1]:default_territory
 sim_avail	            = true
 surge		            = 1
-lair 					= 1
 
-[jup_b19]:default_territory
+[jup_b19]:default_base
 sim_avail 	            = true
 zombied 	            = 1
 
-[jup_b200]:default_territory
+[jup_b200]:default_base
 sim_avail	            = true
 surge		            = 1
 territory 	            = 1
-stalker		            = 1 
-bandit		            = 1 
-csky		            = 1 
-dolg 		            = 1 
+stalker		            = 1
+bandit		            = 1
+csky		            = 1
+dolg 		            = 1
 freedom 	            = 1
 
 [jup_b202]:default_territory
@@ -2158,7 +2157,7 @@ surge		            = 1
 [jup_b204]:default_territory
 sim_avail 	            = true
 
-[jup_b205_smart_terrain]:default_territory ; default_lair
+[jup_b205_smart_terrain]:default_lair
 sim_avail 	            = true
 surge		            = 1
 
@@ -2172,10 +2171,9 @@ sim_avail 	            = true
 [depo_terrain]:default
 sim_avail = false
 
-[jup_b208]:default_base
+[jup_b208]:default_territory
 sim_avail 	            = {+lttz_hb_isg_leader_in_jup -lttz_hb_leaving_jup_done} false, true
 surge		            = 1
-lair					= 1
 
 [jup_b209]:default_resource
 sim_avail 	            = true
@@ -2185,7 +2183,6 @@ sim_avail 	            = true
 
 [jup_b212]:default_territory
 sim_avail 	            = true
-lair					= 1
 
 [jup_b25]:default_resource
 sim_avail 	            = true
@@ -2193,16 +2190,16 @@ sim_avail 	            = true
 [jup_b32]:default_resource
 sim_avail 	            = true
 
-[jup_b4]:default_lair ; default_territory
+[jup_b4]:default_territory
 sim_avail 	            = true
 
 [jup_b41]:default_base
 sim_avail 	            = true
 surge		            = 1
-stalker		            = 1 
-bandit		            = 0 
-csky		            = 1 
-dolg 		            = 0 
+stalker		            = 1
+bandit		            = 0
+csky		            = 1
+dolg 		            = 0
 freedom 	            = 0
 killer 		            = 1
 ecolog		            = 1
@@ -2211,9 +2208,8 @@ monolith	            = 0
 [jup_b46]:default_territory
 sim_avail 	            = true
 
-[jup_b47]:default_lair ; default_territory
+[jup_b47]:default_territory
 sim_avail 	            = true
-lair					= 1
 
 [jup_b6_anom_2]:default_resource
 sim_avail 	            = true
@@ -2223,33 +2219,30 @@ sim_avail 	            = true
 [jup_b200_tushkan_smart_terrain]:default_lair
 sim_avail 	            = true
 
-[jup_b207_depot_attack]:default_lair ; default_territory
+[jup_b207_depot_attack]:default_territory
 sim_avail               = false
 
 [jup_b219]:default_territory
 sim_avail               = false
-lair					= 1
 
 [jup_b8_smart_terrain]:default_territory
 sim_avail               = false
-lair					= 1
 
-[jup_b205_smart_terrain_tushkano]:default_lair ; default_territory
+[jup_b205_smart_terrain_tushkano]:default_territory
 sim_avail               = false
 
-[jup_a12_merc]:default_lair ; default_territory
+[jup_a12_merc]:default_territory
 sim_avail               = false
 
-[jup_a9]:default_territory ; default_lair
+[jup_a9]:default_lair
 sim_avail               =  false
-lair				= 1
 
 ;---------	SIMULATION	--------
 
 [jup_sim_1]:weak_lair
 sim_avail 	            = true
 
-[jup_sim_2]:default_lair		;edited	
+[jup_sim_2]:default_lair		;edited
 sim_avail 	            = true
 
 [jup_sim_3]:default_lair
@@ -2261,7 +2254,7 @@ sim_avail 	            = true
 [jup_sim_5]:weak_lair
 sim_avail 	            = true
 
-[jup_sim_6]:default_lair ; default_territory
+[jup_sim_6]:default_territory
 sim_avail 	            = true
 
 [jup_sim_7]:weak_lair
@@ -2294,11 +2287,11 @@ sim_avail 	            = true
 [jup_sim_16]:weak_lair
 sim_avail 	            = true
 
-[jup_sim_17]:default_resource
+[jup_sim_17]:weak_lair
 sim_avail 	            = true
-lair	 	            = 1
+resource 	            = 2
 
-[jup_sim_18]:default_resource ; default_lair
+[jup_sim_18]:default_lair
 sim_avail 	            = true
 
 [jup_sim_19]:weak_lair
@@ -2318,10 +2311,10 @@ sim_avail 	            = true
 
 [pri_a16]:default_base
 sim_avail 	            = true
-stalker		            = 1 
-bandit		            = 1 
-csky		            = 1 
-dolg 		            = 1 
+stalker		            = 1
+bandit		            = 1
+csky		            = 1
+dolg 		            = 1
 freedom 	            = 1
 
 [pri_a17]:default_territory
@@ -2336,7 +2329,7 @@ monolith                = 0
 sim_avail 	            = true
 surge                   = 1
 
-[pri_a22_smart_terrain]:default_lair ; default_territory
+[pri_a22_smart_terrain]:default_territory
 sim_avail 	            = true
 
 [pri_a25_smart_terrain]:default_territory
@@ -2357,10 +2350,9 @@ surge                   = 1
 sim_avail 	            = true
 surge                   = 1
 
-[pri_b306]:default_base
+[pri_b306]:default_resource
 sim_avail 	            = true
 surge                   = 1
-resource				= 1
 
 [pri_b307]:default_resource
 sim_avail 	            = true
@@ -2369,13 +2361,13 @@ sim_avail 	            = true
 sim_avail 	            = true
 surge                   = 1
 
-[pri_b36_smart_terrain]:default_base ; default_territory
+[pri_b36_smart_terrain]:default_territory
 sim_avail 	            = true
 surge 		            = 1
 zombied 	            = 1
-monolith	            = 1 
+monolith	            = 1
 
-[pri_sim_1]:default_base ; default_lair
+[pri_sim_1]:default_lair
 sim_avail 	            = true
 surge                   = 1
 
@@ -2425,22 +2417,22 @@ sim_avail 	            = true
 [pri_a20]:default_territory
 sim_avail 	            = true
 
-[pri_a28_heli]:default_lair ; default_territory
+[pri_a28_heli]:default_territory
 sim_avail 	            = true
 
-[pri_a28_base]:default ; default_territory
+[pri_a28_base]:default_territory
 sim_avail 	            = true
 
 [pri_a28_shop]:default_territory
 sim_avail 	            = true
 
-[pri_a28_arch]:default_lair ; default_territory
+[pri_a28_arch]:default_territory
 sim_avail 	            = true
 
 [pri_a28_school]:default_territory
 sim_avail 	            = true
 
-[pri_a28_evac]:default_lair ; default_territory
+[pri_a28_evac]:default_territory
 sim_avail 	            = true
 
 ;lab x8 building, bugged and overlapping jobs, do not use
@@ -2451,7 +2443,7 @@ sim_avail 	            = false
 [lx8_smart_terrain]:default_territory
 sim_avail               = {+lx8_actor_in_lab +actor_left_labx8} true, false
 all                     = 1
-lair                    = 1 
+lair                    = 1
 
 
 ;underpass
@@ -2485,12 +2477,12 @@ sim_avail               = {+actor_pass_jupiter_exit_find +actor_pass_pripyat_exi
 
 ;--<< TRUCKS CEMETERY >>--
 
-[trc_sim_1]:default_territory
+[trc_sim_1]:default_base
 sim_avail 	            = true
 lair			        = 1
-stalker		            = 1 
-bandit		            = 1 
-dolg 		            = 1 
+stalker		            = 1
+bandit		            = 1
+dolg 		            = 1
 freedom 	            = 1
 army		            = 1
 
@@ -2498,9 +2490,9 @@ army		            = 1
 [trc_sim_2]:default_base
 sim_avail 	            = true
 surge	                = 1
-stalker		            = 1 
-bandit		            = 1 
-dolg 		            = 1 
+stalker		            = 1
+bandit		            = 1
+dolg 		            = 1
 freedom 	            = 1
 army		            = 1
 
@@ -2509,11 +2501,11 @@ sim_avail 	            = true
 dolg			        = 2
 zombied			        = 1
 
-[trc_sim_4]:default_resource
+[trc_sim_4]:default_lair
 sim_avail 	            = true
 ecolog			        = 1
 stalker 		        = 1
-lair	 		        = 1
+resource 		        = 2
 csky			        = 1
 zombied			        = 1
 
@@ -2528,9 +2520,9 @@ surge	                = 1
 [trc_sim_7]:default_lair
 sim_avail 	            = true
 
-[trc_sim_8]:default_resource
+[trc_sim_8]:default_lair
 sim_avail 	            = true
-lair	 	            = 1
+resource 	            = 2
 stalker 		        = 1
 dolg			        = 1
 freedom			        = 1
@@ -2541,11 +2533,11 @@ zombied			        = 1
 [trc_sim_9]:default_lair
 sim_avail 	            = true
 
-[trc_sim_10]:default_resource
+[trc_sim_10]:default_lair
 sim_avail 	            = true
 ecolog			        = 1
 stalker 		        = 1
-lair	 		        = 1
+resource 		        = 1
 csky			        = 1
 
 [trc_sim_11]:default_lair
@@ -2555,9 +2547,9 @@ zombied			        = 1
 [trc_sim_12]:default_lair
 sim_avail 	            = true
 
-[trc_sim_13]:default_resource
+[trc_sim_13]:default_lair
 sim_avail 	            = true
-lair	 		        = 1
+resource 		        = 1
 dolg			        = 1
 stalker 		        = 1
 zombied			        = 1
@@ -2576,9 +2568,9 @@ sim_avail 	            = true
 sim_avail 	            = true
 zombied			        = 1
 
-[trc_sim_18]:default_lair ; default_territory
+[trc_sim_18]:default_base
 sim_avail 	            = true
-stalker		            = 1 
+stalker		            = 1
 zombied			        = 1
 
 [trc_sim_19]:default_lair
@@ -2605,8 +2597,9 @@ sim_avail 	            = false
 [pol_smart_terrain_1_2]:default
 sim_avail 	            = false
 
-[pol_smart_terrain_1_3]:default_resource
+[pol_smart_terrain_1_3]:default
 sim_avail 	            = false
+resource 	            = 1
 
 [pol_smart_terrain_2_1]:default
 sim_avail 	            = false
