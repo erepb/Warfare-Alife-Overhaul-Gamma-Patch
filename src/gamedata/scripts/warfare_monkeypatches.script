@@ -3,59 +3,59 @@
 -- Scientist escort task patch for xr_conditions.script + xr_effects.script
 old_anomaly_task_cond = xr_conditions.has_task_target_anomaly
 function xr_conditions.has_task_target_anomaly()
-    old_anomaly_task_cond()
-
-    local warfare_task = db.actor and load_var(db.actor, "warfare_escort_task_smart")
-    if IsWarfare() and warfare_task then
-        return db.actor and load_var(db.actor, "task_target_anomaly_analyzed") == "not_analyzed"
-    end
-    return db.actor and load_var(db.actor, "task_target_anomaly") ~= nil
+	old_anomaly_task_cond()
+	
+	local warfare_task = db.actor and load_var(db.actor,"warfare_escort_task_smart")
+	if IsWarfare() and warfare_task then
+		return db.actor and load_var(db.actor,"task_target_anomaly_analyzed") == "not_analyzed"
+	end
+	return db.actor and load_var(db.actor,"task_target_anomaly") ~= nil
 end
 
 old_anomaly_task_effect = xr_effects.setup_task_target_anomaly
 function xr_effects.setup_task_target_anomaly()
-    old_anomaly_task_effect()
-
-    local targets = {}
-    local warfare_task = db.actor and load_var(db.actor, "warfare_escort_task_smart")
-    if IsWarfare() and warfare_task then
-        local target_name
-        target_name = level.name()
-
-        save_var(db.actor, "task_target_anomaly_level", target_name) -- xQd
-        save_var(db.actor, "task_target_anomaly_analyzed", "not_analyzed") -- xQd
-        return
-    else
-        for k, v in pairs(db.anomaly_by_name) do
-            targets[#targets + 1] = k
-        end
-
-        if (#targets <= 0) then
-            return
-        end
-
-        local target_name = targets[math.random(#targets)]
-        save_var(db.actor, "task_target_anomaly", target_name)
-    end
+	old_anomaly_task_effect()
+	
+	local targets = {}
+	local warfare_task = db.actor and load_var(db.actor,"warfare_escort_task_smart")
+	if IsWarfare() and warfare_task then
+		local target_name
+		target_name = level.name()
+		
+		save_var(db.actor,"task_target_anomaly_level",target_name) -- xQd
+		save_var(db.actor,"task_target_anomaly_analyzed","not_analyzed") -- xQd
+		return
+	else
+		for k,v in pairs(db.anomaly_by_name) do
+			targets[#targets+1] = k
+		end
+	
+		if (#targets <= 0) then
+			return
+		end
+	
+		local target_name = targets[math.random(#targets)]
+		save_var(db.actor,"task_target_anomaly",target_name)
+	end
 end
 
 
 -- Patch to fix jupiter escort quest completion when anomalous research is also active
 old_ecolog_companion_task_2_complete_task = dialogs_jupiter.ecolog_companion_task_2_complete_task
-function dialogs_jupiter.ecolog_companion_task_2_complete_task(a, b)
-    old_ecolog_companion_task_2_complete_task(a, b)
-
-    local tm = task_manager.get_task_manager()
-    local task_info = tm.task_info
-    if (task_info) then
-        if (task_info["sim_default_ecolog_trader_task_1"]) then
-            task_manager.get_task_manager():set_task_completed("sim_default_ecolog_trader_task_1")
-        elseif (task_info["jup_b6_scientist_tech_task_1"]) then
-            task_manager.get_task_manager():set_task_completed("jup_b6_scientist_tech_task_1")
-        end
-    end
-    a:stop_talk()
-    b:stop_talk()
+function dialogs_jupiter.ecolog_companion_task_2_complete_task(a,b)
+	old_ecolog_companion_task_2_complete_task(a,b)
+	
+	local tm = task_manager.get_task_manager()
+	local task_info = tm.task_info
+	if (task_info) then
+		if (task_info["sim_default_ecolog_trader_task_1"]) then 
+			task_manager.get_task_manager():set_task_completed("sim_default_ecolog_trader_task_1")
+		elseif (task_info["jup_b6_scientist_tech_task_1"]) then
+			task_manager.get_task_manager():set_task_completed("jup_b6_scientist_tech_task_1")
+		end
+	end
+	a:stop_talk()
+	b:stop_talk()
 end
 
 --[[
