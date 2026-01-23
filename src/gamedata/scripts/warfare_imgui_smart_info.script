@@ -476,7 +476,7 @@ function render_mutant_smart_info(smart)
     if warfare_options and warfare_options.options and smart_terrain_warfare.monster_level_capacity then
         local base_capacity = smart_terrain_warfare.monster_level_capacity[current_level] or 0
         local user_setting = warfare_options.options.monster_max_squads_per_level or 0
-        local mutant_pop_multiplier = ui_options and ui_options.get("alife/general/alife_mutant_pop") or 1
+        local mutant_pop_multiplier = warfare.get_monster_pop_factor()
         local effective_capacity = math.min(user_setting, base_capacity * mutant_pop_multiplier)
         
         -- Level type and rare spawn chances
@@ -540,7 +540,7 @@ function render_mutant_smart_info(smart)
     else
         table.insert(block_reasons, "Actor not on same level")
     end
-    
+
     for _, reason in ipairs(block_reasons) do
         ImGui.Text("  " .. reason)
     end
