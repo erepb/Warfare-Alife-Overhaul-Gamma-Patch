@@ -90,7 +90,7 @@
                 <group name="Patches" type="SelectAny">
                     <!--<designer.metadata.do.not.edit> {"name":"Patches"}-->
                     <plugins order="Ascending">
-                        <plugin name="'ZCP">
+                        <plugin name="ZCP">
                             <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
                             <description>Allows you to use ZCP mutants and stalkers sliders instead of vanilla
                                 If you select this patch, this addon must be loaded AFTER ZCP!
