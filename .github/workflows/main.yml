@@ -24,7 +24,7 @@ jobs:
       - name: Read version
         id: version
         run: |
-          VERSION=$(cat VERSION)
+          VERSION=$(cat version)
           if [ -n "${{ github.event.inputs.version_tag }}" ]; then
           VERSION="${VERSION}-${{ github.event.inputs.version_tag }}"
           fi
