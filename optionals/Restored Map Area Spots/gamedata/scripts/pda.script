@@ -15,14 +15,21 @@ function set_active_subdialog(section)
     --printf("set_active_subdialog | section=%s",section)
 
     -- For NPCs PDA
-    local obj = db.actor:item_in_slot(8)
-    local sec = obj and obj:section()
-    if item_device.device_npc_pda[sec] then
-        return ui_pda_npc_tab.get_ui(se_load_var(obj:id(), obj:name(), "info"))
-    end
+    if (section == "eptNPC") then
+        local obj = db.actor:active_item() or db.actor:item_in_slot(14)
+        if obj then
+            local sec = obj and obj:section()
+            if item_device.device_npc_pda[sec] then
+                return ui_pda_npc_tab.get_ui(se_load_var(obj:id(), obj:name(), "info"))
+            end
+        end
 
-    -- For Actor PDA
-    if (section == "eptTasks") then
+        -- Fallback to normal UI
+        ActorMenu.get_pda_menu():SetActiveSubdialog("eptTasks")
+        return
+
+        -- For Actor PDA
+    elseif (section == "eptTasks") then
 
     elseif (section == "eptRanking") then
 
@@ -171,7 +178,7 @@ function get_stat(index)
 end
 
 ----------------------------------------------------------------------------
--- Engine->lua function calls 
+-- Engine->lua function calls
 ----------------------------------------------------------------------------
 local primary_objects_tbl = {
     { target = "mar_2c_01_anomaly_spot", hint = "st_mar_2c_01_anomaly_spot_name" },
@@ -436,9 +443,9 @@ end
 
 function on_game_start()
     local function on_game_load()
-        --		if (not alife_storage_manager.get_state().enable_warfare_mode) then
-        CreateTimeEvent(0, "ScanForSpots", 2, discover_spots)
-        --		end
+        if (not alife_storage_manager.get_state().enable_warfare_mode) then
+            CreateTimeEvent(0, "ScanForSpots", 2, discover_spots)
+        end
     end
 
     RegisterScriptCallback("npc_on_net_spawn", npc_on_net_spawn)

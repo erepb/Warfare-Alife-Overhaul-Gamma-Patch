@@ -1,0 +1,25 @@
+local is_warfare_should_return_false = false
+
+local game_fast_travel_actor_on_interaction = game_fast_travel.actor_on_interaction
+function game_fast_travel.actor_on_interaction(typ, obj, name)
+    is_warfare_should_return_false = true
+    game_fast_travel_actor_on_interaction(typ, obj, name)
+    is_warfare_should_return_false = false
+end
+
+local game_fast_travel_update_settings = game_fast_travel.update_settings
+function game_fast_travel.update_settings()
+    is_warfare_should_return_false = true
+    game_fast_travel_update_settings()
+    is_warfare_should_return_false = false
+end
+
+--IsWarfare should return false because this patch makes fast travel available in warfare mode
+local _g_iswarfare = _G.IsWarfare
+function _G.IsWarfare()
+    if is_warfare_should_return_false then
+        return false
+    end
+
+    return _g_iswarfare()
+end
