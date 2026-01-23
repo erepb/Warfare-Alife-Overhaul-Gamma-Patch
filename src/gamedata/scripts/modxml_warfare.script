@@ -14,179 +14,179 @@ function ui_options.init_opt_coder()
     local alife_general_options = ui_options.options[alife_options_index].gr[alife_general_options_index]
     local alife_general_alife_mutant_pop = alife_general_options.gr[alife_general_alife_mutant_pop_index]
     alife_general_alife_mutant_pop.def = 1.5
-    table.insert(alife_general_alife_mutant_pop.content, {1.5})
-    table.insert(alife_general_alife_mutant_pop.content, {2})
-    table.insert(alife_general_alife_mutant_pop.content, {3})
+    table.insert(alife_general_alife_mutant_pop.content, { 1.5 })
+    table.insert(alife_general_alife_mutant_pop.content, { 2 })
+    table.insert(alife_general_alife_mutant_pop.content, { 3 })
     local alife_general_alife_stalker_pop = alife_general_options.gr[alife_general_alife_stalker_pop_index]
     alife_general_alife_stalker_pop.def = 1
-    table.insert(alife_general_alife_stalker_pop.content, {1.5})
-    table.insert(alife_general_alife_stalker_pop.content, {2})
+    table.insert(alife_general_alife_stalker_pop.content, { 1.5 })
+    table.insert(alife_general_alife_stalker_pop.content, { 2 })
 
     local options = {
-        { id= "slide_warfare"		 		 ,type= "slide"	  ,link= "ui_options_slider_warfare"	 ,text= "ui_mm_title_warfare_faction"		,size= {512,50}		},
+        { id = "slide_warfare", type = "slide", link = "ui_options_slider_warfare", text = "ui_mm_title_warfare_faction", size = { 512, 50 } },
 
-        { id="participate_in_warfare"	              ,type= "check"    ,val= 1	,def= true 	                                                      ,hint="alife_warfare_faction_participate_in_warfare"	                },
-        { id="spawn_on_new_game"	                  ,type= "check"    ,val= 1	,def= true 	                                                      ,hint="alife_warfare_faction_spawn_on_new_game"	                    },
-        { id="random_spawn_entries"                   ,type= "track"    ,val= 2	,def= 1   ,min= 0     ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_random_spawn_entries"                    },
-        { id="linked_level_targeting"	              ,type= "check"    ,val= 1	,def= true 	                                                      ,hint="alife_warfare_faction_linked_level_targeting"	                },
-        { id="ignore_empty_targets"	                  ,type= "check"    ,val= 1	,def= false 	                                                  ,hint="alife_warfare_faction_ignore_empty_targets"	                },
-        { id="expansion_aggression"                   ,type= "track"    ,val= 2	,def= 50  ,min= 0     ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_expansion_aggression"                    },
-        { id="offline_power_multiplier"               ,type= "track"    ,val= 2	,def= 1   ,min= 0     ,max= 10            ,step= 0.1 	          ,hint="alife_warfare_faction_offline_power_multiplier"                },
-        { id="night_activity_chance"                  ,type= "track"    ,val= 2	,def= 1   ,min= 0     ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_night_activity_chance"                   },
+        { id = "participate_in_warfare", type = "check", val = 1, def = true, hint = "alife_warfare_faction_participate_in_warfare" },
+        { id = "spawn_on_new_game", type = "check", val = 1, def = true, hint = "alife_warfare_faction_spawn_on_new_game" },
+        { id = "random_spawn_entries", type = "track", val = 2, def = 1, min = 0, max = 100, step = 1, hint = "alife_warfare_faction_random_spawn_entries" },
+        { id = "linked_level_targeting", type = "check", val = 1, def = true, hint = "alife_warfare_faction_linked_level_targeting" },
+        { id = "ignore_empty_targets", type = "check", val = 1, def = false, hint = "alife_warfare_faction_ignore_empty_targets" },
+        { id = "expansion_aggression", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1, hint = "alife_warfare_faction_expansion_aggression" },
+        { id = "offline_power_multiplier", type = "track", val = 2, def = 1, min = 0, max = 10, step = 0.1, hint = "alife_warfare_faction_offline_power_multiplier" },
+        { id = "night_activity_chance", type = "track", val = 2, def = 1, min = 0, max = 100, step = 1, hint = "alife_warfare_faction_night_activity_chance" },
 
-        { id="keep_last_base"	                      ,type= "check"    ,val= 1	,def= false 	                                                  ,hint="alife_warfare_faction_keep_last_base"	                        },
-        { id="min_faction_respawn"                    ,type= "track"    ,val= 2	,def= 500  	,min= 0     ,max= 50000            ,step= 50 	      ,hint="alife_warfare_faction_min_faction_respawn"					    },
-        { id="max_faction_respawn"                    ,type= "track"    ,val= 2	,def= 35000 ,min= 0     ,max= 100000           ,step= 50 	      ,hint="alife_warfare_faction_max_faction_respawn"                     },
+        { id = "keep_last_base", type = "check", val = 1, def = false, hint = "alife_warfare_faction_keep_last_base" },
+        { id = "min_faction_respawn", type = "track", val = 2, def = 500, min = 0, max = 50000, step = 50, hint = "alife_warfare_faction_min_faction_respawn" },
+        { id = "max_faction_respawn", type = "track", val = 2, def = 35000, min = 0, max = 100000, step = 50, hint = "alife_warfare_faction_max_faction_respawn" },
 
-        { id="min_invasion_size"                      ,type= "track"    ,val= 2	,def= 1   ,min= 0     ,max= 5             ,step= 0.1 	          ,hint="alife_warfare_faction_min_invasion_size"                       },
-        { id="max_invasion_size"                      ,type= "track"    ,val= 2	,def= 1.5 ,min= 0     ,max= 5             ,step= 0.1 	          ,hint="alife_warfare_faction_max_invasion_size"                       },
-        { id="min_invasion_depart_time"               ,type= "track"    ,val= 2	,def= 0   ,min= 0     ,max= 100            ,step= 10 	          ,hint="alife_warfare_faction_min_invasion_depart_time"                },
-        { id="max_invasion_depart_time"               ,type= "track"    ,val= 2	,def= 10  ,min= 0     ,max= 100            ,step= 10 	          ,hint="alife_warfare_faction_max_invasion_depart_time"                },
+        { id = "min_invasion_size", type = "track", val = 2, def = 1, min = 0, max = 5, step = 0.1, hint = "alife_warfare_faction_min_invasion_size" },
+        { id = "max_invasion_size", type = "track", val = 2, def = 1.5, min = 0, max = 5, step = 0.1, hint = "alife_warfare_faction_max_invasion_size" },
+        { id = "min_invasion_depart_time", type = "track", val = 2, def = 0, min = 0, max = 100, step = 10, hint = "alife_warfare_faction_min_invasion_depart_time" },
+        { id = "max_invasion_depart_time", type = "track", val = 2, def = 10, min = 0, max = 100, step = 10, hint = "alife_warfare_faction_max_invasion_depart_time" },
 
-        { id="min_patrol_time"                        ,type= "track"    ,val= 2	,def= 60  ,min= 0     ,max= 50000           ,step= 50 	          ,hint="alife_warfare_faction_min_patrol_time"                         },
-        { id="max_patrol_time"                        ,type= "track"    ,val= 2	,def= 240 ,min= 0     ,max= 50000           ,step= 50 	          ,hint="alife_warfare_faction_max_patrol_time"                         },
-        { id="min_patrol_squads"                      ,type= "track"    ,val= 2	,def= 0   ,min= 0     ,max= 5             ,step= 1 	          ,hint="alife_warfare_faction_min_patrol_squads"                       },
-        { id="max_patrol_squads"                      ,type= "track"    ,val= 2	,def= 0   ,min= 0     ,max= 5             ,step= 1 	          ,hint="alife_warfare_faction_max_patrol_squads"                       },
-        { id="patrol_hunt_chance"                     ,type= "track"    ,val= 2	,def= 50  ,min= 0     ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_patrol_hunt_chance"                      },
-        { id="min_patrol_rest_time"                   ,type= "track"    ,val= 2	,def= 60  ,min= 0     ,max= 5000           ,step= 10 	          ,hint="alife_warfare_faction_min_patrol_rest_time"                    },
-        { id="max_patrol_rest_time"                   ,type= "track"    ,val= 2	,def= 240 ,min= 0     ,max= 5000           ,step= 10 	          ,hint="alife_warfare_faction_max_patrol_rest_time"                    },
+        { id = "min_patrol_time", type = "track", val = 2, def = 60, min = 0, max = 50000, step = 50, hint = "alife_warfare_faction_min_patrol_time" },
+        { id = "max_patrol_time", type = "track", val = 2, def = 240, min = 0, max = 50000, step = 50, hint = "alife_warfare_faction_max_patrol_time" },
+        { id = "min_patrol_squads", type = "track", val = 2, def = 0, min = 0, max = 5, step = 1, hint = "alife_warfare_faction_min_patrol_squads" },
+        { id = "max_patrol_squads", type = "track", val = 2, def = 0, min = 0, max = 5, step = 1, hint = "alife_warfare_faction_max_patrol_squads" },
+        { id = "patrol_hunt_chance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1, hint = "alife_warfare_faction_patrol_hunt_chance" },
+        { id = "min_patrol_rest_time", type = "track", val = 2, def = 60, min = 0, max = 5000, step = 10, hint = "alife_warfare_faction_min_patrol_rest_time" },
+        { id = "max_patrol_rest_time", type = "track", val = 2, def = 240, min = 0, max = 5000, step = 10, hint = "alife_warfare_faction_max_patrol_rest_time" },
 
-        { id="min_resurgence_wait_time"               ,type= "track"    ,val= 2	,def= 10000  ,min= 0     ,max= 500000           ,step= 1000 	          ,hint="alife_warfare_faction_min_resurgence_wait_time"                },
-        { id="max_resurgence_wait_time"               ,type= "track"    ,val= 2	,def= 50000  ,min= 0     ,max= 1000000          ,step= 1000 	          ,hint="alife_warfare_faction_max_resurgence_wait_time"                },
+        { id = "min_resurgence_wait_time", type = "track", val = 2, def = 10000, min = 0, max = 500000, step = 1000, hint = "alife_warfare_faction_min_resurgence_wait_time" },
+        { id = "max_resurgence_wait_time", type = "track", val = 2, def = 50000, min = 0, max = 1000000, step = 1000, hint = "alife_warfare_faction_max_resurgence_wait_time" },
 
-        { id="random_squad_count"	                  ,type= "check"    ,val= 1	,def= true 	                                                      ,hint="alife_warfare_faction_random_squad_count"	                    },
-        { id="min_random_squad_count"                 ,type= "track"    ,val= 2	,def= 3   ,min= 0     ,max= 10             ,step= 1 	          ,hint="alife_warfare_faction_min_random_squad_count"                  },
-        { id="max_random_squad_count"                 ,type= "track"    ,val= 2	,def= 4   ,min= 0     ,max= 10             ,step= 1 	          ,hint="alife_warfare_faction_max_random_squad_count"                  },
+        { id = "random_squad_count", type = "check", val = 1, def = true, hint = "alife_warfare_faction_random_squad_count" },
+        { id = "min_random_squad_count", type = "track", val = 2, def = 3, min = 0, max = 10, step = 1, hint = "alife_warfare_faction_min_random_squad_count" },
+        { id = "max_random_squad_count", type = "track", val = 2, def = 4, min = 0, max = 10, step = 1, hint = "alife_warfare_faction_max_random_squad_count" },
 
-        { id="random_patrols"	                      ,type= "check"    ,val= 1	,def= false 	                                                  ,hint="alife_warfare_faction_random_patrols"	                        },
-        { id="max_random_patrols"                     ,type= "track"    ,val= 2	,def= 15  ,min= 0     ,max= 50             ,step= 1 	          ,hint="alife_warfare_faction_max_random_patrols"                      },
-        { id="min_random_patrol_time"                 ,type= "track"    ,val= 2	,def= 500   ,min= 0     ,max= 50000           ,step= 50 	          ,hint="alife_warfare_faction_min_random_patrol_time"                  },
-        { id="max_random_patrol_time"                 ,type= "track"    ,val= 2	,def= 10000 ,min= 0     ,max= 100000           ,step= 50 	          ,hint="alife_warfare_faction_max_random_patrol_time"                  },
+        { id = "random_patrols", type = "check", val = 1, def = false, hint = "alife_warfare_faction_random_patrols" },
+        { id = "max_random_patrols", type = "track", val = 2, def = 15, min = 0, max = 50, step = 1, hint = "alife_warfare_faction_max_random_patrols" },
+        { id = "min_random_patrol_time", type = "track", val = 2, def = 500, min = 0, max = 50000, step = 50, hint = "alife_warfare_faction_min_random_patrol_time" },
+        { id = "max_random_patrol_time", type = "track", val = 2, def = 10000, min = 0, max = 100000, step = 50, hint = "alife_warfare_faction_max_random_patrol_time" },
 
-        { id="base_priority"                          ,type= "track"    ,val= 2	,def= 10  ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_base_priority"                           },
-        { id="resource_priority"                      ,type= "track"    ,val= 2	,def= 5   ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_resource_priority"                       },
-        { id="territory_priority"                     ,type= "track"    ,val= 2	,def= -5  ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_territory_priority"                      },
-        { id="flag_priority"                          ,type= "track"    ,val= 2	,def= 1   ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_flag_priority"                           },
-        { id="is_being_targeted_priority"             ,type= "track"    ,val= 2	,def= 2   ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_is_being_targeted_priority"              },
-        { id="target_weaker_priority"                 ,type= "track"    ,val= 2	,def= 0   ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_target_weaker_priority"                  },
-        { id="target_stronger_priority"               ,type= "track"    ,val= 2	,def= 1   ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_target_stronger_priority"                },
-        { id="target_faction_stronger_priority"       ,type= "track"    ,val= 2	,def= 1   ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_target_faction_stronger_priority"        },
-        { id="target_faction_weaker_priority"         ,type= "track"    ,val= 2	,def= 0   ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_target_faction_weaker_priority"          },
-        { id="target_resource_priority"               ,type= "track"    ,val= 2	,def= 0   ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_target_resource_priority"                },
-        { id="target_on_same_level_priority"          ,type= "track"    ,val= 2	,def= 10  ,min= -100  ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_target_on_same_level_priority"           },
+        { id = "base_priority", type = "track", val = 2, def = 10, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_base_priority" },
+        { id = "resource_priority", type = "track", val = 2, def = 5, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_resource_priority" },
+        { id = "territory_priority", type = "track", val = 2, def = -5, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_territory_priority" },
+        { id = "flag_priority", type = "track", val = 2, def = 1, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_flag_priority" },
+        { id = "is_being_targeted_priority", type = "track", val = 2, def = 2, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_is_being_targeted_priority" },
+        { id = "target_weaker_priority", type = "track", val = 2, def = 0, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_target_weaker_priority" },
+        { id = "target_stronger_priority", type = "track", val = 2, def = 1, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_target_stronger_priority" },
+        { id = "target_faction_stronger_priority", type = "track", val = 2, def = 1, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_target_faction_stronger_priority" },
+        { id = "target_faction_weaker_priority", type = "track", val = 2, def = 0, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_target_faction_weaker_priority" },
+        { id = "target_resource_priority", type = "track", val = 2, def = 0, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_target_resource_priority" },
+        { id = "target_on_same_level_priority", type = "track", val = 2, def = 10, min = -100, max = 100, step = 1, hint = "alife_warfare_faction_target_on_same_level_priority" },
 
-        { id="max_smart_targets_per_base"             ,type= "track"    ,val= 2	,def= 3   ,min= 0     ,max= 10             ,step= 1 	          ,hint="alife_warfare_faction_max_smart_targets_per_base"              },
+        { id = "max_smart_targets_per_base", type = "track", val = 2, def = 3, min = 0, max = 10, step = 1, hint = "alife_warfare_faction_max_smart_targets_per_base" },
 
-        { id="resource_count_modifier"                ,type= "track"    ,val= 2	,def= 0   ,min= -20     ,max= 20              ,step= 1 	          ,hint="alife_warfare_faction_resource_count_modifier"                 },
-        { id="base_count_modifier"                    ,type= "track"    ,val= 2	,def= 0   ,min= -20     ,max= 20              ,step= 1 	          ,hint="alife_warfare_faction_base_count_modifier"                     },
+        { id = "resource_count_modifier", type = "track", val = 2, def = 0, min = -20, max = 20, step = 1, hint = "alife_warfare_faction_resource_count_modifier" },
+        { id = "base_count_modifier", type = "track", val = 2, def = 0, min = -20, max = 20, step = 1, hint = "alife_warfare_faction_base_count_modifier" },
 
-        { id="lvl_k00_marsh_priority"                 ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_k00_marsh_priority"                  },
-        { id="lvl_k01_darkscape_priority"             ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_k01_darkscape_priority"              },
-        { id="lvl_l01_escape_priority"                ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l01_escape_priority"                 },
-        { id="lvl_l02_garbage_priority"               ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l02_garbage_priority"                },
-        { id="lvl_l03_agroprom_priority"              ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l03_agroprom_priority"               },
-        { id="lvl_l04_darkvalley_priority"            ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l04_darkvalley_priority"             },
-        { id="lvl_l05_bar_priority"                   ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l05_bar_priority"                    },
-        { id="lvl_l06_rostok_priority"                ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l06_rostok_priority"                 },
-        { id="lvl_l07_military_priority"              ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l07_military_priority"               },
-        { id="lvl_l08_yantar_priority"                ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l08_yantar_priority"                 },
-        { id="lvl_l09_deadcity_priority"              ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l09_deadcity_priority"               },
-        { id="lvl_l10_limansk_priority"               ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l10_limansk_priority"                },
-        { id="lvl_l10_radar_priority"                 ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l10_radar_priority"                  },
-        { id="lvl_l10_red_forest_priority"            ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l10_red_forest_priority"             },
-        { id="lvl_l11_hospital_priority"              ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l11_hospital_priority"               },
-        { id="lvl_l11_pripyat_priority"               ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l11_pripyat_priority"                },
-        { id="lvl_l12_stancia_priority"               ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l12_stancia_priority"                },
-        { id="lvl_l12u_sarcofag_priority"             ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l12u_sarcofag_priority"              },
-        { id="lvl_l12u_control_monolith_priority"     ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l12u_control_monolith_priority"      },
-        { id="lvl_l12_stancia_2_priority"             ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l12_stancia_2_priority"              },
-        { id="lvl_l13_generators_priority"            ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_l13_generators_priority"             },
-        { id="lvl_zaton_priority"                     ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_zaton_priority"                      },
-        { id="lvl_jupiter_priority"                   ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_jupiter_priority"                    },
-        { id="lvl_pripyat_priority"                   ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_pripyat_priority"                    },
-        { id="lvl_jupiter_underground_priority"       ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_jupiter_underground_priority"        },
-        { id="lvl_k02_trucks_cemetery_priority"       ,type= "track"    ,val= 2	,def= 0   ,min= -200     ,max= 200         ,step= 1 	          ,hint="alife_warfare_faction_lvl_k02_trucks_cemetery_priority"        },
+        { id = "lvl_k00_marsh_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_k00_marsh_priority" },
+        { id = "lvl_k01_darkscape_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_k01_darkscape_priority" },
+        { id = "lvl_l01_escape_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l01_escape_priority" },
+        { id = "lvl_l02_garbage_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l02_garbage_priority" },
+        { id = "lvl_l03_agroprom_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l03_agroprom_priority" },
+        { id = "lvl_l04_darkvalley_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l04_darkvalley_priority" },
+        { id = "lvl_l05_bar_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l05_bar_priority" },
+        { id = "lvl_l06_rostok_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l06_rostok_priority" },
+        { id = "lvl_l07_military_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l07_military_priority" },
+        { id = "lvl_l08_yantar_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l08_yantar_priority" },
+        { id = "lvl_l09_deadcity_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l09_deadcity_priority" },
+        { id = "lvl_l10_limansk_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l10_limansk_priority" },
+        { id = "lvl_l10_radar_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l10_radar_priority" },
+        { id = "lvl_l10_red_forest_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l10_red_forest_priority" },
+        { id = "lvl_l11_hospital_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l11_hospital_priority" },
+        { id = "lvl_l11_pripyat_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l11_pripyat_priority" },
+        { id = "lvl_l12_stancia_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l12_stancia_priority" },
+        { id = "lvl_l12u_sarcofag_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l12u_sarcofag_priority" },
+        { id = "lvl_l12u_control_monolith_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l12u_control_monolith_priority" },
+        { id = "lvl_l12_stancia_2_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l12_stancia_2_priority" },
+        { id = "lvl_l13_generators_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_l13_generators_priority" },
+        { id = "lvl_zaton_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_zaton_priority" },
+        { id = "lvl_jupiter_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_jupiter_priority" },
+        { id = "lvl_pripyat_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_pripyat_priority" },
+        { id = "lvl_jupiter_underground_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_jupiter_underground_priority" },
+        { id = "lvl_k02_trucks_cemetery_priority", type = "track", val = 2, def = 0, min = -200, max = 200, step = 1, hint = "alife_warfare_faction_lvl_k02_trucks_cemetery_priority" },
 
-        { id="use_bases_not_resources"	              ,type= "check"    ,val= 1	,def= false 	                                                  ,hint="alife_warfare_faction_use_bases_not_resources"	                },
-        { id="resurgence_chance"               		  ,type= "track"    ,val= 2	,def= 50 ,min= 0      ,max= 100            ,step= 1 	          ,hint="alife_warfare_faction_resurgence_chance"                       },
-        { id="min_smart_targets_per_base"             ,type= "track"    ,val= 2	,def= 2   ,min= 0     ,max= 10             ,step= 1 	          ,hint="alife_warfare_faction_min_smart_targets_per_base"              },
+        { id = "use_bases_not_resources", type = "check", val = 1, def = false, hint = "alife_warfare_faction_use_bases_not_resources" },
+        { id = "resurgence_chance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1, hint = "alife_warfare_faction_resurgence_chance" },
+        { id = "min_smart_targets_per_base", type = "track", val = 2, def = 2, min = 0, max = 10, step = 1, hint = "alife_warfare_faction_min_smart_targets_per_base" },
     }
 
     local stalker_warfare_options = {
-        id= "stalker",
-        sh=true,
-        presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"},
-        id_gr= "warfare_faction",
-        apply_to_all=true,
-        gr=options,
+        id = "stalker",
+        sh = true,
+        presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" },
+        id_gr = "warfare_faction",
+        apply_to_all = true,
+        gr = options,
     }
 
     local warfare_options = ui_options.options[alife_options_index].gr[alife_warfare_options_index]
-    warfare_options.presets = {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}
+    warfare_options.presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" }
     warfare_options.gr[alife_warfare_general_options_index] = {
-        id= "general",
-        sh=true,
-        presets= {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"},
-        gr={
-            { id= "slide_warfare"		 ,type= "slide"	  ,link= "ui_options_slider_warfare"	 ,text= "ui_mm_title_warfare"		,size= {512,50}		},
+        id = "general",
+        sh = true,
+        presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" },
+        gr = {
+            { id = "slide_warfare", type = "slide", link = "ui_options_slider_warfare", text = "ui_mm_title_warfare", size = { 512, 50 } },
 
-            { id= "all_out_war"    	 	                            ,type= "check"    ,val= 1	,def= false	             	                    				},
-            { id= "random_starting_locations"    	 	 		    ,type= "check"    ,val= 1	,def= false	             	                    				},
-            { id= "random_starting_character"    	 	 		    ,type= "check"    ,val= 1	,def= false	             	                    				},
-            { id= "random_stalker_chance"    	 	 		        ,type= "track"    ,val= 2	,def= 50	  ,min= 0     ,max= 100        ,step= 1  	        },
-            { id= "random_monster_chance"    	 	 		        ,type= "track"    ,val= 2	,def= 50	  ,min= 0     ,max= 100        ,step= 1  	        },
-            { id= "auto_capture"    	 	 		                ,type= "check"    ,val= 1	,def= false	             	                    				},
-            { id= "auto_capture_max_distance"    	 	 		    ,type= "track"    ,val= 2	,def= 50	  ,min= 0     ,max= 100        ,step= 5  	        },
-            { id= "auto_capture_wait_time"    	 	 		        ,type= "track"    ,val= 2	,def= 1		  ,min= 0     ,max= 10        ,step= 0.5  	        },
-            { id= "fog_of_war"    	 	 		                    ,type= "check"    ,val= 1	,def= false	             	                    				},
-            { id= "fog_of_war_distance"    	 	 		            ,type= "track"    ,val= 2	,def= 50	  ,min= 0     ,max= 100        ,step= 1  	        },
-            { id= "hide_unfriendly_squads"    	 	 		        ,type= "check"    ,val= 1	,def= true	                                                    },
-            { id= "hide_smarts"    	 	 		                    ,type= "check"    ,val= 1	,def= false	                                                    },
-            { id= "hide_underground_smarts"    	 	 		        ,type= "check"    ,val= 1	,def= true	                                                    },
-            { id= "enemy_new_game_bonus"    	 	 		        ,type= "check"    ,val= 1	,def= false	                                                    },
-            { id= "enemy_resource_boost"    	 	 		        ,type= "track"    ,val= 2	,def= 0	      ,min= -50     ,max= 50        ,step= 1  	        },
-            { id= "enemy_base_boost"    	 	 		            ,type= "track"    ,val= 2	,def= 0	      ,min= -50     ,max= 50        ,step= 1  	        },
+            { id = "all_out_war", type = "check", val = 1, def = false },
+            { id = "random_starting_locations", type = "check", val = 1, def = false },
+            { id = "random_starting_character", type = "check", val = 1, def = false },
+            { id = "random_stalker_chance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
+            { id = "random_monster_chance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
+            { id = "auto_capture", type = "check", val = 1, def = false },
+            { id = "auto_capture_max_distance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 5 },
+            { id = "auto_capture_wait_time", type = "track", val = 2, def = 1, min = 0, max = 10, step = 0.5 },
+            { id = "fog_of_war", type = "check", val = 1, def = false },
+            { id = "fog_of_war_distance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
+            { id = "hide_unfriendly_squads", type = "check", val = 1, def = true },
+            { id = "hide_smarts", type = "check", val = 1, def = false },
+            { id = "hide_underground_smarts", type = "check", val = 1, def = true },
+            { id = "enemy_new_game_bonus", type = "check", val = 1, def = false },
+            { id = "enemy_resource_boost", type = "track", val = 2, def = 0, min = -50, max = 50, step = 1 },
+            { id = "enemy_base_boost", type = "track", val = 2, def = 0, min = -50, max = 50, step = 1 },
 
-            { id= "actor_influence_weight"    	 	 		        ,type= "track"    ,val= 2	,def= 250	  ,min= 0     ,max= 10000      ,step= 50  	        },
-            { id= "novice_squad_price"    	 	 		            ,type= "track"    ,val= 2	,def= 1000	  ,min= 0     ,max= 100000     ,step= 1000  	    },
-            { id= "advanced_squad_price"    	 	 		        ,type= "track"    ,val= 2	,def= 10000	  ,min= 0     ,max= 100000     ,step= 1000  	    },
-            { id= "veteran_squad_price"    	 	 		            ,type= "track"    ,val= 2	,def= 50000	  ,min= 0     ,max= 100000     ,step= 1000  	    },
-            { id= "heli_price"    	 	 		                    ,type= "track"    ,val= 2	,def= 75000	  ,min= 0     ,max= 100000     ,step= 1000  	    },
-            { id= "actor_support_enemy_rank_weight"    	 	 		,type= "track"    ,val= 2	,def= 0	      ,min= 0     ,max= 5          ,step= 0.1  	        },
-            { id= "actor_support_reward_money"    	 	 		    ,type= "track"    ,val= 2	,def= 0		  ,min= 0     ,max= 10000      ,step= 50  	        },
-            { id= "actor_support_reward_influence"    	 	 		,type= "track"    ,val= 2	,def= 0 	  ,min= 0     ,max= 20         ,step= 1  	        },
+            { id = "actor_influence_weight", type = "track", val = 2, def = 250, min = 0, max = 10000, step = 50 },
+            { id = "novice_squad_price", type = "track", val = 2, def = 1000, min = 0, max = 100000, step = 1000 },
+            { id = "advanced_squad_price", type = "track", val = 2, def = 10000, min = 0, max = 100000, step = 1000 },
+            { id = "veteran_squad_price", type = "track", val = 2, def = 50000, min = 0, max = 100000, step = 1000 },
+            { id = "heli_price", type = "track", val = 2, def = 75000, min = 0, max = 100000, step = 1000 },
+            { id = "actor_support_enemy_rank_weight", type = "track", val = 2, def = 0, min = 0, max = 5, step = 0.1 },
+            { id = "actor_support_reward_money", type = "track", val = 2, def = 0, min = 0, max = 10000, step = 50 },
+            { id = "actor_support_reward_influence", type = "track", val = 2, def = 0, min = 0, max = 20, step = 1 },
 
-            { id= "monster_max_squads_per_level"    	 	 		,type= "track"    ,val= 2	,def= 10      ,min= 0     ,max= 50        ,step= 1  	        },
-            { id= "monster_min_faction_respawn"    	 	 		    ,type= "track"    ,val= 2	,def= 600  	  ,min= 0     ,max= 20000        ,step= 10  	    },
-            { id= "monster_max_faction_respawn"    	 	 		    ,type= "track"    ,val= 2	,def= 6000	  ,min= 0     ,max= 20000        ,step= 10          },
+            { id = "monster_max_squads_per_level", type = "track", val = 2, def = 10, min = 0, max = 50, step = 1 },
+            { id = "monster_min_faction_respawn", type = "track", val = 2, def = 600, min = 0, max = 20000, step = 10 },
+            { id = "monster_max_faction_respawn", type = "track", val = 2, def = 6000, min = 0, max = 20000, step = 10 },
 
-            { id= "zombies_act_as_faction"    	 	 		        ,type= "check"    ,val= 1	,def= false	                                                    },
-            { id= "enable_mutant_offline_combat"    	 	 		,type= "check"    ,val= 1	,def= true	                                                    },
-            { id= "disable_smart_pop_cap"    	 	 		        ,type= "check"    ,val= 1	,def= false	                                                    },
-            { id= "purge_zone_on_emission"    	 	 		        ,type= "check"    ,val= 1	,def= false	                                                    },
-            { id= "purge_zone_percentage"    	 	 		        ,type= "track"    ,val= 2	,def= 50	  ,min= 0     ,max= 100        ,step= 1  	        },
-            { id= "debug_logging"    	 	 		                ,type= "check"    ,val= 1	,def= false	                                                    },
+            { id = "zombies_act_as_faction", type = "check", val = 1, def = false },
+            { id = "enable_mutant_offline_combat", type = "check", val = 1, def = true },
+            { id = "disable_smart_pop_cap", type = "check", val = 1, def = false },
+            { id = "purge_zone_on_emission", type = "check", val = 1, def = false },
+            { id = "purge_zone_percentage", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
+            { id = "debug_logging", type = "check", val = 1, def = false },
 
-            { id= "territory_diplo_penalty"    	 	                ,type= "check"    ,val= 1	,def= true	             	                    				},
-            { id= "prevent_mainbase_attacks"    	 	            ,type= "check"    ,val= 1	,def= false	             	                    				},
-            { id= "use_old_auto_capture"    	 	 		        ,type= "check"    ,val= 1	,def= false	             	                    				},
-            { id= "extra_loner_fog_of_war"    	 	 		        ,type= "check"    ,val= 1	,def= true	                                                    },
-            { id= "hide_lair_smarts"    	 	 		            ,type= "check"    ,val= 1	,def= false	                                                    },
-            { id= "actor_support_goodwill_base"    	 	 			,type= "track"    ,val= 2	,def= 0 	  ,min= 0     ,max= 100        ,step= 5  	        },
-            { id= "actor_support_goodwill_weight"    	 	 		,type= "track"    ,val= 2	,def= 0.001   ,min= 0     ,max= 0.01       ,step= 0.0005  	    },
-            { id= "monster_max_squads_per_level_lab"     	 		,type= "track"    ,val= 2	,def= 5	      ,min= 0     ,max= 20        ,step= 1  	        },
-            { id= "monster_rare_chance_south"    	 	 		    ,type= "track"    ,val= 2	,def= 3			,min= 0     ,max= 100        ,step= 1  	        },
-            { id= "monster_rare_chance_north"    	 	 		    ,type= "track"    ,val= 2	,def= 10		,min= 0     ,max= 100        ,step= 1  	        },
-            { id= "monster_rare_chance_lab"    	 	 		    	,type= "track"    ,val= 2	,def= 50		,min= 0     ,max= 100        ,step= 1  	        },
-            { id= "offline_combat_distance"    	 	 		    	,type= "track"    ,val= 2	,def= 50	  ,min= 1     ,max= 100        ,step= 1  	        },
-            { id= "overflow_overrides_manual_control" 		        ,type= "check"    ,val= 1	,def= true	                                                    },
+            { id = "territory_diplo_penalty", type = "check", val = 1, def = true },
+            { id = "prevent_mainbase_attacks", type = "check", val = 1, def = false },
+            { id = "use_old_auto_capture", type = "check", val = 1, def = false },
+            { id = "extra_loner_fog_of_war", type = "check", val = 1, def = true },
+            { id = "hide_lair_smarts", type = "check", val = 1, def = false },
+            { id = "actor_support_goodwill_base", type = "track", val = 2, def = 0, min = 0, max = 100, step = 5 },
+            { id = "actor_support_goodwill_weight", type = "track", val = 2, def = 0.001, min = 0, max = 0.01, step = 0.0005 },
+            { id = "monster_max_squads_per_level_lab", type = "track", val = 2, def = 5, min = 0, max = 20, step = 1 },
+            { id = "monster_rare_chance_south", type = "track", val = 2, def = 3, min = 0, max = 100, step = 1 },
+            { id = "monster_rare_chance_north", type = "track", val = 2, def = 10, min = 0, max = 100, step = 1 },
+            { id = "monster_rare_chance_lab", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
+            { id = "offline_combat_distance", type = "track", val = 2, def = 50, min = 1, max = 100, step = 1 },
+            { id = "overflow_overrides_manual_control", type = "check", val = 1, def = true },
         },
     }
-    warfare_options.gr[alife_warfare_azazel_options_index].presets = {"warfare_alifeoverhaul","warfare_alifeoverhaul_faster","warfare_alifeoverhaul_veryfast","warfare_alifeoverhaul_rapidtest","warfare_default","warfare_yoko"}
+    warfare_options.gr[alife_warfare_azazel_options_index].presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" }
     warfare_options.gr[alife_warfare_stalker_options_index] = stalker_warfare_options
 
     -- Auto-complete factions options for warfare
-    local other_factions = {"bandit", "csky", "army", "freedom", "dolg", "ecolog", "killer", "monolith", "renegade", "greh", "isg", "zombied"}
+    local other_factions = { "bandit", "csky", "army", "freedom", "dolg", "ecolog", "killer", "monolith", "renegade", "greh", "isg", "zombied" }
     for i, faction in ipairs(other_factions) do
         warfare_options.gr[alife_warfare_stalker_options_index + i] = {
             id = faction,
@@ -200,11 +200,11 @@ function ui_options.init_opt_coder()
 
     local function code_option(gr, id, num)
         local path
-        for i=1,#gr do
+        for i = 1, #gr do
             if ui_options.allowed_type[gr[i].type] then
-                path            = ui_options.cc(id , gr[i].id)
-                ui_options.opt_index[path] = ui_options.cc(num , i)
-                ui_options.opt_val[path]  = gr[i].val
+                path = ui_options.cc(id, gr[i].id)
+                ui_options.opt_index[path] = ui_options.cc(num, i)
+                ui_options.opt_val[path] = gr[i].val
                 --printf("-[%s] (%s) | index: %s - type: %s", path, id, ui_options.opt_index[path], ui_options.opt_val[path])
             else
                 --printf("code_option %s type not allowed: %s", gr[i].id, gr[i].type)
@@ -214,22 +214,22 @@ function ui_options.init_opt_coder()
 
     local id_1, id_2, id_3
     -- Level 1
-    for i=1,#ui_options.options do
+    for i = 1, #ui_options.options do
         id_1 = ui_options.options[i].id
         if ui_options.options[i].sh then
             code_option(ui_options.options[i].gr, id_1, i)
         else
             -- Level 2
-            for ii=1,#ui_options.options[i].gr do
+            for ii = 1, #ui_options.options[i].gr do
                 id_2 = ui_options.options[i].gr[ii].id
                 if ui_options.options[i].gr[ii].sh then
-                    code_option( (ui_options.options[i].gr[ii].gr), (id_1 ..ui_options._opt_.. id_2), (i ..ui_options._opt_.. ii) )
+                    code_option((ui_options.options[i].gr[ii].gr), (id_1 .. ui_options._opt_ .. id_2), (i .. ui_options._opt_ .. ii))
                 else
                     -- Level 3
-                    for iii=1,#ui_options.options[i].gr[ii].gr do
+                    for iii = 1, #ui_options.options[i].gr[ii].gr do
                         id_3 = ui_options.options[i].gr[ii].gr[iii].id
                         if ui_options.options[i].gr[ii].gr[iii].sh then
-                            code_option( (ui_options.options[i].gr[ii].gr[iii].gr), (id_1 ..ui_options._opt_.. id_2 ..ui_options._opt_.. id_3), (i ..ui_options._opt_.. ii ..ui_options._opt_.. iii) )
+                            code_option((ui_options.options[i].gr[ii].gr[iii].gr), (id_1 .. ui_options._opt_ .. id_2 .. ui_options._opt_ .. id_3), (i .. ui_options._opt_ .. ii .. ui_options._opt_ .. iii))
                         else
                             --printf("code_option too long: %s", ui_options.options[i].gr[ii].gr[iii].id)
                         end
@@ -243,7 +243,7 @@ end
 
 local old_UINewGame_OnCheckSetStory = ui_mm_faction_select.UINewGame.OnCheckSetStory
 function ui_mm_faction_select.UINewGame:OnCheckSetStory()
-    printf("UINewGame:OnCheckSetStory overridden")
+    --printf("UINewGame:OnCheckSetStory overridden")
     if (not self.access) then
         return
     end
@@ -275,7 +275,7 @@ function ui_mm_faction_select.on_game_load(binder)
     if not (config) then
         return
     end
-    local faction = config:r_value("character_creation","new_game_faction",3) or ""
+    local faction = config:r_value("character_creation", "new_game_faction", 3) or ""
     old_on_game_load(binder)
     if not ui_mm_faction_select.faction_psi_off[faction] then
         return
@@ -291,38 +291,38 @@ function ui_mm_faction_select.on_game_load(binder)
             "bar_deactivate_radar_done",
             "warlab_deactivate_generators_done"
         }
-        for _,info in pairs(info_to_disable) do
+        for _, info in pairs(info_to_disable) do
             disable_info(info)
         end
     end
 
     local helm_name = "good_psy_helmet"
     alife_create_item(helm_name, db.actor)
-    printf("giving psy helmet to Monolith/Sin/Zombied actor")
+    --printf("giving psy helmet to Monolith/Sin/Zombied actor")
 end
 
 local old_actor_on_first_update = ui_mm_faction_select.actor_on_first_update
-function ui_mm_faction_select.actor_on_first_update(binder,delta)
-    old_actor_on_first_update(binder,delta)
+function ui_mm_faction_select.actor_on_first_update(binder, delta)
+    old_actor_on_first_update(binder, delta)
     -- Survival mode
     if (IsSurvivalMode()) then
-        game_relations.change_factions_community_num("zombied",0,-5000)
-        game_relations.change_factions_community_num("monolith",0,-5000)
+        game_relations.change_factions_community_num("zombied", 0, -5000)
+        game_relations.change_factions_community_num("monolith", 0, -5000)
 
         local faction = character_community(db.actor):sub(7)
-        if (ini_sys:section_exist("survival_squad_"..faction) and ui_mm_faction_select.start_pos) then
-            local squad = alife_create("survival_squad_"..faction,ui_mm_faction_select.start_pos[3],ui_mm_faction_select.start_pos[1],ui_mm_faction_select.start_pos[2])
+        if (ini_sys:section_exist("survival_squad_" .. faction) and ui_mm_faction_select.start_pos) then
+            local squad = alife_create("survival_squad_" .. faction, ui_mm_faction_select.start_pos[3], ui_mm_faction_select.start_pos[1], ui_mm_faction_select.start_pos[2])
             if (squad) then
                 axr_companions.companion_squads[squad.id] = squad
-                squad:create_npc(nil,ui_mm_faction_select.start_pos[3],ui_mm_faction_select.start_pos[1],ui_mm_faction_select.start_pos[2])
+                squad:create_npc(nil, ui_mm_faction_select.start_pos[3], ui_mm_faction_select.start_pos[1], ui_mm_faction_select.start_pos[2])
                 for k in squad:squad_members() do
                     local se_obj = k.object or k.id and alife():object(k.id)
                     if (se_obj) then
-                        game_relations.change_factions_community_num("zombied",k.id,-5000)
+                        game_relations.change_factions_community_num("zombied", k.id, -5000)
                         SIMBOARD:setup_squad_and_group(se_obj)
 
-                        se_save_var(se_obj.id,se_obj:name(),"companion",true)
-                        se_save_var(se_obj.id,se_obj:name(),"companion_cannot_dismiss",true)
+                        se_save_var(se_obj.id, se_obj:name(), "companion", true)
+                        se_save_var(se_obj.id, se_obj:name(), "companion_cannot_dismiss", true)
                     end
                 end
             end

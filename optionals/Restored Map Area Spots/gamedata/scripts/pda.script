@@ -458,7 +458,7 @@ end
 ----------------------------------------------------------------------------
 function get_coc_ranking_list()
     for i = 1, 10 do
-        printf("- get_coc_ranking_list | id [%s] = %s", i, coc_ranking_list[i])
+        --printf("- get_coc_ranking_list | id [%s] = %s", i, coc_ranking_list[i])
     end
     return coc_ranking_list
 end

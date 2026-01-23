@@ -908,7 +908,7 @@ function faction_diplomatic_penalty(contested_smart_id, faction_1, faction_2)
 	game_relations.change_faction_relations(faction_1, faction_2, penalty_value)
 	
 	if enable_debug then
-		printf("%s is mad that %s has stolen target %s from them! %s to relations", faction_1, faction_2, contested_smart:name(), penalty_value)
+		--printf("%s is mad that %s has stolen target %s from them! %s to relations", faction_1, faction_2, contested_smart:name(), penalty_value)
 	end
 end
 
@@ -1092,7 +1092,7 @@ function process_targets(smart)
 								-- stop sending squads once full force is sent
 								if (numSent == invasion_size) then
 									if enable_debug then
-										printf("sending %s %s squads from %s to attack %s", invasion_size, smart.owning_faction, smart:name(), target:name())
+										--printf("sending %s %s squads from %s to attack %s", invasion_size, smart.owning_faction, smart:name(), target:name())
 									end
 									break
 								end
@@ -1196,7 +1196,7 @@ function process_targets(smart)
 		end
 		
 --		if enable_debug then
---			printf("re-checking targets/invasion of %s base %s due to loss of bases/resources: %s vs %s and %s vs %s", smart.owning_faction, smart:name(), current_base_count, base_recheck[smart.id], current_resource_count, resource_recheck[smart.id])
+--			--printf("re-checking targets/invasion of %s base %s due to loss of bases/resources: %s vs %s and %s vs %s", smart.owning_faction, smart:name(), current_base_count, base_recheck[smart.id], current_resource_count, resource_recheck[smart.id])
 --		end
 	end
 	
@@ -1310,7 +1310,7 @@ function capture_empty_location(smart, target)
 					-- send the available squad
 					sim_squad_warfare.set_target(squad, target.id)
 					if enable_debug then
-						printf("sending %s squad on base %s to empty terrain %s (requested by %s)", other.owning_faction, other:name(), target:name(), smart:name())
+						--printf("sending %s squad on base %s to empty terrain %s (requested by %s)", other.owning_faction, other:name(), target:name(), smart:name())
 					end
 					
 					-- exit function
@@ -1322,7 +1322,7 @@ function capture_empty_location(smart, target)
 
 
 --	if enable_debug then
---		printf("no %s bases within linked levels have spare squads to send to empty terrain %s", smart.owning_faction, target:name())
+--		--printf("no %s bases within linked levels have spare squads to send to empty terrain %s", smart.owning_faction, target:name())
 --	end
 	
 end
@@ -1351,7 +1351,7 @@ function capture_empty_location_simple(smart, target)
 				-- send the available squad
 				sim_squad_warfare.set_target(squad, target.id)
 				if enable_debug then
-					printf("sending %s squad on base %s to empty terrain %s", smart.owning_faction, smart:name(), target:name())
+					--printf("sending %s squad on base %s to empty terrain %s", smart.owning_faction, smart:name(), target:name())
 				end
 
 				-- exit function
@@ -1507,9 +1507,9 @@ function create_invasion_plan(smart, target)
 		
 --		if enable_debug then
 --			if immediate_invasion then
---				printf("prepping instant invasion from %s base %s to target %s with force of %s squads", smart.owning_faction, smart:name(), target:name(), invasion_force_size)
+--				--printf("prepping instant invasion from %s base %s to target %s with force of %s squads", smart.owning_faction, smart:name(), target:name(), invasion_force_size)
 --			else
---				printf("planning invasion from %s base %s to target %s with force of %s squads (desired was %s)", smart.owning_faction, smart:name(), target:name(), invasion_force_size, invasion_force_desired)
+--				--printf("planning invasion from %s base %s to target %s with force of %s squads (desired was %s)", smart.owning_faction, smart:name(), target:name(), invasion_force_size, invasion_force_desired)
 --			end
 --		end
 	end
@@ -1567,7 +1567,7 @@ function contribute_to_other_invasion(smart)
 							sim_squad_warfare.set_target(squad, other.id)
 							squads_available = squads_available - 1
 							if enable_debug then
-								printf("giving one %s squad at %s to invasion force prepping at %s", smart.owning_faction, smart:name(), other:name())
+								--printf("giving one %s squad at %s to invasion force prepping at %s", smart.owning_faction, smart:name(), other:name())
 							end
 						end
 					end
@@ -1779,7 +1779,7 @@ function process_invasion_defense(smart)
 							power_disparity = power_disparity - ally_squad_power
 							squads_sent = true
 							if enable_debug then
-								printf("sending %s reinforcement squad from %s to location under attack %s", defending_faction, other:name(), smart:name())
+								--printf("sending %s reinforcement squad from %s to location under attack %s", defending_faction, other:name(), smart:name())
 							end
 							if (power_disparity < 0) then
 								return				-- once power disparity is made up, stop sending squads
@@ -1793,9 +1793,9 @@ function process_invasion_defense(smart)
 		-- not enough reinforcements were available to make up the power disparity
 		if enable_debug then
 			if squads_sent then
-				printf("not enough %s reinforcements were available in the vicinity to sufficiently assist %s", defending_faction, smart:name())
+				--printf("not enough %s reinforcements were available in the vicinity to sufficiently assist %s", defending_faction, smart:name())
 			else
-				printf("no %s reinforcements were available in the area to assist %s", defending_faction, smart:name())
+				--printf("no %s reinforcements were available in the area to assist %s", defending_faction, smart:name())
 			end
 		end
 
@@ -1829,7 +1829,7 @@ function process_invasion_defense(smart)
 	else
 		-- if function has gotten to this point, then no reinforcements were in the vicinity
 		if enable_debug then
-			printf("no %s reinforcements were available in the area to assist %s", defending_faction, smart:name())
+			--printf("no %s reinforcements were available in the area to assist %s", defending_faction, smart:name())
 		end
 		
 		if (warfare.actor_faction) and (warfare.actor_faction == defending_faction) and (smart.is_on_actor_level) and (1.5*smart.dist_to_actor < avg_enemy_dist) then
@@ -2319,7 +2319,7 @@ function process_loners(smart)
 							if (#all_targets > 0) then
 								local target = all_targets[math.random(#all_targets)]																	-- pick a random target from the list
 								if enable_debug then
-									printf("setting target of loners on base ".. smart:name() .. " to same-level resource: " ..target:name())
+									--printf("setting target of loners on base ".. smart:name() .. " to same-level resource: " ..target:name())
 								end
 								sim_squad_warfare.set_target(squad, target.id)
 								target_set = true
@@ -2342,7 +2342,7 @@ function process_loners(smart)
 							if (#all_targets > 0) then
 								local target = all_targets[math.random(#all_targets)]
 								if enable_debug then
-									printf("setting target of loners on base ".. smart:name() .. " to same-level lair: " ..target:name())
+									--printf("setting target of loners on base ".. smart:name() .. " to same-level lair: " ..target:name())
 								end
 								sim_squad_warfare.set_target(squad, target.id)
 								target_set = true
@@ -2391,14 +2391,14 @@ function process_loners(smart)
 						if (#priority_targets > 0) then
 							local target = priority_targets[math.random(#priority_targets)]
 							if enable_debug then
-								printf("setting target of loners on base ".. smart:name() .. " to empty linked-level resource: " ..target:name())
+								--printf("setting target of loners on base ".. smart:name() .. " to empty linked-level resource: " ..target:name())
 							end
 							sim_squad_warfare.set_target(squad, target.id)
 							target_set = true
 						elseif (#all_targets > 0) then
 							local target = all_targets[math.random(#all_targets)]
 							if enable_debug then
-								printf("setting target of loners on base ".. smart:name() .. " to occupied linked-level resource: " ..target:name())
+								--printf("setting target of loners on base ".. smart:name() .. " to occupied linked-level resource: " ..target:name())
 							end
 							sim_squad_warfare.set_target(squad, target.id)
 							target_set = true
@@ -2440,7 +2440,7 @@ function process_loners(smart)
 					if (#all_targets > 0) then
 						local target = all_targets[math.random(#all_targets)]
 						if enable_debug then
-							printf("setting target of loners on resource ".. smart:name() .. " to same-level resource: " ..target:name())
+							--printf("setting target of loners on resource ".. smart:name() .. " to same-level resource: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
@@ -2487,14 +2487,14 @@ function process_loners(smart)
 					if (#priority_targets > 0) then
 						local target = priority_targets[math.random(#priority_targets)]
 						if enable_debug then
-							printf("setting target of loners on resource ".. smart:name() .. " to empty linked-level resource: " ..target:name())
+							--printf("setting target of loners on resource ".. smart:name() .. " to empty linked-level resource: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
 					elseif (#all_targets > 0) then
 						local target = all_targets[math.random(#all_targets)]
 						if enable_debug then
-							printf("setting target of loners on resource ".. smart:name() .. " to occupied linked-level resource: " ..target:name())
+							--printf("setting target of loners on resource ".. smart:name() .. " to occupied linked-level resource: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
@@ -2520,7 +2520,7 @@ function process_loners(smart)
 				if (#all_targets > 0) then
 					local target = all_targets[math.random(#all_targets)]
 					if enable_debug then
-						printf("setting target of loners on lair ".. smart:name() .. " to same-level lair: " ..target:name())
+						--printf("setting target of loners on lair ".. smart:name() .. " to same-level lair: " ..target:name())
 					end
 					sim_squad_warfare.set_target(squad, target.id)
 					target_set = true
@@ -2557,14 +2557,14 @@ function process_loners(smart)
 					if (#priority_targets > 0) then
 						local target = priority_targets[math.random(#priority_targets)]
 						if enable_debug then
-							printf("setting target of loners on ".. smart:name() .. " to same-level loner base: " ..target:name())
+							--printf("setting target of loners on ".. smart:name() .. " to same-level loner base: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
 					elseif (#all_targets > 0) then
 						local target = all_targets[math.random(#all_targets)]
 						if enable_debug then
-							printf("setting target of loners on ".. smart:name() .. " to same-level " .. target.owning_faction .. " base: " ..target:name())
+							--printf("setting target of loners on ".. smart:name() .. " to same-level " .. target.owning_faction .. " base: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
@@ -2605,14 +2605,14 @@ function process_loners(smart)
 					if (#priority_targets > 0) then
 						local target = priority_targets[math.random(#priority_targets)]
 						if enable_debug then
-							printf("setting target of loners on ".. smart:name() .. " to linked-level loner base: " ..target:name())
+							--printf("setting target of loners on ".. smart:name() .. " to linked-level loner base: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
 					elseif (#all_targets > 0) then
 						local target = all_targets[math.random(#all_targets)]
 						if enable_debug then
-							printf("setting target of loners on ".. smart:name() .. " to linked-level " .. target.owning_faction .. " base: " ..target:name())
+							--printf("setting target of loners on ".. smart:name() .. " to linked-level " .. target.owning_faction .. " base: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
@@ -2637,7 +2637,7 @@ function process_loners(smart)
 					if (#all_targets > 0) then
 						local target = all_targets[math.random(#all_targets)]
 						if enable_debug then
-							printf("setting target of loners on ".. smart:name() .. " to same-level territory: " ..target:name())
+							--printf("setting target of loners on ".. smart:name() .. " to same-level territory: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
@@ -2669,6 +2669,9 @@ function process_ecolog(smart)
 
 	for sid,_ in pairs(squads) do
 		local squad = sid and alife_object(sid)
+		if squad == nil then
+			goto continue
+		end
 		local faction = squad:get_squad_community()							-- get faction of squads
 		
 		if (faction == "ecolog") and squad_is_commandable(squad, true) and (squad.current_action == 1) then								-- only operate on ecologists, exclude unique npcs
@@ -2700,7 +2703,7 @@ function process_ecolog(smart)
 						if (#all_targets > 0) then
 							local target = all_targets[math.random(#all_targets)]
 							if enable_debug then
-								printf("setting target of ecologists at base ".. smart:name() .. " to same-level resource: " ..target:name())
+								--printf("setting target of ecologists at base ".. smart:name() .. " to same-level resource: " ..target:name())
 							end
 							sim_squad_warfare.set_target(squad, target.id)
 							target_set = true
@@ -2729,7 +2732,7 @@ function process_ecolog(smart)
 						if (#all_targets > 0) then
 							local target = all_targets[math.random(#all_targets)]
 							if enable_debug then
-								printf("setting target of ecologists at base ".. smart:name() .. " to linked-level resource: " ..target:name())
+								--printf("setting target of ecologists at base ".. smart:name() .. " to linked-level resource: " ..target:name())
 							end
 							sim_squad_warfare.set_target(squad, target.id)
 							target_set = true
@@ -2756,7 +2759,7 @@ function process_ecolog(smart)
 					if (#all_targets > 0) then
 						local target = all_targets[math.random(#all_targets)]
 						if enable_debug then
-							printf("setting target of ecologists on resource ".. smart:name() .. " to same-level resource: " ..target:name())
+							--printf("setting target of ecologists on resource ".. smart:name() .. " to same-level resource: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
@@ -2784,7 +2787,7 @@ function process_ecolog(smart)
 					if (#all_targets > 0) then
 						local target = all_targets[math.random(#all_targets)]
 						if enable_debug then
-							printf("setting target of ecologists on resource ".. smart:name() .. " to linked-level resource: " ..target:name())
+							--printf("setting target of ecologists on resource ".. smart:name() .. " to linked-level resource: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
@@ -2853,21 +2856,21 @@ function process_ecolog(smart)
 				if (#priority_targets > 0) then																						-- first priority for ecologist bases
 					local target = priority_targets[math.random(#priority_targets)]
 					if enable_debug then
-						printf("setting target of ecologists on ".. smart:name() .. " to ecologist base: " ..target:name())
+						--printf("setting target of ecologists on ".. smart:name() .. " to ecologist base: " ..target:name())
 					end
 					sim_squad_warfare.set_target(squad, target.id)
 					target_set = true
 				elseif (#backup_targets_on > 0) then																					-- otherwise try on-level neutral/empty bases
 					local target = backup_targets_on[math.random(#backup_targets_on)]
 					if enable_debug then
-						printf("setting target of ecologists on ".. smart:name() .. " to same-level " .. target.owning_faction .. " base: " ..target:name())
+						--printf("setting target of ecologists on ".. smart:name() .. " to same-level " .. target.owning_faction .. " base: " ..target:name())
 					end
 					sim_squad_warfare.set_target(squad, target.id)
 					target_set = true
 				elseif (#backup_targets_off > 0) then																				-- if no available on-level bases, pick a linked-level neutral/empty base
 					local target = backup_targets_off[math.random(#backup_targets_off)]
 					if enable_debug then
-						printf("setting target of ecologists on ".. smart:name() .. " to linked-level " .. target.owning_faction .. " base: " ..target:name())
+						--printf("setting target of ecologists on ".. smart:name() .. " to linked-level " .. target.owning_faction .. " base: " ..target:name())
 					end
 					sim_squad_warfare.set_target(squad, target.id)
 					target_set = true
@@ -2890,7 +2893,7 @@ function process_ecolog(smart)
 					if (#all_targets > 0) then
 						local target = all_targets[math.random(#all_targets)]
 						if enable_debug then
-							printf("setting target of ecologists on ".. smart:name() .. " to same-level territory: " ..target:name())
+							--printf("setting target of ecologists on ".. smart:name() .. " to same-level territory: " ..target:name())
 						end
 						sim_squad_warfare.set_target(squad, target.id)
 						target_set = true
@@ -2898,6 +2901,7 @@ function process_ecolog(smart)
 				end
 			end
 		end
+		::continue::
 	end
 end
 
@@ -2963,7 +2967,7 @@ function spawn_mutants(smart)
 					sim_squad_warfare.set_target(squad, smart.id)
 					spawned = true
 					if enable_debug then
-						printf("spawning %s on terrain %s which already had %s.", section, smart:name(), section)
+						--printf("spawning %s on terrain %s which already had %s.", section, smart:name(), section)
 					end
 					break
 				end
@@ -2975,7 +2979,7 @@ function spawn_mutants(smart)
 			local squad = utils_obj.create_squad(section, smart:name())
 			sim_squad_warfare.set_target(squad, smart.id)
 			if enable_debug then
-				printf("spawning %s on empty terrain %s. There are now %s / %s mutant squads on that level", section, smart:name(), (mutants_on_level+1), max_active)
+				--printf("spawning %s on empty terrain %s. There are now %s / %s mutant squads on that level", section, smart:name(), (mutants_on_level+1), max_active)
 			end
 		end
 	end
@@ -3059,7 +3063,7 @@ function process_mutants(smart)
 										local target = targets[math.random(#targets)]
 										local num_targeting = squad_count_targeting(target, "monster")
 										if enable_debug then
-											printf("setting target of mutants on ".. smart:name() .. " to linked-level target: " ..target:name())
+											--printf("setting target of mutants on ".. smart:name() .. " to linked-level target: " ..target:name())
 										end
 										sim_squad_warfare.set_target(squad, target.id)
 									end
@@ -3087,7 +3091,7 @@ function process_mutants(smart)
 								local target = targets[math.random(#targets)]
 								local num_targeting = squad_count_targeting(target, "monster")
 								if enable_debug then
-									printf("setting target of mutants on ".. smart:name() .. " to same-level target: " ..target:name())
+									--printf("setting target of mutants on ".. smart:name() .. " to same-level target: " ..target:name())
 								end
 								sim_squad_warfare.set_target(squad, target.id)
 							end
@@ -3872,22 +3876,31 @@ end
 -- get squads count and power of all factions in a smart
 -- includes stationary squads
 -- WARNING: Capable of unregistering squads!
-function squad_count_defending_all(smart)
+function squad_count_defending_all(smart, skip_check)
     printd(0, smart:name())
 	
 	local squadCount = {}
 	local squadPower = {}
 	
-	if not (smart.owning_faction) then		
+	if not skip_check and not (smart.owning_faction) then
 		check_owner(smart)
 	end
 	
 	local squads = SIMBOARD.smarts[smart.id].squads
 	for sid,_ in pairs(squads) do
 		local squad = sid and alife_object(sid)
-		if squad and (squad:clsid() == clsid.online_offline_group_s) then
-			local faction = squad:get_squad_community()
-			
+		if not squad then
+			goto continue
+		end
+		if not squad.get_squad_community then
+			goto continue
+		end
+		local faction = squad:get_squad_community()
+		if not faction then
+			goto continue
+		end
+
+		if squad:clsid() == clsid.online_offline_group_s then
 			if warfare_factions.factions_p[faction]                         -- squad is from warfare faction
 			and warfare.registered_squads[faction][sid]                     -- squad is registered in warfare
 			and (squad.current_action == 1)                                 -- squad arrived to smart
@@ -3899,12 +3912,11 @@ function squad_count_defending_all(smart)
 					squadPower[faction] = (squadPower[faction] or 0) + power
 				end
 			end
-		elseif squad then
-			local faction = squad:get_squad_community()
-			if faction then
-				warfare.registered_squads[faction][sid] = nil
-			end
+		else
+			warfare.registered_squads[faction][sid] = nil
 		end
+
+		::continue::
 	end
     
     printd(1, smart:name())
@@ -3987,7 +3999,7 @@ function check_owner(smart)
 		owner = "none"
 	end
 
-	local squadCount, squadPowers = squad_count_defending_all(smart)
+	local squadCount, squadPowers = squad_count_defending_all(smart, true)
 	
 	-- New faction owner = who has highest squad count on the smart + smart has no owner
 	local owner = "none"
@@ -3996,7 +4008,7 @@ function check_owner(smart)
 			if (faction ~= "stalker" and faction ~= "ecolog" and faction ~= "zombied") and (smart.owning_faction == "stalker" or smart.owning_faction == "ecolog" or smart.owning_faction == "zombied") and not is_factions_enemies(faction, smart.owning_faction) then		-- if current owner is loner/ecologist/zombified, they auto-lose non-base points to other neutral factions
 				if ((smart.props) and (smart.props.base < 1)) or (squadCount[smart.owning_faction] and count and squadCount[smart.owning_faction] < count) then																					-- loners/ecologist auto-lose resources/territories to other neutral factions, but bases require the faction to have more squads present
 					if enable_debug then
-						printf("transferring control of " .. smart:name() .. " from " .. smart.owning_faction .. " to " .. faction)
+						--printf("transferring control of " .. smart:name() .. " from " .. smart.owning_faction .. " to " .. faction)
 					end
 					owner = faction 																																	-- relinquish control to other faction
 					break
@@ -4095,13 +4107,13 @@ function check_owner(smart)
 			if is_factions_enemies(smart.owning_faction, previous_owner[smart.id]) then
 				reset_defense_timer[smart.id] = 1											-- a non-nil value here will cause the spawn time to reset, which will happen when a base's ownership changes
 				if enable_debug then
-					printf("resetting defense timer of base %s due to ownership change from %s to %s", smart:name(), previous_owner[smart.id], smart.owning_faction)
+					--printf("resetting defense timer of base %s due to ownership change from %s to %s", smart:name(), previous_owner[smart.id], smart.owning_faction)
 				end
 			-- or reset timer if a legit faction steals a base from another legit faction. Don't reset for loner/ecolog changes
 			elseif (previous_owner[smart.id] ~= "stalker" and previous_owner[smart.id] ~= "ecolog" and smart.owning_faction ~= "stalker" and smart.owning_faction ~= "ecolog") then
 				reset_defense_timer[smart.id] = 1											-- a non-nil value here will cause the spawn time to reset, which will happen when a base's ownership changes
 				if enable_debug then
-					printf("resetting defense timer of base %s due to ownership change from %s to %s", smart:name(), previous_owner[smart.id], smart.owning_faction)
+					--printf("resetting defense timer of base %s due to ownership change from %s to %s", smart:name(), previous_owner[smart.id], smart.owning_faction)
 				end
 			end
 		end
@@ -4202,134 +4214,148 @@ function find_random_patrol_target(smart, faction, sid)
 	printd(0, "find_random_patrol_target: "..(smart and smart:name() or "spawn"))
 
 	local smart_level = smart and game_graph():vertex(smart.m_game_vertex_id):level_id()
-	local smartCollection = {}
-	local targets = {}
-	local backup_targets = {}
 
+	-- Collect all smarts first
+	local smartCollection = {}
 	for _,lvl in pairs(level_targets.active_levels) do
 		local smarts = warfare_levels.level_information[lvl].smarts
-			
 		for i=1,#smarts do
-			smartCollection[#smartCollection+1] = smarts[i]
+			local other = smarts[i] and alife_object(smarts[i])
+			if other then
+				smartCollection[#smartCollection+1] = other
+			end
 		end
-	end	
-	
+	end
+
+	-- Fisher-Yates shuffle for true randomness
+	for i = #smartCollection, 2, -1 do
+		local j = math.random(i)
+		smartCollection[i], smartCollection[j] = smartCollection[j], smartCollection[i]
+	end
+
+	local faction_options = warfare_options.options.factions[faction]
+
+	-- Now iterate through shuffled array and find first valid target
+	local target = nil
+	local backup_target = nil
+
 	for i=1,#smartCollection do
-		local other = smartCollection[i] and alife_object(smartCollection[i])		
+		local other = smartCollection[i]
 		local priority = 0
+		local other_faction = other.owning_faction or "none"
 
-		if (smart) then																								-- only check priorities if the squad has spawned
-			if (other) then
-				local other_faction = other.owning_faction or "none"
+		if (smart) then  -- only check priorities if the squad has spawned
+			-- Skip if it's the same smart
+			if (other.id == smart.id) then
+				goto continue
+			end
+
+			-- Duty random patrols target lairs only
+			if faction == "dolg" then
+				if (other.props.lair > 0) then
+					priority = 2
+				end
+			else
+				-- Calculate priority based on various factors
+				if (warfare.influence_levels[other.id] and faction == warfare.actor_faction) then
+					priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
+				end
+
+				if other.props[faction] then
+					priority = priority + (other.props[faction] * faction_options.faction_flag_priority)
+				end
+
+				if (other.props.base > 0) then
+					priority = priority + (other.props.base * faction_options.base_priority)
+				end
+
+				if (other.props.resource > 0) then
+					priority = priority + (other.props.resource * faction_options.resource_priority)
+				end
+
+				if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1) then
+					priority = priority + (other.props.territory * faction_options.territory_priority)
+				end
+
 				local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
-				
-				-- Duty random patrols target lairs only. Other factions operate normally
-				if (faction ~= "dolg") then
-					if (warfare.influence_levels[other.id] and faction == warfare.actor_faction) then
-						priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
-					end
-					
-					if other.props[faction] then
-						priority = priority + (other.props[faction] * warfare_options.options.factions[faction].faction_flag_priority)
-					end
-					
-					if (other.props.base > 0) then
-						priority = priority + (other.props.base * warfare_options.options.factions[faction].base_priority)
-					end
-					
-					if (other.props.resource > 0) then			
-						priority = priority + (other.props.resource * warfare_options.options.factions[faction].resource_priority)
-					end
-					
-					if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1) then	
-						priority = priority + (other.props.territory * warfare_options.options.factions[faction].territory_priority)
-					end
-				
-					local p = "lvl_"..other_level.."_priority"
-					if warfare_options.options.factions[faction][p] then
-						priority = priority + warfare_options.options.factions[faction][p]
-					end
+				local p = "lvl_"..other_level.."_priority"
+				if faction_options[p] then
+					priority = priority + faction_options[p]
+				end
 
-					if (other.id == smart.id) then
+				-- Check hostile locations
+				if (other_faction ~= "none") and (is_factions_enemies(faction, other_faction)) and (sid) then
+					local squad = sid and alife_object(sid)
+					local enemy_squads = SIMBOARD.smarts[other.id].squads
+					local enemy_power = 0
+					local patrol_power = sim_offline_combat.calculate_squad_power(squad)
+					for enemy_id,_ in pairs(enemy_squads) do
+						local enemy_squad = enemy_id and alife_object(enemy_id)
+						enemy_power = enemy_power + sim_offline_combat.calculate_squad_power(enemy_squad)
+					end
+					local attack_chance = (patrol_power / enemy_power - 1) * 100
+					if (patrol_power) and (patrol_power > enemy_power) and (attack_chance > math.random(1,100)) then
+						priority = 2
+					else
 						priority = 0
 					end
-					
-					if (other_faction ~= "none") and (is_factions_enemies(faction, other_faction)) and (sid) then				-- random patrols only attack hostile locations if they are much stronger than enemy presence
-						local squad = sid and alife_object(sid)
-						local enemy_squads = SIMBOARD.smarts[other.id].squads
-						local enemy_power = 0
-						local patrol_power = sim_offline_combat.calculate_squad_power(squad)
-						for enemy_id,_ in pairs(enemy_squads) do
-							local enemy_squad = enemy_id and alife_object(enemy_id)
-							enemy_power = enemy_power + sim_offline_combat.calculate_squad_power(enemy_squad)
-						end
-						local attack_chance = (patrol_power / enemy_power - 1) * 100
-						if (patrol_power) and (patrol_power > enemy_power) and (attack_chance > math.random(1,100)) then
-							priority = 2
-						else
-							priority = 0
-						end
-					end
+				end
 
-					-- heavily de-prioritize pure lairs
-					if (other.props.resource < 1 and other.props.base < 1 and other.props.territory < 1) then				
-						priority = -1000
-					end
-					
-					-- ISG extremely interested in targeting labs
-					if (faction == "isg") and lab_entrance_smarts[other:name()] then
-						priority = 10 * priority
-					end
-					
-					-- prevent main base attacks if option is enabled
-					if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] then
-						priority = -1000
-					end
-				
-				-- Duty random patrol goes to lairs
-				elseif (other.props.lair > 0) then
-					priority = 2
+				-- heavily de-prioritize pure lairs
+				if (other.props.resource < 1 and other.props.base < 1 and other.props.territory < 1) then
+					priority = -1000
+				end
+
+				-- ISG extremely interested in targeting labs
+				if faction == "isg" and lab_entrance_smarts[other:name()] then
+					priority = 10 * priority
+				end
+
+				-- prevent main base attacks if option is enabled
+				if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] then
+					priority = -1000
 				end
 			end
 
-		elseif (other.owning_faction ~= "none") and is_factions_enemies(faction, other.owning_faction) then					-- during the spawning phase, forbid hostile locations
+		elseif (other_faction ~= "none") and is_factions_enemies(faction, other_faction) then
 			priority = 0
-		elseif ( (faction == "stalker") or (faction == "ecolog") ) and (other.owning_faction ~= "none") and not is_factions_enemies(faction, other.owning_faction) then		-- loners/ecolog can spawn on any neutral location
+		elseif (faction == "stalker" or faction == "ecolog") and (other_faction ~= "none") and not is_factions_enemies(faction, other_faction) then
 			priority = 2
-		elseif (faction == other.owning_faction) and (faction ~= "zombied") then																	-- faction random patrols can spawn on their own locations
+		elseif (faction == other_faction) and (faction ~= "zombied") then
 			priority = 2
-		elseif (other.owning_faction == "none")	then																	-- if the squad has trouble spawning, spawn them on any vacant location
+		elseif (other_faction == "none") then
 			priority = 1
 		end
-		
+
+		-- Check if we found a valid target
 		if (priority > 1) then
-			targets[#targets+1] = other
-		elseif (priority > 0) then
-			backup_targets[#backup_targets+1] = other
+			target = other
+			break -- Found a valid target, stop searching
+		elseif (priority > 0) and not backup_target then
+			backup_target = other -- Keep first valid backup
 		end
-		
+
+		::continue::
 	end
 
 	-- used for spawning and re-targeting
-	if (#targets > 0) then
-		local target = targets[math.random(#targets)]
+	if target then
 		if enable_debug then
 			if (smart) then
-				printf("setting target of %s random patrol to: %s", faction, target:name())
+				--printf("setting target of %s random patrol to: %s", faction, target:name())
 			else
-				printf("spawning %s random patrol on %s", faction, target:name())
+				--printf("spawning %s random patrol on %s", faction, target:name())
 			end
 		end
 		return target.id
 	end
 
 	-- only used for spawning
-	if (#backup_targets > 0) then
-		local target = backup_targets[math.random(#backup_targets)]
+	if backup_target then
 		if enable_debug then
-			printf("spawning %s random patrol on %s", faction, target:name())
+			--printf("spawning %s random patrol on %s", faction, target:name())
 		end
-		return target.id
+		return backup_target.id
 	end
 
 	printd(1)
@@ -4737,13 +4763,13 @@ function pick_target(smart, squad, targets, override_checks)
 				if override_checks then
 					sim_squad_warfare.set_target(squad, other.id)
 					if enable_debug then
-						printf("moving %s squad on %s to %s, owned by %s", faction, smart:name(), other:name(), other.owning_faction)
+						--printf("moving %s squad on %s to %s, owned by %s", faction, smart:name(), other:name(), other.owning_faction)
 					end
 					break
 				elseif (other.owning_faction == "none") or (is_factions_enemies(faction, other.owning_faction)) or (((other.owning_faction == "stalker") or (other.owning_faction == "ecolog" )) and (other.props.base < 1)) then			-- enable targeting of loner/ecologist-occupied pure resources
 					sim_squad_warfare.set_target(squad, other.id)
 					if enable_debug then
-						printf("moving %s squad on %s to %s, owned by %s", faction, smart:name(), other:name(), other.owning_faction)
+						--printf("moving %s squad on %s to %s, owned by %s", faction, smart:name(), other:name(), other.owning_faction)
 					end
 					break
 				end
@@ -4865,7 +4891,7 @@ function check_unique_npcs(smart)
 			local squad = utils_obj.create_squad(trader, sm_name)
 									 
 			sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
-			printf("SPAWNED TRADER AT "..sm_name)
+			--printf("SPAWNED TRADER AT "..sm_name)
 			traderCount = traderCount + 1
 		end
 		
@@ -4873,7 +4899,7 @@ function check_unique_npcs(smart)
 			local squad = utils_obj.create_squad(mechanic, sm_name)
 															  
 			sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
-			printf("SPAWNED MECHANIC AT "..sm_name)
+			--printf("SPAWNED MECHANIC AT "..sm_name)
 			mechanicCount = mechanicCount + 1
 		end
 		
@@ -4881,7 +4907,7 @@ function check_unique_npcs(smart)
 			local squad = utils_obj.create_squad(medic, sm_name)
 															  
 			sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
-			printf("SPAWNED MEDIC AT "..sm_name)
+			--printf("SPAWNED MEDIC AT "..sm_name)
 			medicCount = medicCount + 1
 		end
 		
@@ -4889,7 +4915,7 @@ function check_unique_npcs(smart)
 			local squad = utils_obj.create_squad(barman, sm_name)
 															  
 			sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
-			printf("SPAWNED BARMAN AT "..sm_name)
+			--printf("SPAWNED BARMAN AT "..sm_name)
 			barmanCount = barmanCount + 1
 		end
 		
