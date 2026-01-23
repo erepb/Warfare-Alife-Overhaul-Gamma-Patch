@@ -1,0 +1,15 @@
+local warfare_get_stalker_pop_factor_value = warfare.get_stalker_pop_factor_value
+function warfare.get_stalker_pop_factor_value()
+    if smr_amain_mcm then
+        return smr_amain_mcm.get_config("stalker_pop_factor")
+    end
+    return warfare_get_stalker_pop_factor_value()
+end
+
+local warfare_get_monster_pop_factor_value = warfare.get_monster_pop_factor_value
+function warfare.get_monster_pop_factor_value()
+    if smr_amain_mcm then
+        return smr_amain_mcm.get_config("monster_pop_factor")
+    end
+    return warfare_get_monster_pop_factor_value
+end
