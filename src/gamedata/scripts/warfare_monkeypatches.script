@@ -368,7 +368,7 @@ function sim_squad_scripted.create_npc(self, spawn_smart, pos, lvid, gvid)
 end
 
 local tasks_smart_control_evaluate_smarts_squads = tasks_smart_control.evaluate_smarts_squads
-function evaluate_smarts_squads(task_id, tbl, smart, squad_def, faction_def)
+function tasks_smart_control.evaluate_smarts_squads(task_id, tbl, smart, squad_def, faction_def)
     if (not smart or not _G.WARFARE) then
         tasks_smart_control_evaluate_smarts_squads(task_id, tbl, smart, squad_def, faction_def)
         return
@@ -399,7 +399,7 @@ function evaluate_smarts_squads(task_id, tbl, smart, squad_def, faction_def)
         )
         then
             --printf("# %s | smart (%s) [%s] w/ squad (%s) [%s] = Checking", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
-            local is_legit_mutant_squad = tasks_assault.is_legit_mutant_squad
+            local is_legit_mutant_squad = tasks_smart_control.is_legit_mutant_squad
 
             for fac, _ in pairs(faction_def) do
 
@@ -415,7 +415,7 @@ function evaluate_smarts_squads(task_id, tbl, smart, squad_def, faction_def)
 end
 
 local tasks_smart_control_evaluate_squads_smarts = tasks_smart_control.evaluate_squads_smarts
-function evaluate_squads_smarts(task_id, var, smart, smrt)
+function tasks_smart_control.evaluate_squads_smarts(task_id, var, smart, smrt)
     if not _G.WARFARE then
         return tasks_smart_control_evaluate_squads_smarts(task_id, var, smart, smrt)
     end
@@ -433,8 +433,8 @@ function evaluate_squads_smarts(task_id, var, smart, smrt)
                     and (squad.current_target_id and squad.current_target_id == smart.id and squad.current_action == 1)
             then
                 --printf("- %s | squad (%s) [%s] is targeting smart (%s)", task_id, squad.id, squad.player_id, smart.id)
-                local cache_func = tasks_assault.cache_func
-                local is_legit_mutant_squad = tasks_assault.is_legit_mutant_squad
+                local cache_func = tasks_smart_control.cache_func
+                local is_legit_mutant_squad = tasks_smart_control.is_legit_mutant_squad
                 for i = 1, #cache_func[task_id] do
                     local fac = cache_func[task_id][i]
                     if (is_legit_mutant_squad(squad) and squad.player_id == fac) then
