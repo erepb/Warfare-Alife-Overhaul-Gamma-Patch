@@ -1,0 +1,132 @@
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://qconsulting.ca/fo3/ModConfig5.0.xsd">
+    <moduleName position="Left" colour="000000">Warfare ALife Overhaul</moduleName>
+    <installSteps order="Explicit">
+        <installStep name="">
+            <optionalFileGroups order="Explicit">
+                <group name="Main Files" type="SelectAny">
+                    <plugins order="Ascending">
+                        <plugin name="Warfare ALife Overhaul">
+                            <!--<designer.metadata.do.not.edit> {"name":"Warfare ALife Overhaul"}-->
+                            <description>The core files of this addon
+
+
+                                NOTE ABOUT PATCHES:
+
+                                If you use any of the patches below, this addon must be loaded AFTER the addons you
+                                selected patches for!
+                            </description>
+                            <image path="AlifeOverhaulIcon3.jpg"/>
+                            <files>
+                                <folder source="src" destination="" priority="0"
+                                        alwaysInstall="true" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Required"/>
+                            </typeDescriptor>
+                        </plugin>
+                    </plugins>
+                    <!--<designer.metadata.do.not.edit> {"name":"Main Files"}-->
+                </group>
+                <group name="Optionals" type="SelectAny">
+                    <!--<designer.metadata.do.not.edit> {"name":"Optionals"}-->
+                    <plugins order="Ascending">
+                        <plugin name="Fast Travel + Warfare mode Fix">
+                            <!--<designer.metadata.do.not.edit> {"name":"Fast Travel + Warfare mode Fix"}-->
+                            <description>Fixes Fast Travel feature compatibility with Warfare mode. No more PDA icon
+                                incompatibility.
+
+                                Changes game_fast_travel.script
+                            </description>
+                            <files>
+                                <folder source="optionals\Fix for Fast Travel + Warfare" destination="" priority="0"
+                                        alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Beard invincible unless player is hostile">
+                            <!--<designer.metadata.do.not.edit> {"name":"Beard invincible unless player is hostile"}-->
+                            <description>Beard is an essential NPC for the Living Legend questline.
+
+                                Selecting this option makes Beard invincible as long as the player's faction is not
+                                hostile to Free STALKERs. This guarantees his survival if you play Living Legend as a
+                                faction that is neutral to loners.
+
+                                If using this optional, this addon should be loaded after Trader Overhaul. May have
+                                issues with Beard's inventory if used without Trader Overhaul.
+
+                                Changes zat_a6_stalker_barmen.ltx
+                            </description>
+                            <files>
+                                <folder source="optionals\Beard Invincible to all except hostile player" destination=""
+                                        priority="0" alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Storymode area map spots restored">
+                            <!--<designer.metadata.do.not.edit> {"name":"Storymode area map spots restored"}-->
+                            <description>Restores the story mode pda mapspots.
+
+                                If using debug mode, may cause some issues with selecting the Warfare mapspot. Users
+                                will need to un-select the "Areas" filter in the PDA map in order to select the Warfare
+                                mapspot.
+
+                                Changes pda.script
+                            </description>
+                            <files>
+                                <folder source="optionals\Restored Map Area Spots" destination="" priority="0"
+                                        alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                    </plugins>
+                </group>
+                <group name="Patches" type="SelectAny">
+                    <!--<designer.metadata.do.not.edit> {"name":"Patches"}-->
+                    <plugins order="Ascending">
+                        <plugin name="'Dynamic' addons">
+                            <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
+                            <description>REQUIRED if you use any or all of the following addons:
+
+                                - Dynamic Mutants
+                                - Dynamic NOCTURNAL Mutants
+                                - Dynamic STALKER Guards
+                                - Teleport Anomalies
+                                - Remove select mutants
+
+                                If you select this patch, this addon must be loaded AFTER all of the above addons!
+                            </description>
+                            <files>
+                                <folder source="patches\Patch for Dynamic Mutants or Dynamic Nocturnal Mutants or other bmblbx addons"
+                                        destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="LTTZ Director's Cut">
+                            <!--<designer.metadata.do.not.edit> {"name":"LTTZ Director's Cut"}-->
+                            <description>Select this if you use LTTZ DC.
+
+                                If you select this patch, this addon must be loaded AFTER LTTZ DC!
+                            </description>
+                            <files>
+                                <folder source="patches\Patch for LTTZ Directors Cut" destination="" priority="0"
+                                        alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                    </plugins>
+                </group>
+            </optionalFileGroups>
+        </installStep>
+    </installSteps>
+</config>

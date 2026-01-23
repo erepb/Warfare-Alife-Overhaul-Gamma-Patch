@@ -3,7 +3,7 @@ name: Create Release with 7z Archive
 on:
   workflow_dispatch:
     inputs:
-      version:
+      version_tag:
         description: 'Version tag'
         required: true
         default: 'auto-release'
@@ -21,15 +21,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(cat VERSION)
+          if [ -n "${{ github.event.inputs.version_tag }}" ]; then
+          VERSION="${VERSION}-${{ github.event.inputs.version_tag }}"
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
       - name: Prepare build structure
         run: |
           mkdir -p build_temp
           rsync -av \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='.gitattributes' \
-            --exclude='README.md' \
-            --exclude='version' \
+            --exclude='*' \
+            --include='fomod/' \
+            --include='fomod/***' \
+            --include='optionals/' \
+            --include='optionals/***' \
+            --include='patches/' \
+            --include='patches/***' \
+            --include='src/gamedata/' \
+            --include='src/gamedata/***' \
+            --include='Installation_Instructions+Changelog.txt' \
             ./* build_temp/
       
           echo "? files to build:"
@@ -38,7 +52,7 @@ jobs:
       - name: Create 7z archive
         uses: edgarrc/action-7z@v1
         with:
-          args: 7z a -t7z -mx=9 warfare-alife-overhaul-gamma-patch-${{ github.event.inputs.version }}.7z ./build_temp/gamedata -r
+          args: 7z a -t7z -mx=9 warfare-alife-overhaul-${{ steps.version.outputs.VERSION }}.7z ./build_temp/* -r
 
       - name: Clean up
         run: rm -rf fomod
@@ -46,10 +60,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: Release ${{ github.event.inputs.version }}
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: Release ${{ steps.version.outputs.VERSION }}
           body: |
             ${{ github.event.inputs.description }}
-          files: warfare-alife-overhaul-gamma-patch-${{ github.event.inputs.version }}.7z
+          files: warfare-alife-overhaul-gamma-patch-${{ steps.version.outputs.VERSION }}.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

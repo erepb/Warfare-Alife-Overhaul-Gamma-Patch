@@ -1,0 +1,96 @@
+-- Monkey patches for Warfare
+
+-- Scientist escort task patch for xr_conditions.script + xr_effects.script
+old_anomaly_task_cond = xr_conditions.has_task_target_anomaly
+function xr_conditions.has_task_target_anomaly()
+	old_anomaly_task_cond()
+	
+	local warfare_task = db.actor and load_var(db.actor,"warfare_escort_task_smart")
+	if IsWarfare() and warfare_task then
+		return db.actor and load_var(db.actor,"task_target_anomaly_analyzed") == "not_analyzed"
+	end
+	return db.actor and load_var(db.actor,"task_target_anomaly") ~= nil
+end
+
+old_anomaly_task_effect = xr_effects.setup_task_target_anomaly
+function xr_effects.setup_task_target_anomaly()
+	old_anomaly_task_effect()
+	
+	local targets = {}
+	local warfare_task = db.actor and load_var(db.actor,"warfare_escort_task_smart")
+	if IsWarfare() and warfare_task then
+		local target_name
+		target_name = level.name()
+		
+		save_var(db.actor,"task_target_anomaly_level",target_name) -- xQd
+		save_var(db.actor,"task_target_anomaly_analyzed","not_analyzed") -- xQd
+		return
+	else
+		for k,v in pairs(db.anomaly_by_name) do
+			targets[#targets+1] = k
+		end
+	
+		if (#targets <= 0) then
+			return
+		end
+	
+		local target_name = targets[math.random(#targets)]
+		save_var(db.actor,"task_target_anomaly",target_name)
+	end
+end
+
+
+-- Patch to fix jupiter escort quest completion when anomalous research is also active
+old_ecolog_companion_task_2_complete_task = dialogs_jupiter.ecolog_companion_task_2_complete_task
+function dialogs_jupiter.ecolog_companion_task_2_complete_task(a,b)
+	old_ecolog_companion_task_2_complete_task(a,b)
+	
+	local tm = task_manager.get_task_manager()
+	local task_info = tm.task_info
+	if (task_info) then
+		if (task_info["sim_default_ecolog_trader_task_1"]) then 
+			task_manager.get_task_manager():set_task_completed("sim_default_ecolog_trader_task_1")
+		elseif (task_info["jup_b6_scientist_tech_task_1"]) then
+			task_manager.get_task_manager():set_task_completed("jup_b6_scientist_tech_task_1")
+		end
+	end
+	a:stop_talk()
+	b:stop_talk()
+end
+
+--[[
+-- Warfare documents selling patch for dialogs.script - defer to hard change for now, since people are still having issues
+old_trade_important_documents = dialogs.st_trade_important_documents
+function dialogs.st_trade_important_documents(a,b,typ,txt)
+	if IsWarfare() then
+		local important_docs_warfare_names = {
+			["stalker"] = "bar_visitors_barman_stalker_trader",
+			["bandit"] = "zat_b7_bandit_boss_sultan",
+			["csky"] = "mar_smart_terrain_base_stalker_leader_marsh",
+			["dolg"] = "bar_dolg_leader",
+			["army"] = "agr_smart_terrain_1_6_near_2_military_colonel_kovalski",
+			["killer"] = "cit_killers_merc_trader_stalker",
+			["ecolog"] = "yan_stalker_sakharov",
+			["freedom"] = "mil_smart_terrain_7_7_freedom_leader_stalker",
+		}
+		
+		local npc = dialogs.who_is_npc(a, b)
+		local npc_name
+		local se_obj = alife_object(npc:id())
+		local comm = se_obj:community()
+		npc_name = important_docs_warfare_names[comm]
+		if not npc_name then
+			npc_name = npc:section()
+			if npc_name == "m_trader" then
+				npc_name = npc:name()
+			end
+		end
+		
+		local str = game.translate_string("st_trade_important_documents_".. typ .. "_" .. npc_name)
+		str = strformat(str,txt)
+		return str
+	end
+	
+	old_trade_important_documents(a,b,typ,txt)
+end
+--]]

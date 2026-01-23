@@ -1,0 +1,3 @@
+Fixes conflicting fast travel and Warfare icons.
+
+Does not support 'visited only' fast travel mode, simply due to the nature of how it works.
