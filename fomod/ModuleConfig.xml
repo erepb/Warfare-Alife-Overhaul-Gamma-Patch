@@ -87,45 +87,6 @@
                         </plugin>
                     </plugins>
                 </group>
-                <group name="Patches" type="SelectAny">
-                    <!--<designer.metadata.do.not.edit> {"name":"Patches"}-->
-                    <plugins order="Ascending">
-                        <plugin name="'Dynamic' addons">
-                            <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
-                            <description>REQUIRED if you use any or all of the following addons:
-
-                                - Dynamic Mutants
-                                - Dynamic NOCTURNAL Mutants
-                                - Dynamic STALKER Guards
-                                - Teleport Anomalies
-                                - Remove select mutants
-
-                                If you select this patch, this addon must be loaded AFTER all of the above addons!
-                            </description>
-                            <files>
-                                <folder source="patches\Patch for Dynamic Mutants or Dynamic Nocturnal Mutants or other bmblbx addons"
-                                        destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
-                            </files>
-                            <typeDescriptor>
-                                <type name="Optional"/>
-                            </typeDescriptor>
-                        </plugin>
-                        <plugin name="LTTZ Director's Cut">
-                            <!--<designer.metadata.do.not.edit> {"name":"LTTZ Director's Cut"}-->
-                            <description>Select this if you use LTTZ DC.
-
-                                If you select this patch, this addon must be loaded AFTER LTTZ DC!
-                            </description>
-                            <files>
-                                <folder source="patches\Patch for LTTZ Directors Cut" destination="" priority="0"
-                                        alwaysInstall="false" installIfUsable="false"/>
-                            </files>
-                            <typeDescriptor>
-                                <type name="Optional"/>
-                            </typeDescriptor>
-                        </plugin>
-                    </plugins>
-                </group>
             </optionalFileGroups>
         </installStep>
     </installSteps>

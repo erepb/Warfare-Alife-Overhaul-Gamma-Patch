@@ -1303,18 +1303,18 @@ condlist_0 = {!task_giver_alive(sim_default_ecolog_trader_task_2)} fail
 icon = ui_inGame2_Nochnaya_ohota
 prior = 50
 storyline = false
-title = sim_default_ecolog_trader_task_3_name
+title = sim_default_ecolog_trader_task_1_name
 title_functor = general_fetch_task
-descr = sim_default_ecolog_trader_task_3_text
+descr = sim_default_ecolog_trader_task_1_text
 descr_functor = general_warfare_fetch_task
-job_descr = sim_default_ecolog_trader_task_3_about
-fetch_descr = sim_default_ecolog_trader_task_3_fetch_about
+job_descr = sim_default_ecolog_trader_task_1_about
+fetch_descr = sim_default_ecolog_trader_task_1_fetch_about
 fetch_func = %=setup_fetch_task(sim_default_ecolog_trader_task_3_fetch:mutant_parts_rare:1:2)%
 stage_complete = 1
 repeat_timeout = 86400
 status_functor = actor_has_fetch_item
 target_functor = general_fetch_task
-task_complete_descr = sim_default_ecolog_trader_task_3_fetch_finish
+task_complete_descr = sim_default_ecolog_trader_task_1_fetch_finish
 on_complete = %=complete_task_inc_goodwill(50:ecolog) =reward_stash(true) =fetch_reward_and_remove(sim_default_ecolog_trader_task_3_fetch:1.5) =inc_task_stage(sim_default_ecolog_trader_task_3) =pstor_reset(sim_default_ecolog_trader_task_3_fetch)%
 condlist_0 = {!task_giver_alive(sim_default_ecolog_trader_task_3)} fail
 

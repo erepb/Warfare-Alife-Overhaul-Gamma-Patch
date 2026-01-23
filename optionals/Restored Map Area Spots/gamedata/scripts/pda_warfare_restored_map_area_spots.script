@@ -1,0 +1,23 @@
+local pda_set_active_subdialog = pda.set_active_subdialog
+function pda.set_active_subdialog(section)
+    -- For NPCs PDA
+    local obj = db.actor:item_in_slot(8)
+    local sec = obj and obj:section()
+    if item_device.device_npc_pda[sec] then
+        return ui_pda_npc_tab.get_ui(se_load_var(obj:id(), obj:name(), "info"))
+    end
+
+    return pda_set_active_subdialog(section)
+end
+
+local pda_on_game_start = pda.on_game_start
+function pda.on_game_start()
+    local function on_game_load()
+        if (not alife_storage_manager.get_state().enable_warfare_mode) then
+            CreateTimeEvent(0, "ScanForSpots", 2, pda.discover_spots)
+        end
+    end
+
+    RegisterScriptCallback("on_game_load", on_game_load)
+    pda_on_game_start()
+end
