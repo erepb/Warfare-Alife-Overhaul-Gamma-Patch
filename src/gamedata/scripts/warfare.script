@@ -581,7 +581,7 @@ function fill_start_position()
                     end
                 end
 
-                local section = faction_expansions.get_spawn_section("monster", rare_chance)
+                local section = faction_expansions.get_spawn_section("monster", rare_chance, smart.level_id)
                 local squad = utils_obj.create_squad(section, smart:name())
                 sim_squad_warfare.set_target(squad, smart.id)
 
