@@ -3,59 +3,59 @@
 -- Scientist escort task patch for xr_conditions.script + xr_effects.script
 old_anomaly_task_cond = xr_conditions.has_task_target_anomaly
 function xr_conditions.has_task_target_anomaly()
-	old_anomaly_task_cond()
-	
-	local warfare_task = db.actor and load_var(db.actor,"warfare_escort_task_smart")
-	if IsWarfare() and warfare_task then
-		return db.actor and load_var(db.actor,"task_target_anomaly_analyzed") == "not_analyzed"
-	end
-	return db.actor and load_var(db.actor,"task_target_anomaly") ~= nil
+    old_anomaly_task_cond()
+
+    local warfare_task = db.actor and load_var(db.actor, "warfare_escort_task_smart")
+    if IsWarfare() and warfare_task then
+        return db.actor and load_var(db.actor, "task_target_anomaly_analyzed") == "not_analyzed"
+    end
+    return db.actor and load_var(db.actor, "task_target_anomaly") ~= nil
 end
 
 old_anomaly_task_effect = xr_effects.setup_task_target_anomaly
 function xr_effects.setup_task_target_anomaly()
-	old_anomaly_task_effect()
-	
-	local targets = {}
-	local warfare_task = db.actor and load_var(db.actor,"warfare_escort_task_smart")
-	if IsWarfare() and warfare_task then
-		local target_name
-		target_name = level.name()
-		
-		save_var(db.actor,"task_target_anomaly_level",target_name) -- xQd
-		save_var(db.actor,"task_target_anomaly_analyzed","not_analyzed") -- xQd
-		return
-	else
-		for k,v in pairs(db.anomaly_by_name) do
-			targets[#targets+1] = k
-		end
-	
-		if (#targets <= 0) then
-			return
-		end
-	
-		local target_name = targets[math.random(#targets)]
-		save_var(db.actor,"task_target_anomaly",target_name)
-	end
+    old_anomaly_task_effect()
+
+    local targets = {}
+    local warfare_task = db.actor and load_var(db.actor, "warfare_escort_task_smart")
+    if IsWarfare() and warfare_task then
+        local target_name
+        target_name = level.name()
+
+        save_var(db.actor, "task_target_anomaly_level", target_name) -- xQd
+        save_var(db.actor, "task_target_anomaly_analyzed", "not_analyzed") -- xQd
+        return
+    else
+        for k, v in pairs(db.anomaly_by_name) do
+            targets[#targets + 1] = k
+        end
+
+        if (#targets <= 0) then
+            return
+        end
+
+        local target_name = targets[math.random(#targets)]
+        save_var(db.actor, "task_target_anomaly", target_name)
+    end
 end
 
 
 -- Patch to fix jupiter escort quest completion when anomalous research is also active
 old_ecolog_companion_task_2_complete_task = dialogs_jupiter.ecolog_companion_task_2_complete_task
-function dialogs_jupiter.ecolog_companion_task_2_complete_task(a,b)
-	old_ecolog_companion_task_2_complete_task(a,b)
-	
-	local tm = task_manager.get_task_manager()
-	local task_info = tm.task_info
-	if (task_info) then
-		if (task_info["sim_default_ecolog_trader_task_1"]) then 
-			task_manager.get_task_manager():set_task_completed("sim_default_ecolog_trader_task_1")
-		elseif (task_info["jup_b6_scientist_tech_task_1"]) then
-			task_manager.get_task_manager():set_task_completed("jup_b6_scientist_tech_task_1")
-		end
-	end
-	a:stop_talk()
-	b:stop_talk()
+function dialogs_jupiter.ecolog_companion_task_2_complete_task(a, b)
+    old_ecolog_companion_task_2_complete_task(a, b)
+
+    local tm = task_manager.get_task_manager()
+    local task_info = tm.task_info
+    if (task_info) then
+        if (task_info["sim_default_ecolog_trader_task_1"]) then
+            task_manager.get_task_manager():set_task_completed("sim_default_ecolog_trader_task_1")
+        elseif (task_info["jup_b6_scientist_tech_task_1"]) then
+            task_manager.get_task_manager():set_task_completed("jup_b6_scientist_tech_task_1")
+        end
+    end
+    a:stop_talk()
+    b:stop_talk()
 end
 
 --[[
@@ -454,6 +454,21 @@ function tasks_smart_control.evaluate_squads_smarts(task_id, var, smart, smrt)
     return false
 end
 
+local trade_names = {
+    ["stalker"] 	= "items\\trade\\trade_stalker_owl.ltx",
+    ["bandit"] 		= "items\\trade\\trade_bandit.ltx",
+    ["csky"] 		= "items\\trade\\trade_csky_spore.ltx",
+    ["army"] 		= "items\\trade\\trade_military.ltx",
+    ["freedom"] 	= "items\\trade\\trade_freedom.ltx",
+    ["dolg"] 		= "items\\trade\\trade_duty.ltx",
+    ["ecolog"] 		= "items\\trade\\trade_ecolog_sakharov.ltx",
+    ["killer"] 		= "items\\trade\\trade_mercenary.ltx",
+    ["monolith"] 	= "items\\trade\\trade_monolith.ltx",
+    ["renegade"] 	= "items\\trade\\trade_renegade.ltx",
+    ["greh"] 		= "items\\trade\\trade_greh.ltx",
+    ["isg"] 		= "items\\trade\\trade_isg.ltx",
+}
+
 local xr_logic_configure_schemes = xr_logic.configure_schemes
 function xr_logic.configure_schemes(npc, ini, ini_filename, stype, section_logic, gulag_name)
     if not _G.WARFARE then
@@ -506,9 +521,9 @@ function xr_logic.configure_schemes(npc, ini, ini_filename, stype, section_logic
     end
 
     -- Since at the moment of schema activation the previously installed common schemes could work, all of them should be disabled:
-    disable_generic_schemes(npc, stype)
+    xr_logic.disable_generic_schemes(npc, stype)
     -- We include all the general schemes (wounded, callback for hit, etc.):
-    enable_generic_schemes(actual_ini, npc, stype, section_logic)
+    xr_logic.enable_generic_schemes(actual_ini, npc, stype, section_logic)
 
     st.active_section = nil
     st.active_scheme = nil
