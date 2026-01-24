@@ -6,11 +6,11 @@ on:
       version_tag:
         description: 'Version tag'
         required: false
-        default: 'auto-release'
+        default: ''
       description:
         description: 'Release description'
         required: false
-        default: 'Automatic release - if you reading this that means its better to NOT download this version.'
+        default: 'Automatic release'
 
 jobs:
   release:
