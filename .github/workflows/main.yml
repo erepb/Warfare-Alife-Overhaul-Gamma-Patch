@@ -5,7 +5,7 @@ on:
     inputs:
       version_tag:
         description: 'Version tag'
-        required: true
+        required: false
         default: 'auto-release'
       description:
         description: 'Release description'
