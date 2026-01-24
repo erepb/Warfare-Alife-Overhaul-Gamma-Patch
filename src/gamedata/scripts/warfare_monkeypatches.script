@@ -236,16 +236,21 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
         -- if warfare, override checks on stay time, default squad stuff
         -- if smart's squad is on its level + they are targeting it
         local squad = alife_object(sq_id)
-        if squad and simulation_objects.is_on_the_same_level(squad, smart)
-                and squad.current_target_id and (squad.current_target_id == smrt_id)
-                and (squad.current_action == 1)
+        local is_same_level = simulation_objects.is_on_the_same_level(squad, smart)
+        local is_targeting_smart = squad.current_target_id and (squad.current_target_id == smrt_id)
+        local is_attacking = squad.current_action == 1
+        local has_enough_npcs = squad:npc_count() >= squad_def.num
+        local has_stay_time = squad.stay_time ~= nil
+        local within_stay_time = (not squad_def.stay_time) or (squad_def.stay_time and (game.get_game_time():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time)))
+        local is_not_scripted = squad_def.scripted or (not squad:get_script_target())
+        local no_script_target = not squad:get_script_target()
+
+        if squad and is_same_level
+                and is_targeting_smart
+                and is_attacking
                 and (
-                (
-                        (squad:npc_count() >= squad_def.num)
-                                and squad.stay_time
-                                and ((not squad_def.stay_time) or (squad_def.stay_time and (game.get_game_time():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time))))
-                                and (squad_def.scripted or (not squad:get_script_target()))
-                ) or (not squad:get_script_target())
+                (has_enough_npcs and has_stay_time and within_stay_time and is_not_scripted)
+                or no_script_target
         )
         then
             --printf("# %s | smart (%s) [%s] w/ squad (%s) [%s] = Checking", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
@@ -264,7 +269,7 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
 end
 
 local tasks_assault_evaluate_squads_smarts = tasks_assault.evaluate_squads_smarts
-function evaluate_squads_smarts(task_id, var, squad, smart)
+function tasks_assault.evaluate_squads_smarts(task_id, var, squad, smart)
     if not _G.WARFARE then
         return tasks_assault_evaluate_squads_smarts(task_id, var, squad, smart)
     end
