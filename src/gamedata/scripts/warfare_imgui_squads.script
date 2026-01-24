@@ -71,25 +71,25 @@ local sort_ascending = true
 
 -- Get sortable value for a column
 function get_sortable_value(squad, column)
-    if column == 0 then -- Name
+    if column == 1 then -- Name
         return ui_warfare_options_hints.get_name(squad:section_name()) or warfare_names.faction_names[squad.player_id] or ""
-    elseif column == 1 then -- Faction
+    elseif column == 2 then -- Faction
         return warfare_names.faction_names[squad:get_squad_community()] or ""
-    elseif column == 2 then -- Count
+    elseif column == 3 then -- Count
         return squad:npc_count()
-    elseif column == 3 then -- Power
+    elseif column == 4 then -- Power
         return sim_offline_combat.calculate_squad_power(squad)
-    elseif column == 4 then -- Commander
+    elseif column == 5 then -- Commander
         return get_squad_commander(squad)
-    elseif column == 5 then -- Current Smart
+    elseif column == 6 then -- Current Smart
         return get_squad_smart(squad)
-    elseif column == 6 then -- Relation
+    elseif column == 7 then -- Relation
         return get_squad_relation(squad)
-    elseif column == 7 then -- Patrol Owner
+    elseif column == 8 then -- Patrol Owner
         return get_patrol_owner(squad)
-    elseif column == 8 then -- Target
+    elseif column == 9 then -- Target
         return get_target_info(squad)
-    elseif column == 9 then -- Action
+    elseif column == 10 then -- Action
         return get_action_status(squad)
     end
     return ""
@@ -149,8 +149,9 @@ function render()
         sort_squads(squads, sort_column, sort_ascending)
     end
 
-    if ImGui.BeginTable("WarfareSquads", 10, 3, vector2(0, 0), 0) then
+    if ImGui.BeginTable("WarfareSquads", 11, 3, vector2(0, 0), 0) then
         -- 3 = Borders(1) + RowBg(2)
+        ImGui.TableSetupColumn("ID", 2, 0, 0)
         ImGui.TableSetupColumn("Name", 2, 0, 0)
         ImGui.TableSetupColumn("Faction", 2, 0, 0)
         ImGui.TableSetupColumn("Count", 2, 0, 0)
@@ -166,7 +167,7 @@ function render()
         ImGui.TableNextRow(1, 0) -- ImGuiTableRowFlags_Headers
         
         local column_names = {
-            "Name", "Faction", "Count", "Power", "Commander",
+            "ID", "Name", "Faction", "Count", "Power", "Commander",
             "Current Smart", "Relation", "Patrol Owner", "Target", "Action"
         }
         
@@ -192,6 +193,9 @@ function render()
         for i = 1, #squads do
             local squad = squads[i]
             ImGui.TableNextRow()
+
+            ImGui.TableNextColumn()
+            ImGui.Text(squad.id)
 
             ImGui.TableNextColumn()
             ImGui.Text(ui_warfare_options_hints.get_name(squad:section_name()) or warfare_names.faction_names[squad.player_id])
