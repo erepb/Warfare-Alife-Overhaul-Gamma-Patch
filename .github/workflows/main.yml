@@ -5,12 +5,12 @@ on:
     inputs:
       version_tag:
         description: 'Version tag'
-        required: true
-        default: 'auto-release'
+        required: false
+        default: ''
       description:
         description: 'Release description'
         required: false
-        default: 'Automatic release - if you reading this that means its better to NOT download this version.'
+        default: 'Automatic release'
 
 jobs:
   release:
@@ -33,18 +33,11 @@ jobs:
       - name: Prepare build structure
         run: |
           mkdir -p build_temp
-          rsync -av \
-            --exclude='*' \
-            --include='fomod/' \
-            --include='fomod/***' \
-            --include='optionals/' \
-            --include='optionals/***' \
-            --include='patches/' \
-            --include='patches/***' \
-            --include='src/gamedata/' \
-            --include='src/gamedata/***' \
-            --include='Installation_Instructions+Changelog.txt' \
-            ./* build_temp/
+          cp -r fomod build_temp/
+          cp -r optional build_temp/
+          cp -r patches build_temp/
+          cp -r src build_temp/
+          cp Installation_Instructions+Changelog.txt build_temp/
       
           echo "? files to build:"
           ls -la build_temp/
@@ -64,6 +57,6 @@ jobs:
           name: Release ${{ steps.version.outputs.VERSION }}
           body: |
             ${{ github.event.inputs.description }}
-          files: warfare-alife-overhaul-gamma-patch-${{ steps.version.outputs.VERSION }}.7z
+          files: warfare-alife-overhaul-${{ steps.version.outputs.VERSION }}.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
