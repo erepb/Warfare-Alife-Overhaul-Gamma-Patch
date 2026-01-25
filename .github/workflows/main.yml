@@ -64,6 +64,6 @@ jobs:
           name: Release ${{ steps.version.outputs.VERSION }}
           body: |
             ${{ github.event.inputs.description }}
-          files: warfare-alife-overhaul-gamma-patch-${{ steps.version.outputs.VERSION }}.7z
+          files: warfare-alife-overhaul-${{ steps.version.outputs.VERSION }}.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
