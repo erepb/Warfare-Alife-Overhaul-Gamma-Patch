@@ -33,11 +33,11 @@ jobs:
       - name: Prepare build structure
         run: |
           mkdir -p build_temp
-          cp -r fomod build_temp/ 2>/dev/null || true
-          cp -r optionals build_temp/ 2>/dev/null || true
-          cp -r patches build_temp/ 2>/dev/null || true
-          cp -r src build_temp/ 2>/dev/null || true
-          cp Installation_Instructions+Changelog.txt build_temp/ 2>/dev/null || true
+          cp -r fomod build_temp/
+          cp -r optionals build_temp/
+          cp -r patches build_temp/
+          cp -r src build_temp/
+          cp Installation_Instructions+Changelog.txt build_temp/
       
           echo "? files to build:"
           ls -la build_temp/
