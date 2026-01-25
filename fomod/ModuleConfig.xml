@@ -37,7 +37,7 @@
                                 incompatibility.
                             </description>
                             <files>
-                                <folder source="optionals\Fix for Fast Travel + Warfare" destination="" priority="0"
+                                <folder source="optional\Fix for Fast Travel + Warfare" destination="" priority="0"
                                         alwaysInstall="false" installIfUsable="false"/>
                             </files>
                             <typeDescriptor>
@@ -56,7 +56,7 @@
                                 issues with Beard's inventory if used without Trader Overhaul.
                             </description>
                             <files>
-                                <folder source="optionals\Beard Invincible to all except hostile player" destination=""
+                                <folder source="optional\Beard Invincible to all except hostile player" destination=""
                                         priority="0" alwaysInstall="false" installIfUsable="false"/>
                             </files>
                             <typeDescriptor>
@@ -72,7 +72,7 @@
                                 mapspot.
                             </description>
                             <files>
-                                <folder source="optionals\Restored Map Area Spots" destination="" priority="0"
+                                <folder source="optional\Restored Map Area Spots" destination="" priority="0"
                                         alwaysInstall="false" installIfUsable="false"/>
                             </files>
                             <typeDescriptor>
