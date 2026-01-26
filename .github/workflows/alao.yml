@@ -1,0 +1,88 @@
+name: Lua Lint (ALAO)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Fix Lua Scripts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Clone ALAO
+        run: |
+          git clone --depth 1 https://github.com/Priler/anomaly_alao.git alao_tool
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install luaparser jinja2
+
+      - name: Fix src/gamedata/scripts
+        working-directory: alao_tool
+        run: |
+          python stalker_lua_lint.py "${{ github.workspace }}/src/gamedata" --direct --fix --fix-yellow --experimental --no-backup --no-first-time-auto-backup
+
+      - name: Fix patches scripts
+        working-directory: alao_tool
+        run: |
+          for dir in "${{ github.workspace }}"/patches/*/gamedata; do
+            if [ -d "$dir" ]; then
+              echo "Fixing: $dir"
+              python stalker_lua_lint.py "$dir" --direct --fix --fix-yellow --experimental --no-backup --no-first-time-auto-backup || true
+            fi
+          done
+
+      - name: Fix optional scripts
+        working-directory: alao_tool
+        run: |
+          for dir in "${{ github.workspace }}"/optionals/*/gamedata; do
+            if [ -d "$dir" ]; then
+              echo "Fixing: $dir"
+              python stalker_lua_lint.py "$dir" --direct --fix --fix-yellow --experimental --no-backup --no-first-time-auto-backup || true
+            fi
+          done
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(cat version)
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Prepare build structure
+        run: |
+          mkdir -p build_temp
+          cp -r fomod build_temp/
+          cp -r optional build_temp/
+          cp -r patches build_temp/
+          cp -r src build_temp/
+          cp Installation_Instructions+Changelog.txt build_temp/
+
+          echo "Files to build:"
+          ls -la build_temp/
+
+      - name: Create 7z archive
+        uses: edgarrc/action-7z@v1
+        with:
+          args: 7z a -t7z -mx=9 optimized-warfare-alife-overhaul-${{ steps.version.outputs.VERSION }}.7z ./build_temp/* -r
+
+      - name: Clean up
+        run: rm -rf fomod
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: optimized-${{ steps.version.outputs.VERSION }}
+          name: Optimized Release ${{ steps.version.outputs.VERSION }}
+          body: |
+            Optimized release with ALAO fixes applied (--fix --fix-yellow --experimental)
+          files: optimized-warfare-alife-overhaul-${{ steps.version.outputs.VERSION }}.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
