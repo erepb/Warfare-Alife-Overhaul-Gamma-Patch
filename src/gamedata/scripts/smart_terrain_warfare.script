@@ -2786,15 +2786,16 @@ function process_loners(smart)
 
 	local squads = SIMBOARD.smarts[smart.id].squads							-- get info of all squads at location
 
-	for sid,_ in pairs(squads) do
-		local squad = sid and alife_object(sid)
-		local faction = squad and squad:get_squad_community() or "none"							-- get faction of squads
+    for sid, _ in pairs(squads) do
+        local squad = sid and alife_object(sid)
+        local faction = squad and squad:get_squad_community()                            -- get faction of squads
 
-		if (faction == "stalker") and squad_is_commandable(squad, true) and (squad.current_action == 1) then								-- only operate on loners, exclude unique npcs
-			local night_chance = warfare_options.options.factions[faction].night_activity_chance
-			local isNight = (level.get_time_hours() < 6 or level.get_time_hours() > 20)
-			local isDaylight = (level.get_time_hours() > 6 and level.get_time_hours() < 17)
-			local isSunset = (level.get_time_hours() > 18 and level.get_time_hours() < 21)
+        if faction and (faction == "stalker") and squad_is_commandable(squad, true) and (squad.current_action == 1) then
+            -- only operate on loners, exclude unique npcs
+            local night_chance = warfare_options.options.factions[faction].night_activity_chance
+            local isNight = (level.get_time_hours() < 6 or level.get_time_hours() > 20)
+            local isDaylight = (level.get_time_hours() > 6 and level.get_time_hours() < 17)
+            local isSunset = (level.get_time_hours() > 18 and level.get_time_hours() < 21)
 
 			local target_set = false
 			local all_targets = {}
