@@ -275,6 +275,10 @@ function get_spawn_section(faction, resource, current_level)
         resource = 0  -- nil resource count
     end
 
+    if current_level == nil then
+        current_level = 32 -- Trucks Cemetery 32
+    end
+
     if (faction ~= "monster") then
         if (faction == "stalker") or (faction == "ecolog") then
             -- loners and ecologists have set chances for squad skill: 7% veteran, 36% advanced, 57% novice
