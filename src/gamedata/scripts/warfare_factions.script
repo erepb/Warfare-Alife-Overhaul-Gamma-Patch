@@ -252,7 +252,8 @@ function update_faction(faction)
                     end
 
                     if spawn_random_patrol then
-                        local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count)
+                        local current_level = start.level_id
+                        local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count, current_level)
                         local squad = utils_obj.create_squad(section, start:name())
                         smart_terrain_warfare.random_patrols[squad.id] = faction
                         sim_squad_warfare.set_target(squad, target_id)
@@ -320,7 +321,8 @@ function update_faction(faction)
                                 end
 
                                 for j = 0, target_pop do
-                                    local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count)
+                                    local current_level = nearest_smart.level_id
+                                    local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count, current_level)
                                     local squad = utils_obj.create_squad(section, nearest_smart:name())
                                     sim_squad_warfare.set_target(squad, target.id)
                                 end

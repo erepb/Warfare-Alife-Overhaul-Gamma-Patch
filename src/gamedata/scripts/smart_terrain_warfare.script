@@ -647,7 +647,8 @@ function process_manual_capture(smart)
 				-- base exists
 				if closest_base then
 					-- spawn squad at base and send it
-					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count)
+					local current_level = smart.level_id
+					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
 					local squad = utils_obj.create_squad(section, closest_base:name())
 					sim_squad_warfare.set_target(squad, smart.id)
 					-- increase spawn timer of that base
@@ -778,7 +779,8 @@ function process_manual_capture_old(smart)
 				local targeting = squad_count(smart, warfare.actor_faction)
 
 				if (targeting < smart.max_population) then
-					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count)
+					local current_level = smart.level_id
+					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
 					local squad = utils_obj.create_squad(section, smart:name())
 					sim_squad_warfare.set_target(squad, smart.id)
 				end
@@ -2432,11 +2434,12 @@ function spawn_defense(smart)
 		end
 	end
 
-	local section = faction_expansions.get_spawn_section(smart.owning_faction, max_resource_count[smart.owning_faction])
+	local current_level = smart.level_id
+	local section = faction_expansions.get_spawn_section(smart.owning_faction, max_resource_count[smart.owning_faction], current_level)
 	printf("spawning %s squad on %s with resource count of %s", smart.owning_faction, smart:name(), max_resource_count[smart.owning_faction])
 	-- army spawn quality depends on number of bases
 	if (warfare_options.options.factions[smart.owning_faction].use_bases_not_resources) then
-		section = faction_expansions.get_spawn_section(smart.owning_faction, faction_bases)
+		section = faction_expansions.get_spawn_section(smart.owning_faction, faction_bases, current_level)
 	end
 
 	local squad = utils_obj.create_squad(section, smart:name())
