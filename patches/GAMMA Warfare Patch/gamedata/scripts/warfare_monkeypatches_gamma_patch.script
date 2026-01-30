@@ -11,7 +11,7 @@ function warfare.get_monster_pop_factor_value()
     if smr_amain_mcm then
         return smr_amain_mcm.get_config("monster_pop_factor")
     end
-    return warfare_get_monster_pop_factor_value
+    return warfare_get_monster_pop_factor_value()
 end
 
 local old_emission_guard_patch_on_game_start = emission_guard_patch.on_game_start
