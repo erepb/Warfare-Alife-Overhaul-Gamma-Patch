@@ -35,8 +35,6 @@
                             <!--<designer.metadata.do.not.edit> {"name":"Fast Travel + Warfare mode Fix"}-->
                             <description>Fixes Fast Travel feature compatibility with Warfare mode. No more PDA icon
                                 incompatibility.
-
-                                Changes game_fast_travel.script
                             </description>
                             <files>
                                 <folder source="optionals\Fix for Fast Travel + Warfare" destination="" priority="0"
@@ -56,8 +54,6 @@
 
                                 If using this optional, this addon should be loaded after Trader Overhaul. May have
                                 issues with Beard's inventory if used without Trader Overhaul.
-
-                                Changes zat_a6_stalker_barmen.ltx
                             </description>
                             <files>
                                 <folder source="optionals\Beard Invincible to all except hostile player" destination=""
@@ -74,8 +70,6 @@
                                 If using debug mode, may cause some issues with selecting the Warfare mapspot. Users
                                 will need to un-select the "Areas" filter in the PDA map in order to select the Warfare
                                 mapspot.
-
-                                Changes pda.script
                             </description>
                             <files>
                                 <folder source="optionals\Restored Map Area Spots" destination="" priority="0"
