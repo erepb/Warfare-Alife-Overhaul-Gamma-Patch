@@ -95,7 +95,15 @@ function update_settings()
     --	options.enable_offline_news 					= ui_options.get("alife/warfare/general/enable_offline_news")
     --	options.offline_news_display_percentage			= ui_options.get("alife/warfare/general/offline_news_display_percentage")
 
-    options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count
+    options.distance_based_combat_multiplier = ui_options.get("alife/warfare/general/distance_based_combat_multiplier")
+	options.distance_combat_min_multiplier   = ui_options.get("alife/warfare/general/distance_combat_min_multiplier")
+	options.distance_combat_max_multiplier_base = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_base")
+	options.distance_combat_max_multiplier_resource = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_resource")
+	options.distance_combat_max_multiplier_territory = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_territory")
+	options.distance_combat_max_multiplier_lair = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_lair")
+	options.distance_combat_max_distance     = ui_options.get("alife/warfare/general/distance_combat_max_distance")
+
+	options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count
     options.azazel_respawn_as_companions = ui_options.get("alife/warfare/azazel/respawn_as_companions")
     options.azazel_respawn_as_actor_faction = ui_options.get("alife/warfare/azazel/respawn_as_actor_faction")
     options.azazel_respawn_as_allies = ui_options.get("alife/warfare/azazel/respawn_as_allies")
