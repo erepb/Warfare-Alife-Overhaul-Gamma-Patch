@@ -14,6 +14,7 @@
 --]]
 
 local enable_debug = false
+
 printd = warfare.printd
 printdbg = warfare.printdbg
 
@@ -50,6 +51,22 @@ all_factions = {
     "isg",
     "monster",
     "zombied",
+}
+
+-- Mapping of main bases to their original factions
+local faction_main_bases = {
+    ["dolg"] = {"bar_dolg_general", "bar_dolg_bunker", "bar_zastava", "bar_zastava_2"},
+    ["freedom"] = {"mil_smart_terrain_7_7", "mil_smart_terrain_7_8", "mil_smart_terrain_7_10", "mil_smart_terrain_7_12", "jup_a6"},
+    ["army"] = {"agr_smart_terrain_1_6", "agr_smart_terrain_1_6_near_1", "agr_smart_terrain_1_6_near_2", "esc_smart_terrain_3_16", "val_smart_terrain_1_2"},
+    ["bandit"] = {"val_smart_terrain_7_4", "val_smart_terrain_7_5", "val_smart_terrain_8_6"},
+    ["killer"] = {"cit_killers"},
+    ["monolith"] = {"pri_monolith"},
+    ["ecolog"] = {"yan_smart_terrain_6_4", "jup_b41"},
+    ["csky"] = {"mar_smart_terrain_base"},
+    ["stalker"] = {"esc_smart_terrain_2_12", "zat_stalker_base_smart"},
+    ["renegade"] = {"mar_smart_terrain_3_3"},
+    ["greh"] = {"red_smart_terrain_4_2"},
+    ["isg"] = {"ds2_domik_st", "agr_smart_terrain_1_6", "val_smart_terrain_1_2", "jup_a10_smart_terrain", "zat_b103_merc_smart", "pri_b306"},
 }
 
 faction_information = {}
@@ -269,74 +286,86 @@ function update_faction(faction)
             end
         end
 
+        -- Emergency resurrection when faction has 0 bases
         if (warfare_options.options.factions[faction].participate_in_warfare and (faction_information[faction].base_count + mod) < 1) then
             if (game.get_game_time():diffSec(faction_information[faction].last_resurgence_attempt) > faction_information[faction].next_resurgence_attempt * 6) then
                 faction_information[faction].last_resurgence_attempt = game.get_game_time()
                 faction_information[faction].next_resurgence_attempt = math.random(min_resurgence_wait_time, max_resurgence_wait_time)
 
-                -- chance to skip this resurgence attempt
-                if math.random(0, 99) < faction_resurgence_chance then
-                    local levels = warfare.hash_table_to_array(level_targets.active_levels)
-                    warfare.shuffleTable(levels)
-
-                    local attempted = false
-                    for _, v in pairs(levels) do
-                        local chosen = v.key
-                        local info = warfare_levels.level_information[chosen]
-
-                        if (info) then
-                            local smarts = info.smarts
-                            local targets = {}
-                            local spawns = {}
-
-                            for v, smart_id in pairs(smarts) do
-                                local smart = alife_object(smart_id)
-
-                                if (smart) then
-                                    if (smart.props and smart.props.base > 0) then
-                                        if (smart.owning_faction == "none" or game_relations.is_factions_enemies(smart.owning_faction, faction)) then
-                                            targets[#targets + 1] = smart
-                                        end
-                                    elseif (smart.props and smart.props.territory > 0 and (smart.props.resource == nil or smart.props.resource <= 0)) then
-                                        spawns[#spawns + 1] = smart
-                                    end
-                                end
-                            end
-
-                            if (#spawns > 0 and #targets > 0) then
-                                local target = targets[math.random(#targets)]
-
-                                -- stronger resurgence attempts
-                                local target_pop = 2 * target.max_population
-
-                                local nearest_smart = nil
-                                local nearest_dist = nil
-
-                                attempted = true
-
-                                if (smart_terrain_warfare.enable_debug) then
-                                    printf("Resurgence of %s is underway, targeting %s with %s squads", faction, target:name(), target_pop)
-                                end
-
-                                for _, ter in pairs(spawns) do
-                                    local d = smart_terrain_warfare.fetch_smart_distance(target, ter)
-
-                                    if (nearest_dist == nil or d < nearest_dist) then
-                                        nearest_smart = ter
-                                        nearest_dist = d
-                                    end
-                                end
-
-                                for j = 0, target_pop do
-                                    local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count)
-                                    local squad = utils_obj.create_squad(section, nearest_smart:name())
-                                    sim_squad_warfare.set_target(squad, target.id)
-                                end
-                            end
+                -- Choose between new and old resurgence logic
+                if warfare_options.options.use_new_resurgence_logic then
+                    -- Emergency spawn: Create powerful squad for extinct factions
+                    local emergency_attempted = emergency_resurrection_spawn(faction)
+                    if emergency_attempted then
+                        if (enable_debug) then
+                            printf("Emergency resurrection activated for extinct faction: %s", faction)
                         end
+                    end
+                else
+                    -- Original resurgence logic with chance to skip
+                    if math.random(0, 99) < faction_resurgence_chance then
+                        local levels = warfare.hash_table_to_array(level_targets.active_levels)
+                        warfare.shuffleTable(levels)
 
-                        if (attempted) then
-                            break
+                        local attempted = false
+                        for _, v in pairs(levels) do
+                            local chosen = v.key
+                            local info = warfare_levels.level_information[chosen]
+
+                            if (info) then
+                                local smarts = info.smarts
+                                local targets = {}
+                                local spawns = {}
+
+                                for v, smart_id in pairs(smarts) do
+                                    local smart = alife_object(smart_id)
+
+                                    if (smart) then
+                                        if (smart.props and smart.props.base > 0) then
+                                            if (smart.owning_faction == "none" or game_relations.is_factions_enemies(smart.owning_faction, faction)) then
+                                                targets[#targets + 1] = smart
+                                            end
+                                        elseif (smart.props and smart.props.territory > 0 and (smart.props.resource == nil or smart.props.resource <= 0)) then
+                                            spawns[#spawns + 1] = smart
+                                        end
+                                    end
+                                end
+
+                                if (#spawns > 0 and #targets > 0) then
+                                    local target = targets[math.random(#targets)]
+
+                                    -- stronger resurgence attempts
+                                    local target_pop = 2 * target.max_population
+
+                                    local nearest_smart = nil
+                                    local nearest_dist = nil
+
+                                    attempted = true
+
+                                    if (enable_debug) then
+                                        printf("Resurgence of %s is underway, targeting %s with %s squads", faction, target:name(), target_pop)
+                                    end
+
+                                    for _, ter in pairs(spawns) do
+                                        local d = smart_terrain_warfare.fetch_smart_distance(target, ter)
+
+                                        if (nearest_dist == nil or d < nearest_dist) then
+                                            nearest_smart = ter
+                                            nearest_dist = d
+                                        end
+                                    end
+
+                                    for j = 0, target_pop do
+                                        local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count)
+                                        local squad = utils_obj.create_squad(section, nearest_smart:name())
+                                        sim_squad_warfare.set_target(squad, target.id)
+                                    end
+                                end
+                            end
+
+                            if (attempted) then
+                                break
+                            end
                         end
                     end
                 end
@@ -345,4 +374,229 @@ function update_faction(faction)
 
         printd(9, "true end")
     end
+end
+
+-- Emergency resurrection function for extinct factions
+function emergency_resurrection_spawn(faction)
+    printf("warfare debug: emergency_resurrection_spawn for %s", faction)
+    if not faction or faction == "none" then
+        return false
+    end
+
+    local levels = warfare.hash_table_to_array(level_targets.active_levels)
+    warfare.shuffleTable(levels)
+
+    local all_targets = {}
+    local priority_targets = {} -- Former faction bases get priority
+    local all_spawns = {}
+
+    -- Collect all possible targets and spawn points across all levels
+    for _,v in pairs(levels) do
+        local chosen = v.key
+        local info = warfare_levels.level_information[chosen]
+
+        if (info) then
+            local smarts = info.smarts
+
+            for v,smart_id in pairs(smarts) do
+                local smart = alife_object(smart_id)
+
+                if (smart) then
+                    -- Target: enemy or empty bases
+                    if (smart.props and smart.props.base > 0 ) then
+                        if (smart.owning_faction == "none" or game_relations.is_factions_enemies(smart.owning_faction, faction)) then
+                            local is_main_base = is_smart_main_base(smart:name())
+                            if enable_debug then printf("Emergency resurrection: Found target %s (main base: %s) owned by %s", smart:name(), tostring(is_main_base), smart.owning_faction) end
+                            if is_faction_main_base(smart:name(), faction) then
+                                if enable_debug then printf("Emergency resurrection: %s is a main base of %s", smart:name(), faction) end
+                                priority_targets[#priority_targets+1] = smart
+                            elseif not is_main_base then
+                                all_targets[#all_targets+1] = smart
+                            end
+                        end
+                    -- Spawn point: non-enemy territories only (neutral, friendly, or own faction)
+                    elseif (smart.props and smart.props.territory > 0) then
+                        if (smart.owning_faction == "none" or not game_relations.is_factions_enemies(smart.owning_faction, faction)) then
+                            all_spawns[#all_spawns+1] = smart
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    if (#all_spawns > 0 and (#priority_targets > 0 or #all_targets > 0)) then
+        -- Find closest target to any spawn point, prioritizing former faction bases
+        local best_target = nil
+        local best_spawn = nil
+        local best_distance = nil
+
+        -- First, try to target former faction bases (priority targets)
+        if (#priority_targets > 0) then
+            for _,spawn in pairs(all_spawns) do
+                for _,target in pairs(priority_targets) do
+                    local distance = smart_terrain_warfare.fetch_smart_distance(spawn, target)
+                    if distance > 10000 and (best_distance == nil or distance < best_distance) then
+                        best_distance = distance
+                        best_target = target
+                        best_spawn = spawn
+                    end
+                end
+            end
+
+            if (enable_debug and best_target) then
+                printf("Emergency resurrection: Targeting priority main base %s for faction %s", best_target:name(), faction)
+            end
+        end
+
+        -- If no priority targets found or accessible, fall back to regular targets
+        -- Strategy: Find closest target to faction's main base, then find closest spawn to that target
+        if (not best_target and #all_targets > 0) then
+            if enable_debug then printf("Emergency resurrection: No priority targets found, falling back to regular targets") end
+            local main_base_smarts = {}
+            local main_base_names = faction_main_bases[faction]
+
+            if main_base_names then
+                for _, base_name in pairs(main_base_names) do
+                    local smart = alife():story_object(base_name)
+                    if smart then
+                        main_base_smarts[#main_base_smarts+1] = smart
+                    end
+                end
+            end
+
+            -- Find the target closest to any faction main base
+            local best_target_to_mainbase = nil
+            local best_mainbase_distance = nil
+
+            if #main_base_smarts > 0 then
+                for _,target in pairs(all_targets) do
+                    for _,main_base in pairs(main_base_smarts) do
+                        local distance = smart_terrain_warfare.fetch_smart_distance(main_base, target)
+                        if distance > 10000 and (best_mainbase_distance == nil or distance < best_mainbase_distance) then
+                            best_mainbase_distance = distance
+                            best_target_to_mainbase = target
+                        end
+                    end
+                end
+
+                if (enable_debug and best_target_to_mainbase) then
+                    printf("Emergency resurrection: Found target %s closest to %s main base (distance: %s)",
+                           best_target_to_mainbase:name(), faction, best_mainbase_distance)
+                end
+
+                -- Now find the closest spawn point to the selected target
+                if best_target_to_mainbase then
+                    for _,spawn in pairs(all_spawns) do
+                        local distance = smart_terrain_warfare.fetch_smart_distance(spawn, best_target_to_mainbase)
+                        if distance > 10000 and (best_distance == nil or distance < best_distance) then
+                            best_distance = distance
+                            best_target = best_target_to_mainbase
+                            best_spawn = spawn
+                        end
+                    end
+                end
+            else
+                -- Fallback: if no main bases found, use old logic (closest spawn-target pair)
+                for _,spawn in pairs(all_spawns) do
+                    for _,target in pairs(all_targets) do
+                        local distance = smart_terrain_warfare.fetch_smart_distance(spawn, target)
+                        if distance > 10000 and (best_distance == nil or distance < best_distance) then
+                            best_distance = distance
+                            best_target = target
+                            best_spawn = spawn
+                        end
+                    end
+                end
+            end
+
+            if (enable_debug and best_target) then
+                printf("Emergency resurrection: Targeting fallback target %s for faction %s with spawn at %s",
+                       best_target:name(), faction, best_spawn and best_spawn:name() or "unknown")
+            end
+        end
+
+        if (best_target and best_spawn) then
+            local emergency_squad_count = math.min(4, math.ceil(best_target.max_population * 1.5))
+
+            if (enable_debug) then
+                printf("Emergency resurrection: spawning %s squads for %s at %s, targeting %s",
+                       emergency_squad_count, faction, best_spawn:name(), best_target:name())
+            end
+
+            for j=1,emergency_squad_count do
+                local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count)
+                local squad = utils_obj.create_squad(section, best_spawn:name())
+                if squad then
+                    sim_squad_warfare.set_target(squad, best_target.id)
+                end
+            end
+
+            return true
+        end
+    end
+
+    return false
+end
+
+-- Helper function to check if a smart terrain is a main faction base
+function is_main_faction_base(smart, faction)
+    if not smart or not faction or faction == "none" then
+        return false
+    end
+
+    -- This is a simple heuristic - you may want to customize this
+    -- Main bases typically have high max_population and are bases (not resources)
+    if smart.props and smart.props.base and smart.props.base > 0 then
+        if smart.max_population and smart.max_population >= 8 then
+            return true
+        end
+
+        -- You can add specific smart terrain name checks here if needed
+        local name = smart:name()
+        if name then
+            -- Add main base names if you know them, e.g.:
+            -- if string.find(name, "bar_") or string.find(name, "freedom_base") then
+            --     return true
+            -- end
+        end
+    end
+
+    return false
+end
+
+
+
+-- Helper function to check if a smart terrain is a main base (uses smart_terrain_warfare's function)
+function is_smart_main_base(smart_name)
+    if not smart_name then
+        return false
+    end
+
+    -- Use the function from smart_terrain_warfare.script
+    if smart_terrain_warfare and smart_terrain_warfare.is_main_base then
+        return smart_terrain_warfare.is_main_base(smart_name)
+    end
+
+    return false
+end
+
+-- Helper function to check if a smart terrain is a main base belonging to a specific faction
+function is_faction_main_base(smart_name, faction)
+    if not smart_name or not faction then
+        return false
+    end
+
+    local bases = faction_main_bases[faction]
+    if not bases then
+        return false
+    end
+
+    for _, base_name in pairs(bases) do
+        if base_name == smart_name then
+            return true
+        end
+    end
+
+    return false
 end
