@@ -129,9 +129,9 @@ function save_state(m_data)
     m_data.warfare.invasions = smart_terrain_warfare.invasions
     m_data.warfare.player_heli = warfare_faction_control.player_heli
     m_data.warfare.defense_timers = smart_terrain_warfare.defense_timers
-    m_data.warfare.defense_next_update = smart_terrain_warfare.defense_next_update
+    m_data.warfare.defence_delay = smart_terrain_warfare.defence_delay
     m_data.warfare.patrol_timers = smart_terrain_warfare.patrol_timers
-    m_data.warfare.patrol_next_update = smart_terrain_warfare.patrol_next_update
+
     m_data.warfare.patrol_squads = smart_terrain_warfare.patrol_squads
     m_data.warfare.faction_information = warfare_factions.faction_information
     m_data.warfare.new_surge = new_surge or true
@@ -200,9 +200,8 @@ function load_state(m_data)
     warfare_faction_control.player_heli = m_data.warfare and m_data.warfare.player_heli
 
     smart_terrain_warfare.defense_timers = m_data.warfare and m_data.warfare.defense_timers or {}
-    smart_terrain_warfare.defense_next_update = m_data.warfare and m_data.warfare.defense_next_update or {}
-    smart_terrain_warfare.patrol_timers = m_data.warfare and m_data.warfare.patrol_timers or {}
-    smart_terrain_warfare.patrol_next_update = m_data.warfare and m_data.warfare.patrol_next_update or {}
+    smart_terrain_warfare.defence_delay = m_data.warfare and m_data.warfare.defence_delay or {}
+    smart_terrain_warfare.patrol_timers = m_data.warfare and m_data.warfare.patrol_timers  or {}
     smart_terrain_warfare.patrol_squads = m_data.warfare and m_data.warfare.patrol_squads or {}
     smart_terrain_warfare.random_patrols = m_data.warfare and m_data.warfare.random_patrols or {}
 

@@ -55,9 +55,8 @@ local reset_defense_timer = {}
 local previous_owner = {}                                        -- have to use this, since using smart.last_owner messes with the pda icons
 
 defense_timers = {}
-defense_next_update = {}
+defence_delay = {} -- stores how many times base sent capture squads while having 0 avail. 0 value means no delay
 patrol_timers = {}
-patrol_next_update = {}
 spawn_mutant_timers = {}
 spawn_mutant_next_update = {}
 process_mutant_timers = {}
@@ -545,7 +544,10 @@ function process_manual_capture(smart)
                     local max_respawn = warfare_options.options.factions[warfare.actor_faction].max_faction_respawn
                     local respawn_time = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
                     local respawn_multiplier = 1.2
-                    defense_next_update[closest_base.id] = defense_next_update[closest_base.id] + respawn_multiplier * respawn_time  -- add respawn penalty to base
+                    if defence_delay[smart.id] == nil then
+                        defence_delay[smart.id] = 0
+                    end
+					defence_delay[smart.id] = defence_delay[smart.id] + 1
                     -- get info of base NPC for message info
                     local squads = SIMBOARD.smarts[closest_base.id].squads
                     local base_squad
@@ -711,10 +713,8 @@ function process_squads(smart)
     set_max_population(smart)
 
     local squads = SIMBOARD.smarts[smart.id].squads
-    local squad_moved = false
 
     for sid, _ in pairs(squads) do
-        if squad_moved then break end
         local squad = sid and alife_object(sid)
 
         -- don't operate on ignore_list squads or story squads, or squads that are not idle
@@ -768,7 +768,7 @@ function process_squads(smart)
                                 if (#targets > 0) then
                                     -- linked level target found
                                     pick_target(smart, squad, targets, true)
-                                    squad_moved = true
+                                    break  -- limit to one overflow move per cycle
                                 else
                                     -- overflow squad with no valid linked level targets
                                     local new_targets = find_targets_for_overflow(smart, faction, true)                -- find target on any level for overflow squad (third field set to true)
@@ -779,7 +779,7 @@ function process_squads(smart)
                                         squad:remove_squad()
                                     else
 									    pick_target(smart, squad, new_targets, true)
-									    squad_moved = true
+									    break  -- limit to one overflow move per cycle
                                     end
                                 end
                             end
@@ -1893,31 +1893,30 @@ function update_resources(smart)
     end
 end
 
+function get_current_def_respawn_interval(faction)
+    local min_respawn = warfare_options.options.factions[faction].min_faction_respawn
+    local max_respawn = warfare_options.options.factions[faction].max_faction_respawn
+    local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier
+    local current_respawn = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
+    return current_respawn
+end
+
 function spawn_defense(smart)
-    local faction_bases
-    if not (defense_timers[smart.id]) or reset_defense_timer[smart.id] then
-        local min_respawn = warfare_options.options.factions[smart.owning_faction].min_faction_respawn
-        local max_respawn = warfare_options.options.factions[smart.owning_faction].max_faction_respawn
-        faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier                                    -- base count plus modifier
-        local current_respawn = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
-        printdbg("WARFARE DEBUG: reset defense timer. min/max: %s/%s, bases: %s, timer: %s", min_respawn, max_respawn, faction_bases, current_respawn)
-        defense_next_update[smart.id] = current_respawn
-        defense_timers[smart.id] = game.get_game_time()
-        reset_defense_timer[smart.id] = nil                                            -- timer reset only occurs when a base changes owners
-        return
-    elseif (game.get_game_time():diffSec(defense_timers[smart.id]) > (defense_next_update[smart.id]*6)) then
-        printdbg("WARFARE DEBUG: defence time elapsed. was set at: %s %s, curr time: %s %s, diff: %s, next_update: %s(%s)", defense_timers[smart.id]:dateToString(0), defense_timers[smart.id]:timeToString(2), game.get_game_time():dateToString(0), game.get_game_time():timeToString(2), game.get_game_time():diffSec(defense_timers[smart.id]), defense_next_update[smart.id], defense_next_update[smart.id]*6)
-        local min_respawn = warfare_options.options.factions[smart.owning_faction].min_faction_respawn
-        local max_respawn = warfare_options.options.factions[smart.owning_faction].max_faction_respawn
-        faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
-        local current_respawn = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
-        printdbg("WARFARE DEBUG: update defense timer. min/max: %s/%s, bases: %s, timer: %s", min_respawn, max_respawn, faction_bases, current_respawn)
-        defense_next_update[smart.id] = current_respawn
-        defense_timers[smart.id] = warfare_utils.add_time(defense_timers[smart.id], defense_next_update[smart.id]*6)
-    else
-        --printf("not ready to spawn squad at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(defense_timers[smart.id]) .. " out of " .. (defense_next_update[smart.id]*6))
-        return
+    if defence_delay[smart.id] == nil then
+        defence_delay[smart.id] = 0
     end
+	local current_respawn = get_current_def_respawn_interval(smart.owning_faction)
+	if not (defense_timers[smart.id]) or reset_defense_timer[smart.id] then
+		defense_timers[smart.id] = game.get_game_time()
+		reset_defense_timer[smart.id] = nil											-- timer reset only occurs when a base changes owners
+		return
+	elseif (game.get_game_time():diffSec(defense_timers[smart.id]) > (current_respawn*6) * (defence_delay[smart.id] + 1)) then
+		defense_timers[smart.id] = warfare_utils.add_time(defense_timers[smart.id], (current_respawn*6) * (defence_delay[smart.id] + 1))
+		defence_delay[smart.id] = 0
+	else
+		--printf("not ready to spawn squad at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(defense_timers[smart.id]) .. " out of " .. (current_respawn*6))
+		return
+	end
 
     printd(0, smart:name())
 
@@ -1961,48 +1960,25 @@ function process_defense(smart)
     end
 end
 
+function get_current_patrol_respawn_interval(faction)
+    local ff = warfare_options.options.factions[faction]
+    local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier
+    local respawn = warfare.lerp(ff.min_patrol_time, ff.max_patrol_time, clamp(faction_bases / warfare.base_count, 0, 1))
+    return respawn
+end
+
 function spawn_patrols(smart)
     printd(0, smart:name())
+    local respawn = get_current_patrol_respawn_interval(smart.owning_faction)
 
-    if not (patrol_timers[smart.id]) then
-        patrol_timers[smart.id] = game.get_game_time()
-        patrol_next_update[smart.id] = 10
-
-        if (smart.owning_faction ~= "none") then
-            local ff = warfare_options.options.factions[smart.owning_faction]
-            local faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
-            local respawn
-
-            if (ff) then
-                respawn = warfare.lerp(ff.min_patrol_time, ff.max_patrol_time, clamp(faction_bases / warfare.base_count, 0, 1))
-            else
-                respawn = 10
-            end
-
-            patrol_next_update[smart.id] = respawn
-        end
-
-        return
-    elseif (game.get_game_time():diffSec(patrol_timers[smart.id]) > (patrol_next_update[smart.id] * 6)) then
-        patrol_timers[smart.id] = warfare_utils.add_time(patrol_timers[smart.id], patrol_next_update[smart.id]*6)
-        patrol_next_update[smart.id] = 10
-
-        if (smart.owning_faction ~= "none") then
-            local ff = warfare_options.options.factions[smart.owning_faction]
-            local faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
-            local respawn
-
-            if (ff) then
-                respawn = warfare.lerp(ff.min_patrol_time, ff.max_patrol_time, clamp(faction_bases / warfare.base_count, 0, 1))
-            else
-                respawn = 10
-            end
-
-            patrol_next_update[smart.id] = respawn
-        end
-    else
-        return
-    end
+	if not (patrol_timers[smart.id]) then
+		patrol_timers[smart.id] = game.get_game_time()
+		return
+	elseif (game.get_game_time():diffSec(patrol_timers[smart.id]) > (respawn*6)) then
+		patrol_timers[smart.id] = warfare_utils.add_time(patrol_timers[smart.id], respawn*6)
+	else
+		return
+	end
 
     local squads = patrol_squads[smart.id]
     local count = 0
@@ -3750,14 +3726,18 @@ function get_warfare_info(smart)
     props = props .. " \\n" .. clr_gr .. str_wrfr[7] .. ": " .. clr_w .. tostring(smart.defense_count) --.. "\\n"
     props = props .. " \\n" .. clr_gr .. str_wrfr[8] .. ": " .. clr_w .. tostring(smart.max_population) .. "\\n"
 
-    if defense_timers[smart.id] then
+    if defense_timers[smart.id] and smart.owning_faction and smart.owning_faction ~= "none" then
         --props = props .. "\\n----------\\n"
 
         local defense_timer = defense_timers[smart.id]
-        local next_defense = defense_next_update[smart.id]
+        local next_defense = get_current_def_respawn_interval(smart.owning_faction)
 
         local diff = game.get_game_time():diffSec(defense_timer)
-        local remaining = (next_defense * 6) - diff
+        if defence_delay[smart.id] == nil then
+            defence_delay[smart.id] = 0
+        end
+
+        local remaining = (next_defense * 6) * (defence_delay[smart.id] + 1)- diff
         -- xQd, show the timer in hours and minutes
         --remaining = round_idp(remaining / 60)
         if remaining <= 3600 then
@@ -3778,7 +3758,7 @@ function get_warfare_info(smart)
         --props = props .. "\\n----------\\n"
 
         local patrol_timer = patrol_timers[smart.id]
-        local next_patrol = patrol_next_update[smart.id]
+        local next_patrol = get_current_patrol_respawn_interval(smart.owning_faction)
 
         local diff = game.get_game_time():diffSec(patrol_timer)
         local remaining = (next_patrol * 6) - diff
@@ -4103,11 +4083,13 @@ function check_owner(smart)
 
     if (not SIMBOARD.smarts[smart.id]) then
         smart.owning_faction = "none"
+        patrol_timers[smart.id] = nil
         return
     end
 
     if not (SIMBOARD.smarts[smart.id].squads) then
         smart.owning_faction = "none"
+        patrol_timers[smart.id] = nil
         return
     end
 
@@ -4228,12 +4210,14 @@ function check_owner(smart)
             -- reset timer if enemy faction takes over a base
             if is_factions_enemies(smart.owning_faction, previous_owner[smart.id]) then
                 reset_defense_timer[smart.id] = 1                                            -- a non-nil value here will cause the spawn time to reset, which will happen when a base's ownership changes
+                patrol_timers[smart.id] = nil
                 if enable_debug then
                     --printf("resetting defense timer of base %s due to ownership change from %s to %s", smart:name(), previous_owner[smart.id], smart.owning_faction)
                 end
                 -- or reset timer if a legit faction steals a base from another legit faction. Don't reset for loner/ecolog changes
             elseif (previous_owner[smart.id] ~= "stalker" and previous_owner[smart.id] ~= "ecolog" and smart.owning_faction ~= "stalker" and smart.owning_faction ~= "ecolog") then
                 reset_defense_timer[smart.id] = 1                                            -- a non-nil value here will cause the spawn time to reset, which will happen when a base's ownership changes
+                patrol_timers[smart.id] = nil
                 if enable_debug then
                     --printf("resetting defense timer of base %s due to ownership change from %s to %s", smart:name(), previous_owner[smart.id], smart.owning_faction)
                 end
