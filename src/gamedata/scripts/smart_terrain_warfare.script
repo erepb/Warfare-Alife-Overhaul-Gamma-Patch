@@ -4465,7 +4465,7 @@ function find_targets(smart, faction_override, overflow_squad)
     end
 
     local targets = {}
-    local mainbase_targets = {}  -- backup array if targets array is empty
+
 
     if (faction == "monster") then
         return
@@ -4620,10 +4620,10 @@ function find_targets(smart, faction_override, overflow_squad)
 
                 -- prevent main base attacks if option is enabled
                 if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and (other_faction ~= "none") then
-                    mainbase_targets[#targets + 1] = { priority * inv_dist, other.id }
-                else
-                    targets[#targets + 1] = { priority * inv_dist, other.id }  -- otherwise add to standard target array
+                    inv_dist = inv_dist / 1000
                 end
+                    targets[#targets + 1] = { priority * inv_dist, other.id }  -- otherwise add to standard target array
+
 
             end
         end
@@ -4635,14 +4635,7 @@ function find_targets(smart, faction_override, overflow_squad)
 
     printd(1, smart:name())
 
-    -- if targets array is empty and mainbase array isn't, use mainbase targets
-    if (#targets < 1) and (#mainbase_targets > 0) then
-        table.sort(mainbase_targets, function(a, b)
-            return math.abs(a[1]) > math.abs(b[1])
-        end)
 
-        return mainbase_targets
-    end
 
     return targets
 end
@@ -4799,7 +4792,12 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
                 local distance = fetch_smart_distance(smart, other)
                 local inv_dist = (1 / distance)
 
-                -- extra weight on distance
+                -- prevent main base attacks if option is enabled
+				if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and (other_faction ~= "none") and other_faction ~= faction then
+					inv_dist = inv_dist / 1000
+				end
+
+				-- extra weight on distance
                 targets[#targets + 1] = { priority * inv_dist * inv_dist, other.id }
             end
 
@@ -4811,7 +4809,6 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
     end)
 
     return targets
-
 end
 
 
