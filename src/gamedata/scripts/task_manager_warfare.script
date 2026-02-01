@@ -1,0 +1,45 @@
+--[[
+
+=======================================================================================
+	Original creator: SaloEater
+    Prevent s
+	Edit log:
+    2025/09/15 - SaloEater - Allow the test to be cancelled when task givers are killed
+	2025/09/19 - SheBang   - Still fail the task if the task giver is killed by the actor
+
+    This file deals with task closure upon the death of the task givers.
+=======================================================================================
+
+--]]
+
+
+function npc_on_death_callback(victim, who)
+    -- Callback, NPC caused by death
+    if not victim then
+        return
+    end
+
+    local tm = task_manager.get_task_manager()
+    if not tm then
+        return
+    end
+
+    for tid, task in pairs(tm.task_info) do
+        if task and task.t then
+            if task.task_giver_id == victim:id() then
+                if not who or who:id() ~= AC_ID then
+                    tm:set_task_cancelled(tid)
+                    local icon = task:get_icon_name()
+                    local caption = game.translate_string("general_update_task")
+                    local task_name = game.translate_string(task.current_title)
+                    local text = strformat(game.translate_string("st_wrfr_task_cancellation"), task_name, victim:character_name())
+                    db.actor:give_game_news(caption, text, icon, 0, 3000)
+                end
+            end
+        end
+    end
+end
+
+function on_game_start()
+    RegisterScriptCallback("npc_on_death_callback", npc_on_death_callback)
+end
