@@ -4343,7 +4343,7 @@ function find_random_patrol_target(smart, faction, sid)
         local smarts = warfare_levels.level_information[lvl].smarts
         for i = 1, #smarts do
             local other = smarts[i] and alife_object(smarts[i])
-            if other then
+            if other and other.props.base == 0 then
                 smartCollection[#smartCollection + 1] = other
             end
         end
