@@ -4780,12 +4780,15 @@ function find_random_patrol_target(smart, faction, sid)
 		local smarts = warfare_levels.level_information[lvl].smarts
 
 		for i=1,#smarts do
-			smartCollection[#smartCollection+1] = smarts[i]
+			local other = smarts[i] and alife_object(smarts[i])
+            if other and other.props.base == 0 then
+                smartCollection[#smartCollection + 1] = other
+            end
 		end
 	end
 
 	for i=1,#smartCollection do
-		local other = smartCollection[i] and alife_object(smartCollection[i])
+		local other = smartCollection[i]
 		local priority = 0
 
 		if (smart) then																								-- only check priorities if the squad has spawned
