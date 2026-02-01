@@ -260,7 +260,11 @@ random_patrols[squad.id] = {
 
 function process_random_patrol(squad)
     if not (squad.patrol_timer) or game.get_game_time():diffSec(squad.patrol_timer) > (squad.next_patrol_update * 6) then
-        squad.patrol_timer = game.get_game_time()
+        if not squad.patrol_timer then
+            squad.patrol_timer = game.get_game_time()
+        else
+            squad.patrol_timer = warfare_utils.add_time(squad.patrol_timer, squad.next_patrol_update*6)
+        end
         squad.next_patrol_update = 10
     else
         return

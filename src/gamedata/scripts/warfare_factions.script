@@ -13,8 +13,9 @@
 
 --]]
 
-
+local enable_debug = false
 printd = warfare.printd
+printdbg = warfare.printdbg
 
 factions_p = {}
 factions = {
@@ -133,7 +134,12 @@ function update_faction(faction)
         local next_random_patrol = faction_information[faction].next_random_patrol or math.random(min_random_patrol_time, max_random_patrol_time)
 
         faction_information[faction] = {}
-        faction_information[faction].timer = game.get_game_time()
+        if not faction_information[faction].timer then
+            faction_information[faction].timer = game.get_game_time()
+        else
+            faction_information[faction].timer = warfare_utils.add_time(faction_information[faction].timer, faction_information[faction].next_update*6)
+        end
+
         faction_information[faction].next_update = math.random(1, 5)
         faction_information[faction].base_count = 0
         faction_information[faction].resource_count = 0
@@ -218,7 +224,7 @@ function update_faction(faction)
 
         if (warfare_options.options.factions[faction].random_patrols) then
             if (game.get_game_time():diffSec(faction_information[faction].last_random_patrol) > faction_information[faction].next_random_patrol * 6) then
-                faction_information[faction].last_random_patrol = game.get_game_time()
+                faction_information[faction].last_random_patrol = warfare_utils.add_time(faction_information[faction].last_random_patrol, faction_information[faction].next_random_patrol*6)
                 faction_information[faction].next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time)
 
                 local start_id = smart_terrain_warfare.find_random_patrol_target(nil, faction)
@@ -254,6 +260,8 @@ function update_faction(faction)
                     if spawn_random_patrol then
                         local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count)
                         local squad = utils_obj.create_squad(section, start:name())
+                        printdbg("WARFARE DEBUG: spawning ranom patrol squad faction: %s, resources: %s", faction, faction_information[faction].resource_count)
+
                         smart_terrain_warfare.random_patrols[squad.id] = faction
                         sim_squad_warfare.set_target(squad, target_id)
                     end
