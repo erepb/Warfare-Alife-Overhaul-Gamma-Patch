@@ -1936,6 +1936,7 @@ function spawn_defense(smart)
 
     -- army spawn quality depends on number of bases
     if (warfare_options.options.factions[smart.owning_faction].use_bases_not_resources) then
+        local faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
         section = faction_expansions.get_spawn_section(smart.owning_faction, faction_bases)
     end
 
