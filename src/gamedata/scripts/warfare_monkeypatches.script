@@ -114,6 +114,309 @@ function dialogs.st_trade_important_documents(a, b, typ, txt)
     return str
 end
 
+-- faction_expansions.script mutant spawn patches
+-- 2023/05/21 - Vintar - removed tushkano
+-- 2023/12/06 - Vintar - split mutant spawns by level closeness to center
+-- 2024/08/05 - Vintar - fix crash on nil resource count
+
+local random_mutants_south = {
+    "simulation_boar",
+    "simulation_boar",
+    "simulation_boar",
+    "simulation_dog",
+    "simulation_dog",
+    "simulation_dog",
+    "simulation_pseudodog",
+    "simulation_pseudodog",
+    "simulation_flesh",
+    "simulation_flesh",
+    "simulation_flesh",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_boar_flesh",
+    "simulation_mix_boar_flesh",
+    "simulation_mix_boar_flesh",
+    "simulation_cat",
+    "simulation_cat",
+    "simulation_cat",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_zombie",
+}
+
+local random_rare_south = {
+    "simulation_bloodsucker",
+    "simulation_snork",
+    "simulation_snork",
+    "simulation_snork",
+    "simulation_psysucker",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_fracture",
+    "simulation_fracture",
+    "simulation_fracture",
+    "simulation_fracture",
+}
+
+local random_mutants_mid = {
+    "simulation_boar",
+    "simulation_boar",
+    "simulation_boar",
+    "simulation_dog",
+    "simulation_dog",
+    "simulation_dog",
+    "simulation_pseudodog",
+    "simulation_pseudodog",
+    "simulation_flesh",
+    "simulation_flesh",
+    "simulation_flesh",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_boar_flesh",
+    "simulation_mix_boar_flesh",
+    "simulation_mix_boar_flesh",
+    "simulation_cat",
+    "simulation_cat",
+    "simulation_cat",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_fracture",
+    "simulation_fracture",
+    "simulation_snork",
+    "simulation_snork",
+}
+
+local random_rare_mid = {
+    "simulation_gigant",
+    "simulation_controller",
+    "simulation_controller",
+    "simulation_controller",
+    "simulation_burer",
+    "simulation_chimera",
+    "simulation_bloodsucker",
+    "simulation_bloodsucker",
+    "simulation_bloodsucker",
+    "simulation_bloodsucker",
+    "simulation_bloodsucker",
+    "simulation_psysucker",
+    "simulation_psysucker",
+    "simulation_psysucker",
+    "simulation_psy_dog",
+    "simulation_psy_dog",
+}
+
+local random_mutants_north = {
+    "simulation_boar",
+    "simulation_boar",
+    "simulation_boar",
+    "simulation_boar",
+    "simulation_dog",
+    "simulation_dog",
+    "simulation_pseudodog",
+    "simulation_pseudodog",
+    "simulation_pseudodog",
+    "simulation_pseudodog",
+    "simulation_flesh",
+    "simulation_flesh",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_dogs",
+    "simulation_mix_boar_flesh",
+    "simulation_mix_boar_flesh",
+    "simulation_cat",
+    "simulation_cat",
+    "simulation_cat",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_lurker",
+    "simulation_fracture",
+    "simulation_fracture",
+    "simulation_snork",
+    "simulation_snork",
+}
+
+local random_rare_north = {
+    "simulation_gigant",
+    "simulation_gigant",
+    "simulation_controller",
+    "simulation_controller",
+    "simulation_controller",
+    "simulation_burer",
+    "simulation_chimera",
+    "simulation_chimera",
+    "simulation_chimera",
+    "simulation_bloodsucker",
+    "simulation_bloodsucker",
+    "simulation_bloodsucker",
+    "simulation_psysucker",
+    "simulation_psysucker",
+    "simulation_psysucker",
+    "simulation_psy_dog",
+    "simulation_psy_dog",
+    "simulation_psy_dog",
+}
+
+local random_mutants_labs = {
+    "simulation_tushkano",
+    "simulation_tushkano",
+    "simulation_tushkano",
+    "simulation_tushkano",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_zombie",
+    "simulation_fracture",
+    "simulation_fracture",
+    "simulation_fracture",
+    "simulation_snork",
+    "simulation_snork",
+    "simulation_snork",
+}
+
+local random_rare_labs = {
+    "simulation_gigant",
+    "simulation_controller",
+    "simulation_controller",
+    "simulation_burer",
+    "simulation_burer",
+    "simulation_burer",
+    "simulation_bloodsucker",
+    "simulation_bloodsucker",
+    "simulation_bloodsucker",
+    "simulation_poltergeist_tele",
+    "simulation_poltergeist_flame",
+    "simulation_psysucker",
+    "simulation_psysucker",
+    "simulation_psysucker",
+}
+
+local random_zombies = {
+    "simulation_zombie",
+}
+
+-- old functions were overly complicated and had a weird minimum at 80% resource ownership where your squads would be worse on average
+-- new functions are monotonically increasing so that each point of resource is always a sizeable benefit
+function faction_expansions.get_advanced_chance(resource)
+    --	return -1 * (100 * (1 / math.pow(warfare.resource_count / 2, 2))) * math.pow((resource - (warfare.resource_count / 2)), 2) + 100
+    return 150 * (math.pow((resource / warfare.resource_count), 0.8))
+end
+
+function faction_expansions.get_veteran_chance(resource)
+    --	return -100 + (100 / (warfare.resource_count / 2)) * resource
+    return 100 * (math.pow((resource / warfare.resource_count), 2))
+end
+
+local faction_expansions_get_spawn_section = faction_expansions.get_spawn_section
+function faction_expansions.get_spawn_section(faction, resource, current_level)
+    if (resource) then
+        --printf("has valid resource count")
+    else
+        printf("resource count was %s for spawn section for faction %s on level %s", resource, faction, current_level)
+        resource = 0  -- nil resource count
+    end
+
+    if (faction ~= "monster") then
+        if (faction == "stalker") or (faction == "ecolog") then
+            -- loners and ecologists have set chances for squad skill: 7% veteran, 36% advanced, 57% novice
+            return faction_expansions.get_section(faction, 36, 7)
+        else
+            local advanced = faction_expansions.get_advanced_chance(resource)
+            local veteran = faction_expansions.get_veteran_chance(resource)
+            return faction_expansions.get_section(faction, advanced, veteran)
+        end
+    elseif (faction == "monster") then
+        return faction_expansions.get_section(faction, resource, current_level)  -- for monster spawns, 'resource' is rare_chance
+    end
+end
+
+local faction_expansions_get_section = faction_expansions.get_section
+function faction_expansions.get_section(faction, advanced_chance, veteran_chance)
+    local r = math.random(0, 100)
+
+    -- faction_list is local in faction_expansions, replicate mapping here
+    local faction_list = {
+        ["stalker"]  = "stalker",
+        ["monolith"] = "monolith",
+        ["csky"]     = "csky",
+        ["army"]     = "army",
+        ["killer"]   = "merc",
+        ["ecolog"]   = "ecolog",
+        ["dolg"]     = "duty",
+        ["freedom"]  = "freedom",
+        ["bandit"]   = "bandit",
+        ["greh"]     = "greh",
+        ["isg"]      = "isg",
+        ["renegade"] = "renegade",
+        ["zombied"]  = "zombied",
+    }
+    local name = faction_list[faction]
+
+    if name then
+        if r <= veteran_chance then
+            return (name .. "_sim_squad_veteran")
+        elseif r <= advanced_chance then
+            return (name .. "_sim_squad_advanced")
+        else
+            return (name .. "_sim_squad_novice")
+        end
+    elseif faction == "monster" then
+        if not (IsSurvivalMode()) then
+            local current_level = veteran_chance -- using `veteran_chance` to store level number for mutants
+            -- Pick correct section by level
+            if current_level < 7 then  -- south level
+                if (r <= advanced_chance) then
+                    return random_rare_south[math.random(#random_rare_south)]
+                else
+                    return random_mutants_south[math.random(#random_mutants_south)]
+                end
+            elseif (current_level > 12) and (current_level < 32) then  -- north or lab level
+                if ((current_level > 19) and (current_level < 27)) or (current_level == 29) or (current_level == 31) then  -- labs will spawn scary mutants
+                    if (r <= advanced_chance) then
+                        return random_rare_labs[math.random(#random_rare_labs)]
+                    else
+                        return random_mutants_labs[math.random(#random_mutants_labs)]
+                    end
+                else  -- north level
+                    if (r <= advanced_chance) then
+                        return random_rare_north[math.random(#random_rare_north)]
+                    else
+                        return random_mutants_north[math.random(#random_mutants_north)]
+                    end
+                end
+            else  -- mid level
+                if (r <= advanced_chance) then
+                    return random_rare_mid[math.random(#random_rare_mid)]
+                else
+                    return random_mutants_mid[math.random(#random_mutants_mid)]
+                end
+            end
+        else
+            return random_zombies[math.random(#random_zombies)]
+        end
+    end
+
+    return nil
+end
+
 local game_relations_calculate_relation_change = game_relations.calculate_relation_change
 function game_relations.calculate_relation_change(faction_from, faction_to, base_change)
     if not _G.WARFARE then
