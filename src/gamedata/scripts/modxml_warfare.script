@@ -180,6 +180,14 @@ function ui_options.init_opt_coder()
             { id = "monster_rare_chance_lab", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
             { id = "offline_combat_distance", type = "track", val = 2, def = 50, min = 1, max = 100, step = 1 },
             { id = "overflow_overrides_manual_control", type = "check", val = 1, def = true },
+
+            { id= "distance_based_combat_multiplier"    	 	    ,type= "check"    ,val= 1	,def= true	             	                    		 },
+            { id= "distance_combat_max_multiplier_base"    	 	    ,type= "track"    ,val= 2	,def= 2.0	  ,min= 1.0     ,max= 10.0        ,step= 0.1 },
+            { id= "distance_combat_max_multiplier_resource"    	    ,type= "track"    ,val= 2	,def= 1.5	  ,min= 1.0     ,max= 10.0        ,step= 0.1 },
+            { id= "distance_combat_max_multiplier_territory"    	,type= "track"    ,val= 2	,def= 1.0	  ,min= 1.0     ,max= 10.0        ,step= 0.1 },
+            { id= "distance_combat_max_multiplier_lair"    	        ,type= "track"    ,val= 2	,def= 1.0	  ,min= 1.0     ,max= 10.0        ,step= 0.1 },
+            { id= "distance_combat_min_multiplier"    	 	        ,type= "track"    ,val= 2	,def= 0.5	  ,min= 0.1     ,max= 10.0        ,step= 0.1 },
+            { id= "distance_combat_max_distance"    	 	        ,type= "track"    ,val= 2	,def= 300     ,min= 100     ,max= 2000        ,step= 100 },
         },
     }
     warfare_options.gr[alife_warfare_azazel_options_index].presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" }

@@ -127,7 +127,48 @@
             PDA v1. This setting is only functional when fog of war is enabled.
         </text>
     </string>
-    <string id="ui_mm_alife_warfare_faction_use_bases_not_resources">
+    <string id="ui_mm_alife_warfare_general_distance_based_combat_multiplier">
+		<text>Distance-based combat multiplier</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_based_combat_multiplier_desc">
+		<text>Enable distance-based combat effectiveness multipliers. Squads perform better when fighting near friendly strategic locations like bases, resources, territory, and lairs.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_min_multiplier">
+		<text>Distance combat min multiplier</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_min_multiplier_desc">
+		<text>The minimum combat effectiveness multiplier applied when squads are far from any friendly strategic locations. This is the baseline combat strength used at maximum distance.</text>	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_multiplier_base">
+		<text>Distance combat max multiplier (base)</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_multiplier_base_desc">
+		<text>Maximum combat effectiveness multiplier when near friendly bases. Bases provide the strongest strategic support and highest combat bonus.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_multiplier_resource">
+		<text>Distance combat max multiplier (resource)</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_multiplier_resource_desc">
+		<text>Maximum combat effectiveness multiplier when near friendly resource points. Resources provide moderate support through supplies and equipment.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_multiplier_territory">
+		<text>Distance combat max multiplier (territory)</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_multiplier_territory_desc">
+		<text>Maximum combat effectiveness multiplier when near friendly territory. Controlled territory provides basic support through familiar terrain.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_multiplier_lair">
+		<text>Distance combat max multiplier (lair)</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_multiplier_lair_desc">
+		<text>Maximum combat effectiveness multiplier when near friendly lairs.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_distance">
+		<text>Distance combat max distance</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_distance_combat_max_distance_desc">
+		<text>The maximum distance at which distance-based combat multipliers are calculated. Squads beyond this distance from friendly strategic locations receive the minimum multiplier.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_use_bases_not_resources">
         <text>Squad quality depends on base count (instead of resources)</text>
     </string>
     <string id="ui_mm_alife_warfare_stalker_use_bases_not_resources_desc">

@@ -1452,6 +1452,8 @@ function create_invasion_plan(smart, target)
             end
         end
 
+        total_enemy_power = total_enemy_power * get_max_power_mult(target)
+
         -- get allied squad avg power
         local num_allied_squads = 0
         local total_allied_power = 0
@@ -1464,6 +1466,8 @@ function create_invasion_plan(smart, target)
                 total_allied_power = total_allied_power + sq_pow
             end
         end
+
+        total_allied_power = total_allied_power * sim_offline_combat.calculate_distance_combat_multiplier(global_position.from(target), smart.owning_faction)
 
         -- compare average enemy squad power to the attacking faction's average squad power
         local avg_allied_squad_power = total_allied_power / num_allied_squads
@@ -4030,6 +4034,31 @@ function squad_is_commandable(squad, random_patrol_override)
     return false
 end
 
+function get_max_power_mult(smart)
+	local opts = warfare_options.options
+	if not opts.distance_based_combat_multiplier then
+		return 1
+	end
+
+	local props = smart and smart.props
+	if not props then
+		return 1
+	end
+
+	if props.base and props.base > 0 then
+		return opts.distance_combat_max_multiplier_base
+	elseif props.resource and props.resource > 0 then
+		return opts.distance_combat_max_multiplier_resource
+	elseif props.territory and props.territory > 0 then
+		return opts.distance_combat_max_multiplier_territory
+	elseif props.lair and props.lair > 0 then
+		return opts.distance_combat_max_multiplier_lair
+	end
+
+	return 1
+end
+
+
 function check_owner(smart)
     if not (smart) then
         return
@@ -4103,7 +4132,8 @@ function check_owner(smart)
     -- Store information in smart_terrain; no need to calculate again elsewhere
     smart.defense_count = squadCount[owner] or 0
     smart.defense_power = squadPowers[owner] or 0
-
+    -- apply distance-based combat multiplier if enabled
+    smart.defense_power = smart.defense_power * get_max_power_mult(smart)
     if (smart.defense_count > 25) then
         local smrt_name = game.translate_string("st_" .. smart:name() .. "_name")
         --		actor_menu.set_msg(1, strformat(str_wrfr[19], smrt_name, tostring(smart.defense_count)), 3) -- TODO: figure out how to stop this being spammed
@@ -4441,6 +4471,8 @@ function find_targets(smart, faction_override, overflow_squad)
         d = get_faction_power(smart, faction)
     end
 
+    d = d * get_max_power_mult(smart) or 1
+
     -- non-linked levels are included only for overflow squads
     if (warfare_options.options.factions[faction].linked_level_targeting) and not (overflow_squad) then
         for i = 1, #currentLevelSmarts do
@@ -4657,6 +4689,8 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
     if (faction) then
         d = get_faction_power(smart, faction)
     end
+
+    d = d * get_max_power_mult(smart) or 1
 
     -- search all levels
     if (search_all_levels) or not (faction_props.linked_level_targeting) then
