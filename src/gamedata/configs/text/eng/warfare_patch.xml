@@ -168,6 +168,12 @@
 	<string id="ui_mm_alife_warfare_general_distance_combat_max_distance_desc">
 		<text>The maximum distance at which distance-based combat multipliers are calculated. Squads beyond this distance from friendly strategic locations receive the minimum multiplier.</text>
 	</string>
+	<string id="ui_mm_alife_warfare_general_use_new_resurgence_logic">
+		<text>Use new resurgence logic</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_use_new_resurgence_logic_desc">
+		<text>When enabled, uses improved emergency resurrection system for extinct factions. Creates powerful squads that target the closest enemy/empty strategic locations when a faction has zero bases. When disabled, uses the original random resurgence system.</text>
+	</string>
 	<string id="ui_mm_alife_warfare_faction_use_bases_not_resources">
         <text>Squad quality depends on base count (instead of resources)</text>
     </string>
