@@ -99,6 +99,21 @@
                                 <type name="Optional"/>
                             </typeDescriptor>
                         </plugin>
+                        <plugin name="LTTZ">
+                            <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
+                            <description>
+                                Compatibility with LTTZ (Needed for Gamma)
+
+                                Adds squads from LTTZ
+                            </description>
+                            <files>
+                                <folder source="patches\Patch for LTTZ Directors Cut"
+                                        destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
                     </plugins>
                 </group>
             </optionalFileGroups>
