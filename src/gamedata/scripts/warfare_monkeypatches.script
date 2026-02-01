@@ -157,6 +157,12 @@ end
 
 local faction_expansions_get_spawn_section = faction_expansions.get_spawn_section
 function faction_expansions.get_spawn_section(faction, resource)
+    local days_in_zone = utils_obj.time_spent_in_zone(4)
+        if days_in_zone == false then
+            days_in_zone = 0
+        end
+        resource = resource + math.floor(days_in_zone / 2)
+        resource = math.min(resource, warfare.resource_count)
     if (faction == "monster") then
         return faction_expansions.get_section(faction, resource, resource)    -- for monster spawns, 'resource' is rare_chance
     end
