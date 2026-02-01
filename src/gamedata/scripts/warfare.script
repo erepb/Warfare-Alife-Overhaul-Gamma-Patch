@@ -954,6 +954,12 @@ function on_game_start()
     RegisterScriptCallback("on_game_load", on_game_load)
 end
 
+function print_dbg(...)
+	if enable_debug then
+		printf(...)
+	end
+end
+
 function printd(e, optionalMessage)
     if (warfare_options.options.debug_logging) then
         info = debug.getinfo(2, "nS")
