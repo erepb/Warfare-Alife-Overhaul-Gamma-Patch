@@ -152,7 +152,7 @@ end
 
 function faction_expansions.get_veteran_chance(resource)
     --	return -100 + (100 / (warfare.resource_count / 2)) * resource
-    return 100 * (math.pow((resource / warfare.resource_count), 2))
+    return 80 * (math.pow((resource / warfare.resource_count), 0,8))
 end
 
 local faction_expansions_get_spawn_section = faction_expansions.get_spawn_section
