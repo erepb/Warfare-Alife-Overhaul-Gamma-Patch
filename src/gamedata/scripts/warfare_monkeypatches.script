@@ -753,9 +753,7 @@ function tasks_smart_control.evaluate_squads_smarts(task_id, var, smart, smrt)
                     local fac = cache_func[task_id][i]
                     if (is_legit_mutant_squad(squad) and squad.player_id == fac) then
 
-                        --WARFARE START: force squad selected for task to stay at smart
-                        squad.stay_time = game.get_game_time()
-                        --WARFARE END
+                        -- squad.stay_time = game.get_game_time()
 
                         squad.force_online = true
                         --printf("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)
