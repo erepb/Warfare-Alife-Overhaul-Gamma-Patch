@@ -103,6 +103,8 @@ function update_settings()
 	options.distance_combat_max_multiplier_lair = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_lair")
 	options.distance_combat_max_distance     = ui_options.get("alife/warfare/general/distance_combat_max_distance")
 	options.use_new_resurgence_logic			= ui_options.get("alife/warfare/general/use_new_resurgence_logic")
+	local spawn_speed_ui = ui_options.get("alife/warfare/general/spawn_speed_multiplier") or 1
+	options.spawn_speed_multiplier			= 1 / spawn_speed_ui
 
 	options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count
     options.azazel_respawn_as_companions = ui_options.get("alife/warfare/azazel/respawn_as_companions")

@@ -655,7 +655,7 @@ function process_manual_capture(smart)
 					local faction_bases = warfare_factions.faction_information[warfare.actor_faction].base_count + warfare_options.options.factions[warfare.actor_faction].base_count_modifier
 					local min_respawn = warfare_options.options.factions[warfare.actor_faction].min_faction_respawn
 					local max_respawn = warfare_options.options.factions[warfare.actor_faction].max_faction_respawn
-					local respawn_time = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
+					local respawn_time = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1)) * (warfare_options.options.spawn_speed_multiplier or 1)
 					local respawn_multiplier = 1.2
 					if defence_delay[smart.id] == nil then
                         defence_delay[smart.id] = 0
@@ -2428,7 +2428,7 @@ function get_current_def_respawn_interval(faction)
     if faction == "monolith" and has_alife_info("bar_deactivate_radar_done") then
         current_respawn = 2 * current_respawn  -- Once the Brain Scorcher is deactivated, Monolith spawn at a much slower rate
     end
-    return current_respawn
+    return current_respawn * (warfare_options.options.spawn_speed_multiplier or 1)
 end
 
 function spawn_defense(smart)
@@ -2472,7 +2472,7 @@ function get_current_patrol_respawn_interval(faction)
     local ff = warfare_options.options.factions[faction]
     local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier
     local respawn = warfare.lerp(ff.min_patrol_time, ff.max_patrol_time, clamp(faction_bases / warfare.base_count, 0, 1))
-    return respawn
+    return respawn * (warfare_options.options.spawn_speed_multiplier or 1)
 end
 
 function spawn_patrols(smart)
@@ -3445,20 +3445,20 @@ function get_mutant_level_settings(level_id)
 end
 
 function spawn_mutants(smart)
-	if (smart.props.base > 0) or (smart.props.territory > 0) or (smart.props.lair < 1) then
-		--printf("Cannot spawn mutants at base/territory location: " .. smart:name())
+	if (smart.props.base > 0) or (smart.props.resource > 0) or (smart.props.territory > 0) or (smart.props.lair < 1) then
+		--printf("Cannot spawn mutants at base/resource/territory location: " .. smart:name())
 		return
 	elseif not (spawn_mutant_timers[smart.id]) then
 		local min_respawn = warfare_options.options.monster_min_faction_respawn
 		local max_respawn = warfare_options.options.monster_max_faction_respawn
-		spawn_mutant_next_update[smart.id] = math.random(min_respawn, max_respawn)
+		spawn_mutant_next_update[smart.id] = math.random(min_respawn, max_respawn) * (warfare_options.options.spawn_speed_multiplier or 1)
 		spawn_mutant_timers[smart.id] = game.get_game_time()			-- these timers and the update timers now get saved, and don't reset upon game load!
 		return
 	elseif (game.get_game_time():diffSec(spawn_mutant_timers[smart.id]) > (spawn_mutant_next_update[smart.id]*60)) then
 		--printf("time to spawn mutants on location: " .. smart:name())
 		local min_respawn = warfare_options.options.monster_min_faction_respawn
 		local max_respawn = warfare_options.options.monster_max_faction_respawn
-		spawn_mutant_next_update[smart.id] = math.random(min_respawn, max_respawn)
+		spawn_mutant_next_update[smart.id] = math.random(min_respawn, max_respawn) * (warfare_options.options.spawn_speed_multiplier or 1)
 		spawn_mutant_timers[smart.id] = warfare_utils.add_time(spawn_mutant_timers[smart.id], spawn_mutant_next_update[smart.id]*6)
 	else
 		--printf("not ready to spawn mutants at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(spawn_mutant_timers[smart.id]) .. " out of " .. (spawn_mutant_next_update[smart.id]*60))
@@ -3528,7 +3528,7 @@ function process_mutants(smart)
         end
 		local min_respawn = warfare_options.options.monster_min_faction_respawn
 		local max_respawn = warfare_options.options.monster_max_faction_respawn
-		process_mutant_next_update[smart.id] = 2*math.random(min_respawn, max_respawn)
+		process_mutant_next_update[smart.id] = 2 * math.random(min_respawn, max_respawn) * (warfare_options.options.spawn_speed_multiplier or 1)
 	else
 		--printf("not ready to change mutant target at " .. smart:name() .. " more time needed: " .. game.get_game_time():diffSec(process_mutant_timers[smart.id]) .. " out of " .. (process_mutant_next_update[smart.id]*60))
 		return

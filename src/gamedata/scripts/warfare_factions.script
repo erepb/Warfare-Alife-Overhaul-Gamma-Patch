@@ -115,7 +115,7 @@ function update_faction(faction)
         local max_random_patrol_time = warfare_options.options.factions[faction].max_random_patrol_time
 
         local next_resurgence_attempt = math.random(min_resurgence_wait_time, max_resurgence_wait_time)
-        local next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time)
+        local next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time) * (warfare_options.options.spawn_speed_multiplier or 1)
 
         faction_information[faction] = {}
         faction_information[faction].base_count = 0
@@ -148,7 +148,7 @@ function update_faction(faction)
         local last_resurgence_attempt = faction_information[faction].last_resurgence_attempt or game.get_game_time()
         local next_resurgence_attempt = faction_information[faction].next_resurgence_attempt or math.random(min_resurgence_wait_time, max_resurgence_wait_time)
         local last_random_patrol = faction_information[faction].last_random_patrol or game.get_game_time()
-        local next_random_patrol = faction_information[faction].next_random_patrol or math.random(min_random_patrol_time, max_random_patrol_time)
+        local next_random_patrol = faction_information[faction].next_random_patrol or math.random(min_random_patrol_time, max_random_patrol_time) * (warfare_options.options.spawn_speed_multiplier or 1)
 
         faction_information[faction] = {}
         if not faction_information[faction].timer then
@@ -208,8 +208,9 @@ function update_faction(faction)
         faction_information[faction].base_count = base_count
         faction_information[faction].resource_count = resource_count
 
-        local respawn = warfare.lerp(ff.max_faction_respawn, ff.min_faction_respawn, clamp(resource_count / warfare.resource_count, 0, 1))
-        local patrol_respawn = warfare.lerp(ff.max_patrol_time, ff.min_patrol_time, clamp(resource_count / warfare.resource_count, 0, 1))
+        local spawn_mult = warfare_options.options.spawn_speed_multiplier or 1
+        local respawn = warfare.lerp(ff.max_faction_respawn, ff.min_faction_respawn, clamp(resource_count / warfare.resource_count, 0, 1)) * spawn_mult
+        local patrol_respawn = warfare.lerp(ff.max_patrol_time, ff.min_patrol_time, clamp(resource_count / warfare.resource_count, 0, 1)) * spawn_mult
         local invasion_size = warfare.lerp(ff.min_invasion_size, ff.max_invasion_size, clamp(base_count / warfare.base_count, 0, 1))
         local patrol_pop_factor = warfare.lerp(ff.min_patrol_squads, ff.max_patrol_squads, clamp(base_count / warfare.base_count, 0, 1))
 
@@ -242,7 +243,7 @@ function update_faction(faction)
         if (warfare_options.options.factions[faction].random_patrols) then
             if (game.get_game_time():diffSec(faction_information[faction].last_random_patrol) > faction_information[faction].next_random_patrol * 6) then
                 faction_information[faction].last_random_patrol = warfare_utils.add_time(faction_information[faction].last_random_patrol, faction_information[faction].next_random_patrol*6)
-                faction_information[faction].next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time)
+                faction_information[faction].next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time) * (warfare_options.options.spawn_speed_multiplier or 1)
 
                 local start_id = smart_terrain_warfare.find_random_patrol_target(nil, faction)
                 local start = start_id and alife_object(start_id)
