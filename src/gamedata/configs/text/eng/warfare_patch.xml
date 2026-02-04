@@ -13,7 +13,7 @@
 		<text>Alife Overhaul - Test (10x)</text>
 	</string>
 	<string id="ui_mm_prst_warfare_alifeoverhaul_balanced">
-		<text>Alife Overhaul from Erepb</text>
+		<text>Alife Overhaul - Balanced</text>
 	</string>
 	<string id="ui_mm_alife_warfare_general_use_old_auto_capture">
 		<text>Use old auto-capture method</text>
@@ -141,6 +141,12 @@
 	</string>
 	<string id="ui_mm_alife_warfare_general_use_new_resurgence_logic_desc">
 		<text>When enabled, uses improved emergency resurrection system for extinct factions. Creates powerful squads that target the closest enemy/empty strategic locations when a faction has zero bases. When disabled, uses the original random resurgence system.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_spawn_speed_multiplier">
+		<text>Global spawn speed</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_spawn_speed_multiplier_desc">
+		<text>Controls the speed of all faction spawns and patrols globally. 0.1 = slowest (10x slower), 1 = normal, 10 = fastest (10x faster). Default: 1</text>
 	</string>
 	<string id="ui_mm_alife_warfare_faction_use_bases_not_resources">
 		<text>Squad quality depends on base count (instead of resources)</text>
