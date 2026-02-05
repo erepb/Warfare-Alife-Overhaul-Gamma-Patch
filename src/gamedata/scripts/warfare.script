@@ -1,16 +1,16 @@
 --[[
 
 =======================================================================================
-	Original creator: Werejew
-	Edit log: 
-	2020/05/18 - Vintar
-	2020/10/22 - Vintar - fixed vanilla bug where random patrols were unmarked as random patrols upon game save/load
-	2021/02/16 - Vintar - allowed loner random patrols to be unmarked on game save, so that process_loners() can handle them, saved calculated distances between smart terrains
-	2021/02/22 - Vintar - added initial mutant spawns to non-random start. Random start mutants now spawn on lairs. Under attack status saved
-	2021/03/19 - Vintar - fix for lower population factor initial spawns
+    Original creator: Werejew
+    Edit log:
+    2020/05/18 - Vintar
+    2020/10/22 - Vintar - fixed vanilla bug where random patrols were unmarked as random patrols upon game save/load
+    2021/02/16 - Vintar - allowed loner random patrols to be unmarked on game save, so that process_loners() can handle them, saved calculated distances between smart terrains
+    2021/02/22 - Vintar - added initial mutant spawns to non-random start. Random start mutants now spawn on lairs. Under attack status saved
+    2021/03/19 - Vintar - fix for lower population factor initial spawns
 
-	This file deals with warfare's essential data, such as squad registration with warfare,
-	and saving/loading important parameters like respawn timers, squad targets, faction info
+    This file deals with warfare's essential data, such as squad registration with warfare,
+    and saving/loading important parameters like respawn timers, squad targets, faction info
 =======================================================================================
 
 --]]
@@ -21,29 +21,29 @@
 --[[
 axr_keybind.keybinds["warfare_hide_smarts"] = "DIK_M"
 function axr_keybind.action.warfare_hide_smarts(p)
-	if (p == 1) then
-		smart_terrain_warfare.hide_smarts = not smart_terrain_warfare.hide_smarts
-	end	
+    if (p == 1) then
+        smart_terrain_warfare.hide_smarts = not smart_terrain_warfare.hide_smarts
+    end
 end
 
 axr_keybind.keybinds["warfare_debug_info"] = "DIK_L"
 function axr_keybind.action.warfare_debug_info(p)
-	if (p == 1) then
-		local actor = alife():actor()
-		local lvid = actor.m_level_vertex_id
-		local gvid = actor.m_game_vertex_id
-		local x = actor.position.x
-		local y = actor.position.y
-		local z = actor.position.z
+    if (p == 1) then
+        local actor = alife():actor()
+        local lvid = actor.m_level_vertex_id
+        local gvid = actor.m_game_vertex_id
+        local x = actor.position.x
+        local y = actor.position.y
+        local z = actor.position.z
 
-		--printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		--printf("	LVID 	= 	"..tostring(lvid))
-		--printf("	GVID	=	"..tostring(gvid))
-		--printf("	X		=	"..tostring(x))
-		--printf("	y		=	"..tostring(y))
-		--printf("	z		=	"..tostring(z))
-		--printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	end
+        --printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        --printf("  LVID    =   "..tostring(lvid))
+        --printf("  GVID    =   "..tostring(gvid))
+        --printf("  X       =   "..tostring(x))
+        --printf("  y       =   "..tostring(y))
+        --printf("  z       =   "..tostring(z))
+        --printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    end
 end]]
 
 squad_community_by_behaviour["trader"] = "trader"
@@ -58,6 +58,31 @@ base_count = 0
 resource_count = 0
 level_count = 32
 initialized = false
+
+-- Gradual time advancement system
+-- Prevents mass spawns when player sleeps by advancing time in 1-hour steps
+local warfare_time = nil           -- CTime object, virtual clock for warfare timers
+local MAX_TIME_STEP = 360         -- 6 minutes in game seconds
+
+-- Night spawn pause system
+-- Tracks accumulated night seconds so spawn timers can be corrected at dawn
+local was_night_wt = false          -- was warfare_time in night hours on last tick?
+night_accumulated = 0                -- game seconds accumulated during current night period
+
+-- Called by spawn functions to check if spawning is blocked (night hours)
+function is_spawn_blocked()
+    return warfare_utils.is_night()
+end
+
+-- Get warfare time (virtual clock that advances gradually in case of huge time travels)
+function get_time()
+    if warfare_time then
+        local copy = game.CTime()
+        copy:set(warfare_time:get(0,0,0,0,0,0,0))
+        return copy
+    end
+    return game.get_game_time()
+end
 
 -- Variable to see if all_out_war was applied at the start of a new game (maintain compatibility with dynamic relations)
 all_out_war_applied = false
@@ -124,6 +149,7 @@ function save_state(m_data)
     m_data.warfare.actor_influence_points = actor_influence_points
     m_data.warfare.influence_levels = influence_levels
     m_data.warfare.all_out_war_applied = all_out_war_applied
+    m_data.warfare.warfare_time = warfare_time
     m_data.warfare.manual_control = pda_actor.manual_control
     m_data.warfare.manual_point = smart_terrain_warfare.manual_point
     m_data.warfare.invasions = smart_terrain_warfare.invasions
@@ -191,6 +217,7 @@ function load_state(m_data)
     actor_influence_points = m_data.warfare and m_data.warfare.actor_influence_points or 0
     influence_levels = m_data.warfare and m_data.warfare.influence_levels or {}
     all_out_war_applied = m_data.warfare and m_data.warfare.all_out_war_applied or false
+    warfare_time = m_data.warfare and m_data.warfare.warfare_time or nil
     pda_actor.manual_control = m_data.warfare and m_data.warfare.manual_control or false
     smart_terrain_warfare.manual_point = m_data.warfare and m_data.warfare.manual_point
 
@@ -294,6 +321,84 @@ function squad_on_npc_creation(squad, se_obj, spawn_smart)
     end
 
     printd(1)
+end
+
+-- Simulate 1 hour of warfare during gradual time advancement (sleep/time skip)
+-- Teleports moving squads to their targets, then runs smart terrain updates
+-- so new assignments and spawns happen each virtual hour
+local TRAVEL_SPEED = 3 -- approximate offline squad travel speed in game-meters per game-second
+local advance_move_times = {} -- squad_id -> CTime when first seen moving during gradual advance
+
+function advance_warfare_step()
+    local sim = alife()
+    if not sim then return end
+
+    local now = get_time()
+
+    -- Phase 1: Teleport moving offline squads that have traveled long enough
+    for faction, tbl in pairs(registered_squads) do
+        for squad_id, target_id in pairs(tbl) do
+            local squad = sim:object(squad_id)
+            if squad
+                and squad.current_action == 0              -- moving
+                and squad.current_target_id                 -- has a target
+                and not squad.online                        -- only offline squads
+                and not (axr_companions.companion_squads and axr_companions.companion_squads[squad_id])
+            then
+                local target = sim:object(squad.current_target_id)
+                if target then
+                    -- Record when we first saw this squad moving
+                    if not advance_move_times[squad_id] then
+                        advance_move_times[squad_id] = now
+                    end
+
+                    local elapsed = now:diffSec(advance_move_times[squad_id])
+                    local dist = squad.position:distance_to(target.position)
+
+                    if dist <= TRAVEL_SPEED * elapsed then
+                        -- Teleport each squad member to target position,
+                        -- but skip online members to avoid engine net_spawn
+                        -- "Object with ID already exists" errors
+                        for k in squad:squad_members() do
+                            local se_obj = k.object or (k.id and sim:object(k.id))
+                            if se_obj and not se_obj.online then
+                                sim:teleport_object(se_obj.id, target.m_game_vertex_id,
+                                    target.m_level_vertex_id, target.position)
+                            end
+                        end
+
+                        -- Complete arrival
+                        if target:clsid() == clsid.smart_terrain then
+                            target:on_after_reach(squad)
+                        end
+                        squad.current_action = 1
+                        squad.arrive_time = now
+                        local faction_opts = warfare_options.options.factions[faction]
+                        if faction_opts and faction_opts.min_patrol_rest_time then
+                            squad.wait_time = math.random(faction_opts.min_patrol_rest_time, faction_opts.max_patrol_rest_time)
+                        else
+                            squad.wait_time = math.random(10, 60)
+                        end
+                        advance_move_times[squad_id] = nil
+                    end
+                end
+            else
+                -- Squad no longer moving or gone, stop tracking
+                advance_move_times[squad_id] = nil
+            end
+        end
+    end
+
+    -- Phase 2: Run smart terrain warfare updates (spawns, assignments, invasions)
+    for name, smart in pairs(SIMBOARD.smarts_by_names) do
+        if smart.props then
+            smart_terrain_warfare.smart_terrain_on_update(smart)
+        end
+    end
+end
+
+function advance_warfare_reset()
+    advance_move_times = {}
 end
 
 -- last update time
@@ -401,12 +506,34 @@ function actor_on_update()
 
     printd(2, "actor_on_update")
 
+    -- Gradual time advancement: prevents mass spawns after sleep
+    local real_time = game.get_game_time()
+    if not warfare_time then
+        warfare_time = real_time
+    end
+
+    local time_delta = real_time:diffSec(warfare_time)
+    if warfare_options.options.enable_gradual_time_step and time_delta > MAX_TIME_STEP then
+        printf("gradual: step")
+        -- Big time jump detected (sleep, time skip) - advance by one step only
+        warfare_time = warfare_utils.add_time(warfare_time, MAX_TIME_STEP)
+        advance_warfare_step()  -- simulate squad movement and warfare for this step
+        -- Disable throttle so next frame catches up another step in 1 sec
+        last_update = tg + 300
+    elseif time_delta > 0 then
+        -- printf("gradual: sync")
+        -- Normal operation - sync to real time
+        warfare_time = real_time
+        advance_warfare_reset()
+        -- set new update time
+        last_update = tg + 10000
+    else
+        last_update = tg + 10000
+    end
+
     -- Update faction to account for switching factions or azazel mode.
     --printf("!!!! "..alife_storage_manager.get_state().default_faction.." !!!!" )
     actor_faction = get_actor_true_community() or alife():actor():community():sub(7)
-
-    -- set new update time
-    last_update = tg + 10000
 
     if (not initialized) then
         if ui_options.get("alife/general/dynamic_relations") then
@@ -954,9 +1081,9 @@ function on_game_start()
 end
 
 function print_dbg(...)
-	if enable_debug then
-		printf(...)
-	end
+    if enable_debug then
+        printf(...)
+    end
 end
 
 function printd(e, optionalMessage)

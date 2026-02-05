@@ -60,9 +60,7 @@ function get_defense_timer(smart)
     local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
     local next_defense = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] or 10
 
-    local diff = game.get_game_time():diffSec(defense_timer)
-    local remaining = (next_defense  * 6) - diff
-
+    local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer, next_defense * 6)
     return format_time_remaining(remaining)
 end
 
@@ -81,9 +79,7 @@ function get_patrol_timer(smart)
     local patrol_timer = smart_terrain_warfare.patrol_timers[smart.id]
     local next_patrol = smart_terrain_warfare.patrol_next_update[smart.id] or 10
 
-    local diff = game.get_game_time():diffSec(patrol_timer)
-    local remaining = (next_patrol  * 6) - diff
-
+    local remaining = warfare_utils.get_real_seconds_until_spawn(patrol_timer, next_patrol * 6)
     return format_time_remaining(remaining)
 end
 
@@ -142,7 +138,7 @@ function get_unique_check_timer(smart)
         return "Invalid timer"
     end
     
-    local diff = game.get_game_time():diffSec(smart.last_unique_check)
+    local diff = warfare.get_time():diffSec(smart.last_unique_check)
     local remaining = (smart.next_unique_check  * 6) - diff
     
     return format_time_remaining(remaining)
@@ -259,9 +255,8 @@ function render_faction_smart_info(smart, faction)
         if reset_timer then
             ImGui.Text("  Timer Status: Pending Reset")
         elseif defense_timer_val and next_update_val then
-            local diff = game.get_game_time():diffSec(defense_timer_val)
-            local remaining = (next_update_val  * 6) - diff
-            
+            local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer_val, next_update_val * 6)
+
             local time_status = format_time_remaining(remaining)
             if time_status == "Ready" then
                 ImGui.Text("  Spawn Status: Ready to Spawn")
@@ -388,7 +383,7 @@ function render_faction_smart_info(smart, faction)
         ImGui.Text("Process Squads Timer:")
         
         if smart.process_squads_time and smart.next_process_squads_time then
-            local diff = game.get_game_time():diffSec(smart.process_squads_time)
+            local diff = warfare.get_time():diffSec(smart.process_squads_time)
             local remaining = (smart.next_process_squads_time  * 6) - diff
             
             local time_status = format_time_remaining(remaining)
@@ -433,7 +428,7 @@ function render_mutant_smart_info(smart)
     local next_update = smart_terrain_warfare.spawn_mutant_next_update and smart_terrain_warfare.spawn_mutant_next_update[smart.id]
     
     if spawn_timer and next_update then
-        local diff = game.get_game_time():diffSec(spawn_timer)
+        local diff = warfare.get_time():diffSec(spawn_timer)
         local remaining = (next_update  * 6) - diff
         
         local time_status = format_time_remaining(remaining)
@@ -462,8 +457,8 @@ function render_mutant_smart_info(smart)
     ImGui.Text("Environmental Conditions:")
     
     if smart.props.resource > 0 then
-        local current_hour = level.get_time_hours()
-        local is_night = (current_hour < 6 or current_hour > 20)
+        local current_hour = warfare_utils.get_warfare_hour()
+        local is_night = warfare_utils.is_night()
         ImGui.Text("  Resource Location: Night spawns only")
         ImGui.Text("  Current Time: " .. string.format("%02d:00", current_hour))
         ImGui.Text("  Can Spawn Now: " .. (is_night and "Yes (Night)" or "No (Day)"))
@@ -519,8 +514,8 @@ function render_mutant_smart_info(smart)
     
     -- Resource location night-only check
     if smart.props.resource > 0 then
-        local current_hour = level.get_time_hours()
-        local is_night = (current_hour < 6 or current_hour > 20)
+        local current_hour = warfare_utils.get_warfare_hour()
+        local is_night = warfare_utils.is_night()
         if not is_night then
             table.insert(block_reasons, "Resource location: Day time (spawn blocked until night)")
         else
@@ -580,7 +575,7 @@ function render_mutant_smart_info(smart)
     local process_next_update = smart_terrain_warfare.process_mutant_next_update and smart_terrain_warfare.process_mutant_next_update[smart.id]
     
     if process_timer and process_next_update then
-        local diff = game.get_game_time():diffSec(process_timer)
+        local diff = warfare.get_time():diffSec(process_timer)
         local remaining = (process_next_update  * 6) - diff
         
         local time_status = format_time_remaining(remaining)
@@ -624,7 +619,7 @@ function render_mutant_smart_info(smart)
                         waiting_mutants = waiting_mutants + 1
                         local wait_remaining = 0
                         if squad.arrive_time then
-                            local time_here = game.get_game_time():diffSec(squad.arrive_time)
+                            local time_here = warfare.get_time():diffSec(squad.arrive_time)
                             wait_remaining = math.max(0, (squad.wait_time  * 6) - time_here)
                         end
                         table.insert(mutant_behavior, {
@@ -827,7 +822,7 @@ function render()
                                smart_terrain_warfare.invasion_defense_next_update[smart.id]
         
         if defense_timer_val and next_update_val then
-            local diff = game.get_game_time():diffSec(defense_timer_val)
+            local diff = warfare.get_time():diffSec(defense_timer_val)
             local remaining = (next_update_val  * 6) - diff
             
             ImGui.Text("  Defense Check: " .. format_time_remaining(remaining))

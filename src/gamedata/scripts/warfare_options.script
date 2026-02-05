@@ -105,6 +105,7 @@ function update_settings()
 	options.use_new_resurgence_logic			= ui_options.get("alife/warfare/general/use_new_resurgence_logic")
 	local spawn_speed_ui = ui_options.get("alife/warfare/general/spawn_speed_multiplier") or 1
 	options.spawn_speed_multiplier			= 1 / spawn_speed_ui
+	options.enable_gradual_time_step		= ui_options.get("alife/warfare/general/enable_gradual_time_step")
 
 	options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count
     options.azazel_respawn_as_companions = ui_options.get("alife/warfare/azazel/respawn_as_companions")
@@ -278,7 +279,7 @@ function sim_squad_scripted.sim_squad_scripted.check_online_status(self)
         -- force online in underground levels
         b = true
     elseif (self.assigned_target_id and is_squad_monster[self.player_id]) then
-        local hour = level.get_time_hours()
+        local hour = warfare_utils.get_warfare_hour()
         if (self.player_id == "monster_predatory_day") then
             -- Monster will not come online during the hours of (9PM till 5AM)
             if (hour <= 5 or hour >= 22) then
