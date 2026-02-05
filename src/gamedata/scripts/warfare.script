@@ -1,16 +1,16 @@
 --[[
 
 =======================================================================================
-	Original creator: Werejew
-	Edit log: 
-	2020/05/18 - Vintar
-	2020/10/22 - Vintar - fixed vanilla bug where random patrols were unmarked as random patrols upon game save/load
-	2021/02/16 - Vintar - allowed loner random patrols to be unmarked on game save, so that process_loners() can handle them, saved calculated distances between smart terrains
-	2021/02/22 - Vintar - added initial mutant spawns to non-random start. Random start mutants now spawn on lairs. Under attack status saved
-	2021/03/19 - Vintar - fix for lower population factor initial spawns
+    Original creator: Werejew
+    Edit log:
+    2020/05/18 - Vintar
+    2020/10/22 - Vintar - fixed vanilla bug where random patrols were unmarked as random patrols upon game save/load
+    2021/02/16 - Vintar - allowed loner random patrols to be unmarked on game save, so that process_loners() can handle them, saved calculated distances between smart terrains
+    2021/02/22 - Vintar - added initial mutant spawns to non-random start. Random start mutants now spawn on lairs. Under attack status saved
+    2021/03/19 - Vintar - fix for lower population factor initial spawns
 
-	This file deals with warfare's essential data, such as squad registration with warfare,
-	and saving/loading important parameters like respawn timers, squad targets, faction info
+    This file deals with warfare's essential data, such as squad registration with warfare,
+    and saving/loading important parameters like respawn timers, squad targets, faction info
 =======================================================================================
 
 --]]
@@ -21,29 +21,29 @@
 --[[
 axr_keybind.keybinds["warfare_hide_smarts"] = "DIK_M"
 function axr_keybind.action.warfare_hide_smarts(p)
-	if (p == 1) then
-		smart_terrain_warfare.hide_smarts = not smart_terrain_warfare.hide_smarts
-	end	
+    if (p == 1) then
+        smart_terrain_warfare.hide_smarts = not smart_terrain_warfare.hide_smarts
+    end
 end
 
 axr_keybind.keybinds["warfare_debug_info"] = "DIK_L"
 function axr_keybind.action.warfare_debug_info(p)
-	if (p == 1) then
-		local actor = alife():actor()
-		local lvid = actor.m_level_vertex_id
-		local gvid = actor.m_game_vertex_id
-		local x = actor.position.x
-		local y = actor.position.y
-		local z = actor.position.z
+    if (p == 1) then
+        local actor = alife():actor()
+        local lvid = actor.m_level_vertex_id
+        local gvid = actor.m_game_vertex_id
+        local x = actor.position.x
+        local y = actor.position.y
+        local z = actor.position.z
 
-		--printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		--printf("	LVID 	= 	"..tostring(lvid))
-		--printf("	GVID	=	"..tostring(gvid))
-		--printf("	X		=	"..tostring(x))
-		--printf("	y		=	"..tostring(y))
-		--printf("	z		=	"..tostring(z))
-		--printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-	end
+        --printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        --printf("  LVID    =   "..tostring(lvid))
+        --printf("  GVID    =   "..tostring(gvid))
+        --printf("  X       =   "..tostring(x))
+        --printf("  y       =   "..tostring(y))
+        --printf("  z       =   "..tostring(z))
+        --printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    end
 end]]
 
 squad_community_by_behaviour["trader"] = "trader"
@@ -58,6 +58,21 @@ base_count = 0
 resource_count = 0
 level_count = 32
 initialized = false
+
+-- Gradual time advancement system
+-- Prevents mass spawns when player sleeps by advancing time in 1-hour steps
+local warfare_time = nil           -- CTime object, virtual clock for warfare timers
+local MAX_TIME_STEP = 1200         -- 20 minutes in game seconds
+
+-- Get warfare time (virtual clock that advances gradually in case of huge time travels)
+function get_time()
+    if warfare_time then
+        local copy = game.CTime()
+        copy:set(warfare_time:get(0,0,0,0,0,0,0))
+        return copy
+    end
+    return game.get_game_time()
+end
 
 -- Variable to see if all_out_war was applied at the start of a new game (maintain compatibility with dynamic relations)
 all_out_war_applied = false
@@ -124,6 +139,7 @@ function save_state(m_data)
     m_data.warfare.actor_influence_points = actor_influence_points
     m_data.warfare.influence_levels = influence_levels
     m_data.warfare.all_out_war_applied = all_out_war_applied
+    m_data.warfare.warfare_time = warfare_time
     m_data.warfare.manual_control = pda_actor.manual_control
     m_data.warfare.manual_point = smart_terrain_warfare.manual_point
     m_data.warfare.invasions = smart_terrain_warfare.invasions
@@ -191,6 +207,7 @@ function load_state(m_data)
     actor_influence_points = m_data.warfare and m_data.warfare.actor_influence_points or 0
     influence_levels = m_data.warfare and m_data.warfare.influence_levels or {}
     all_out_war_applied = m_data.warfare and m_data.warfare.all_out_war_applied or false
+    warfare_time = m_data.warfare and m_data.warfare.warfare_time or nil
     pda_actor.manual_control = m_data.warfare and m_data.warfare.manual_control or false
     smart_terrain_warfare.manual_point = m_data.warfare and m_data.warfare.manual_point
 
@@ -401,12 +418,30 @@ function actor_on_update()
 
     printd(2, "actor_on_update")
 
+    -- Gradual time advancement: prevents mass spawns after sleep
+    local real_time = game.get_game_time()
+    if not warfare_time then
+        warfare_time = real_time
+    end
+
+    local time_delta = real_time:diffSec(warfare_time)
+    if time_delta > MAX_TIME_STEP then
+        -- Big time jump detected (sleep, time skip) - advance by one step only
+        warfare_time = warfare_utils.add_time(warfare_time, MAX_TIME_STEP)
+        -- Disable throttle so next frame catches up another step in 1 sec
+        last_update = tg + 1000
+    elseif time_delta > 0 then
+        -- Normal operation - sync to real time
+        warfare_time = real_time
+        -- set new update time
+        last_update = tg + 10000
+    else
+        last_update = tg + 10000
+    end
+
     -- Update faction to account for switching factions or azazel mode.
     --printf("!!!! "..alife_storage_manager.get_state().default_faction.." !!!!" )
     actor_faction = get_actor_true_community() or alife():actor():community():sub(7)
-
-    -- set new update time
-    last_update = tg + 10000
 
     if (not initialized) then
         if ui_options.get("alife/general/dynamic_relations") then
@@ -954,9 +989,9 @@ function on_game_start()
 end
 
 function print_dbg(...)
-	if enable_debug then
-		printf(...)
-	end
+    if enable_debug then
+        printf(...)
+    end
 end
 
 function printd(e, optionalMessage)

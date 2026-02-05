@@ -33,3 +33,33 @@ function add_time(time, secs)
 
 	return res
 end
+
+-- Returns current hour from warfare virtual clock (compatible with gradual time advance)
+function get_warfare_hour()
+    local Y, M, D, h, m, s, ms = 0, 0, 0, 0, 0, 0, 0
+    Y, M, D, h, m, s, ms = warfare.get_time():get(Y, M, D, h, m, s, ms)
+    return h
+end
+
+-- Night: 9PM (21:00) to 6AM (05:59)
+function is_night()
+    local h = get_warfare_hour()
+    return h < 6 or h >= 22
+end
+
+-- Daylight: 6AM (06:00) to 5PM (16:59)
+function is_daylight()
+    local h = get_warfare_hour()
+    return h >= 6 and h < 17
+end
+
+-- Sunset: 5PM (17:00) to 9PM (20:59)
+function is_sunset()
+    local h = get_warfare_hour()
+    return h >= 17 and h < 22
+end
+
+-- Not night (daylight or sunset): 6AM (06:00) to 9PM (20:59)
+function is_not_night()
+    return not is_night()
+end

@@ -247,7 +247,7 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
         local is_attacking = squad.current_action == 1
         local has_enough_npcs = squad:npc_count() >= squad_def.num
         local has_stay_time = squad.stay_time ~= nil
-        local within_stay_time = (not squad_def.stay_time) or (squad_def.stay_time and (game.get_game_time():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time)))
+        local within_stay_time = (not squad_def.stay_time) or (squad_def.stay_time and (warfare.get_time():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time)))
         local is_not_scripted = squad_def.scripted or (not squad:get_script_target())
         local no_script_target = not squad:get_script_target()
 
@@ -265,7 +265,7 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
 
                 -- if squad is from enemies table
                 if (is_legit_mutant_squad(squad) and squad.player_id == fac) then
-                    --squad.stay_time = game.get_game_time()
+                    --squad.stay_time = warfare.get_time()
                     tbl[sq_id] = smrt_id
                     --printf("- %s | smart (%s) [%s] w/ squad (%s) [%s] = Added", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
                 end
@@ -300,7 +300,7 @@ function tasks_assault.evaluate_squads_smarts(task_id, var, squad, smart)
                     save_var(db.actor, task_id, var)
 
                     --WARFARE START: force squad selected for task to stay at smart
-                    squad.stay_time = game.get_game_time()
+                    squad.stay_time = warfare.get_time()
                     --WARFARE END
 
                     squad.force_online = true
@@ -478,7 +478,7 @@ function tasks_smart_control.evaluate_smarts_squads(task_id, tbl, smart, squad_d
                 and (
                 (
                         squad.stay_time
-                                and ((not squad_def.stay_time) or (squad_def.stay_time and (game.get_game_time():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time))))
+                                and ((not squad_def.stay_time) or (squad_def.stay_time and (warfare.get_time():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time))))
                                 and (squad_def.scripted or (not squad:get_script_target()))
                 ) or not squad:get_script_target()
         )
@@ -490,7 +490,7 @@ function tasks_smart_control.evaluate_smarts_squads(task_id, tbl, smart, squad_d
 
                 -- if squad is from enemies table
                 if (is_legit_mutant_squad(squad) and squad.player_id == fac) then
-                    --squad.stay_time = game.get_game_time()
+                    --squad.stay_time = warfare.get_time()
                     tbl[#tbl + 1] = sq_id
                     --printf("- %s | smart (%s) [%s] w/ squad (%s) [%s] = Added", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
                 end
@@ -524,7 +524,7 @@ function tasks_smart_control.evaluate_squads_smarts(task_id, var, smart, smrt)
                     local fac = cache_func[task_id][i]
                     if (is_legit_mutant_squad(squad) and squad.player_id == fac) then
 
-                        -- squad.stay_time = game.get_game_time()
+                        -- squad.stay_time = warfare.get_time()
 
                         squad.force_online = true
                         --printf("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)

@@ -218,7 +218,7 @@ function squad_warfare_update(squad)
                         if (se_target:am_i_reached(squad)) then
                             se_target:on_after_reach(squad)
                             squad.current_action = 1
-                            squad.arrive_time = game.get_game_time()
+                            squad.arrive_time = warfare.get_time()
                             squad.wait_time = math.random(10, 60)
                         end
                     end
@@ -226,7 +226,7 @@ function squad_warfare_update(squad)
                     if (se_target:am_i_reached(squad)) then
                         se_target:on_after_reach(squad)
                         squad.current_action = 1
-                        squad.arrive_time = game.get_game_time()
+                        squad.arrive_time = warfare.get_time()
                         squad.wait_time = math.random(10, 60)
                     end
                 end
@@ -254,14 +254,14 @@ end
 random_patrols[squad.id] = {
 	target = smart.id,
 	stay_time = math.random(min_idle, max_idle),
-	arrive_time = game.get_game_time()
+	arrive_time = warfare.get_time()
 }
 ]]
 
 function process_random_patrol(squad)
-    if not (squad.patrol_timer) or game.get_game_time():diffSec(squad.patrol_timer) > (squad.next_patrol_update * 6) then
+    if not (squad.patrol_timer) or warfare.get_time():diffSec(squad.patrol_timer) > (squad.next_patrol_update * 6) then
         if not squad.patrol_timer then
-            squad.patrol_timer = game.get_game_time()
+            squad.patrol_timer = warfare.get_time()
         else
             squad.patrol_timer = warfare_utils.add_time(squad.patrol_timer, squad.next_patrol_update*6)
         end
@@ -721,7 +721,7 @@ function get_warfare_info(squad)
 
         if (squad.patrol_table) then
             if (squad.patrol_table.arrive_time and squad.patrol_table.stay_time) then
-                local diff = game.get_game_time():diffSec(squad.patrol_table.arrive_time)
+                local diff = warfare.get_time():diffSec(squad.patrol_table.arrive_time)
                 local remaining = (squad.patrol_table.stay_time * 6) - diff
 
                 -- xQd, show the timer in hours and minutes
