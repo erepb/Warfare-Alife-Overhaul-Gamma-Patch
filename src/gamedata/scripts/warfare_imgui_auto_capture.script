@@ -22,9 +22,9 @@ function get_auto_capture_status()
     status.is_surge = currently_surge or false
     
     -- Check time restrictions (night/day)
-    local current_hour = level.get_time_hours()
+    local current_hour = warfare_utils.get_warfare_hour()
     status.current_hour = current_hour
-    status.is_night = (current_hour < 6 or current_hour > 20)
+    status.is_night = warfare_utils.is_night()
     
     -- Check auto capture settings
     status.auto_capture_enabled = warfare_options.options.enable_auto_capture or false
@@ -42,7 +42,7 @@ function get_auto_capture_status()
 
         -- Calculate time elapsed
         if smart_terrain_warfare.manual_point[2] then
-            status.time_elapsed = round_idp(game.get_game_time():diffSec(smart_terrain_warfare.manual_point[2]))
+            status.time_elapsed = round_idp(warfare.get_time():diffSec(smart_terrain_warfare.manual_point[2]))
         else
             status.time_elapsed = 0
         end
