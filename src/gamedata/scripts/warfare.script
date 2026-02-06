@@ -64,6 +64,16 @@ initialized = false
 local warfare_time = nil           -- CTime object, virtual clock for warfare timers
 local MAX_TIME_STEP = 1200         -- 20 minutes in game seconds
 
+-- Night spawn pause system
+-- Tracks accumulated night seconds so spawn timers can be corrected at dawn
+local was_night_wt = false          -- was warfare_time in night hours on last tick?
+local night_accumulated = 0         -- game seconds accumulated during current night period
+
+-- Called by spawn functions to check if spawning is blocked (night hours)
+function is_spawn_blocked()
+    return warfare_utils.is_night()
+end
+
 -- Get warfare time (virtual clock that advances gradually in case of huge time travels)
 function get_time()
     if warfare_time then
@@ -140,6 +150,8 @@ function save_state(m_data)
     m_data.warfare.influence_levels = influence_levels
     m_data.warfare.all_out_war_applied = all_out_war_applied
     m_data.warfare.warfare_time = warfare_time
+    m_data.warfare.night_accumulated = night_accumulated
+    m_data.warfare.was_night_wt = was_night_wt
     m_data.warfare.manual_control = pda_actor.manual_control
     m_data.warfare.manual_point = smart_terrain_warfare.manual_point
     m_data.warfare.invasions = smart_terrain_warfare.invasions
@@ -208,6 +220,8 @@ function load_state(m_data)
     influence_levels = m_data.warfare and m_data.warfare.influence_levels or {}
     all_out_war_applied = m_data.warfare and m_data.warfare.all_out_war_applied or false
     warfare_time = m_data.warfare and m_data.warfare.warfare_time or nil
+    night_accumulated = m_data.warfare and m_data.warfare.night_accumulated or 0
+    was_night_wt = m_data.warfare and m_data.warfare.was_night_wt or false
     pda_actor.manual_control = m_data.warfare and m_data.warfare.manual_control or false
     smart_terrain_warfare.manual_point = m_data.warfare and m_data.warfare.manual_point
 
@@ -501,16 +515,46 @@ function actor_on_update()
     end
 
     local time_delta = real_time:diffSec(warfare_time)
+    local wt_is_night = warfare_utils.is_night()
+
     if time_delta > MAX_TIME_STEP then
         printf("gradual: step")
         -- Big time jump detected (sleep, time skip) - advance by one step only
         warfare_time = warfare_utils.add_time(warfare_time, MAX_TIME_STEP)
-        advance_warfare_step()  -- simulate squad movement and warfare for this step
+
+        if wt_is_night then
+            -- Night step: accumulate night seconds, still run warfare
+            -- (spawn functions will self-block via is_spawn_blocked())
+            night_accumulated = night_accumulated + MAX_TIME_STEP
+            was_night_wt = true
+        else
+            -- Day step: apply accumulated night correction if transitioning from night
+            if was_night_wt and night_accumulated > 0 then
+                smart_terrain_warfare.advance_spawn_timers(night_accumulated)
+                warfare_factions.advance_spawn_timers(night_accumulated)
+                night_accumulated = 0
+            end
+            was_night_wt = false
+        end
+        advance_warfare_step()
         -- Disable throttle so next frame catches up another step in 1 sec
         last_update = tg + 1000
     elseif time_delta > 0 then
         printf("gradual: sync")
-        -- Normal operation - sync to real time
+        -- Normal real-time operation
+        if wt_is_night then
+            -- Real-time night: track accumulated seconds for dawn correction
+            night_accumulated = night_accumulated + time_delta
+            was_night_wt = true
+        else
+            -- Day: apply correction if just transitioned from night
+            if was_night_wt and night_accumulated > 0 then
+                smart_terrain_warfare.advance_spawn_timers(night_accumulated)
+                warfare_factions.advance_spawn_timers(night_accumulated)
+                night_accumulated = 0
+            end
+            was_night_wt = false
+        end
         warfare_time = real_time
         advance_warfare_reset()
         -- set new update time
