@@ -701,7 +701,9 @@ function fill_start_position()
     ignore = sim_offline_combat.get_ignore_list()
 
 
-    -- mutant spawns on new game
+    -- mutant spawns on new game + stagger mutant spawn timers
+    local speed_mult = warfare_options.options.spawn_speed_multiplier or 1
+    local mutant_max = warfare_options.options.monster_max_faction_respawn
     local max_active = warfare_options.options.monster_max_squads_per_level
     for name, smart in pairs(SIMBOARD.smarts_by_names) do
 
@@ -716,6 +718,10 @@ function fill_start_position()
 
         if (smart.props.lair > 0) and (smart.props.base < 1) and (smart.props.resource < 1) and (smart.props.territory < 1) then
             --local mutants_on_level = sim_offline_combat.get_num_squads_on_level(smart.level_id, "monster")
+
+            -- stagger mutant spawn timer so lairs don't all fire at the same time
+            smart_terrain_warfare.spawn_mutant_next_update[smart.id] = math.random(0, mutant_max) * speed_mult
+            smart_terrain_warfare.spawn_mutant_timers[smart.id] = get_time()
 
             -- for new game, spawn 50% the allowable mutants, or one mutant squad per smart (whichever occurs first)
             if (math.random(100) < 50 * monster_pop_factor) then
@@ -811,6 +817,17 @@ function fill_start_position()
                             if smart and squad_spawned and registered_squads[squad:get_squad_community()] and not ignore[squad:section_name()] then
                                 sim_squad_warfare.set_target(squad, smart.id)
                                 --printf("-Warfare Registered Squad | smart=%s, squad=%s", tostring(smart:name()), tostring(squad:name()))
+
+                                -- stagger defense/patrol timers for bases so they don't all fire in sync
+                                if smart.props and smart.props.base > 0 and not smart_terrain_warfare.defense_timers[smart.id] then
+                                    local ff = warfare_options.options.factions[sf]
+                                    if ff then
+                                        local def_interval = ff.min_faction_respawn * speed_mult
+                                        local pat_interval = ff.min_patrol_time * speed_mult
+                                        smart_terrain_warfare.defense_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(def_interval * 6)))
+                                        smart_terrain_warfare.patrol_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(pat_interval * 6)))
+                                    end
+                                end
                             else
                                 --printf("-Warfare Ignored Squad | smart=%s, squad=%s", tostring(smart:name()), tostring(squad:name()))
                             end
