@@ -1,3 +1,42 @@
+function subtract_time(time, secs)
+    local Y, M, D, h, m, s, ms = 0, 0, 0, 0, 0, 0, 0
+    Y, M, D, h, m, s, ms = time:get(Y, M, D, h, m, s, ms)
+
+    local day_secs = h * 3600 + m * 60 + s - secs
+
+    while day_secs < 0 do
+        D = D - 1
+        day_secs = day_secs + 86400
+    end
+
+    h = math.floor(day_secs / 3600)
+    day_secs = day_secs % 3600
+    m = math.floor(day_secs / 60)
+    s = day_secs % 60
+
+    local days_in_month = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+    if Y % 4 == 0 and (Y % 100 ~= 0 or Y % 400 == 0) then
+        days_in_month[2] = 29
+    end
+    while D < 1 do
+        M = M - 1
+        if M < 1 then
+            M = 12
+            Y = Y - 1
+            if Y % 4 == 0 and (Y % 100 ~= 0 or Y % 400 == 0) then
+                days_in_month[2] = 29
+            else
+                days_in_month[2] = 28
+            end
+        end
+        D = D + days_in_month[M]
+    end
+
+    local res = game.get_game_time()
+    res:set(Y, M, D, h, m, s, ms)
+    return res
+end
+
 function add_time(time, secs)
     local Y, M, D, h, m, s, ms = 0, 0, 0, 0, 0, 0, 0
 	Y, M, D, h, m, s, ms = time:get(Y, M, D, h, m, s, ms)

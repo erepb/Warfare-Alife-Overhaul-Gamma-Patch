@@ -4216,7 +4216,7 @@ function get_warfare_info(smart)
 	props = props .. " \\n" .. clr_gr .. str_wrfr[7] .. ": " .. clr_w .. tostring(smart.defense_count) --.. "\\n"
 	props = props .. " \\n" .. clr_gr .. str_wrfr[8] .. ": " .. clr_w .. tostring(smart.max_population) .. "\\n"
 
-	if defense_timers[smart.id] and smart.owning_faction and smart.owning_faction ~= "none" then
+	if defense_timers[smart.id] and smart.owning_faction and smart.owning_faction ~= "none" and warfare_factions.faction_information[smart.owning_faction] then
 		--props = props .. "\\n----------\\n"
 
 		local defense_timer = defense_timers[smart.id]
@@ -4241,7 +4241,7 @@ function get_warfare_info(smart)
 		-- xQd end
 	end
 
-	if patrol_timers[smart.id] and smart.owning_faction and warfare_options.options.factions[smart.owning_faction] and (warfare_options.options.factions[smart.owning_faction].max_patrol_squads > 0) then
+	if patrol_timers[smart.id] and smart.owning_faction and warfare_factions.faction_information[smart.owning_faction] and warfare_options.options.factions[smart.owning_faction] and (warfare_options.options.factions[smart.owning_faction].max_patrol_squads > 0) then
 		--props = props .. "\\n----------\\n"
 
 		local patrol_timer = patrol_timers[smart.id]
