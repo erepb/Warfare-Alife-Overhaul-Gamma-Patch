@@ -3040,6 +3040,10 @@ function spawn_mutants(smart)
                     local section = squad:section_name()
                     local new_squad = utils_obj.create_squad(section, smart:name())    -- create identical section
                     sim_squad_warfare.set_target(squad, smart.id)
+                    -- update squads_by_level so other smarts in the same cycle see accurate count
+                    if new_squad and sim_offline_combat.squads_by_level[current_level] then
+                        sim_offline_combat.squads_by_level[current_level][new_squad.id] = true
+                    end
                     spawned = true
                     if enable_debug then
                         --printf("spawning %s on terrain %s which already had %s.", section, smart:name(), section)
@@ -3053,6 +3057,10 @@ function spawn_mutants(smart)
             local section = faction_expansions.get_spawn_section("monster", rare_chance)
             local squad = utils_obj.create_squad(section, smart:name())
             sim_squad_warfare.set_target(squad, smart.id)
+            -- update squads_by_level so other smarts in the same cycle see accurate count
+            if squad and sim_offline_combat.squads_by_level[current_level] then
+                sim_offline_combat.squads_by_level[current_level][squad.id] = true
+            end
             if enable_debug then
                 --printf("spawning %s on empty terrain %s. There are now %s / %s mutant squads on that level", section, smart:name(), (mutants_on_level+1), max_active)
             end
