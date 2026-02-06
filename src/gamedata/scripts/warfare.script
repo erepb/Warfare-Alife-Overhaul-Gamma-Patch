@@ -313,6 +313,82 @@ function squad_on_npc_creation(squad, se_obj, spawn_smart)
     printd(1)
 end
 
+-- Simulate 1 hour of warfare during gradual time advancement (sleep/time skip)
+-- Teleports moving squads to their targets, then runs smart terrain updates
+-- so new assignments and spawns happen each virtual hour
+local TRAVEL_SPEED = 3 -- approximate offline squad travel speed in game-meters per game-second
+local advance_move_times = {} -- squad_id -> CTime when first seen moving during gradual advance
+
+function advance_warfare_step()
+    local sim = alife()
+    if not sim then return end
+
+    local now = get_time()
+
+    -- Phase 1: Teleport moving offline squads that have traveled long enough
+    for faction, tbl in pairs(registered_squads) do
+        for squad_id, target_id in pairs(tbl) do
+            local squad = sim:object(squad_id)
+            if squad
+                and squad.current_action == 0              -- moving
+                and squad.current_target_id                 -- has a target
+                and not squad.online                        -- only offline squads
+                and not (axr_companions.companion_squads and axr_companions.companion_squads[squad_id])
+            then
+                local target = sim:object(squad.current_target_id)
+                if target then
+                    -- Record when we first saw this squad moving
+                    if not advance_move_times[squad_id] then
+                        advance_move_times[squad_id] = now
+                    end
+
+                    local elapsed = now:diffSec(advance_move_times[squad_id])
+                    local dist = squad.position:distance_to(target.position)
+
+                    if dist <= TRAVEL_SPEED * elapsed then
+                        -- Teleport each squad member to target position
+                        for k in squad:squad_members() do
+                            local se_obj = k.object or (k.id and sim:object(k.id))
+                            if se_obj then
+                                sim:teleport_object(se_obj.id, target.m_game_vertex_id,
+                                    target.m_level_vertex_id, target.position)
+                            end
+                        end
+
+                        -- Complete arrival
+                        if target:clsid() == clsid.smart_terrain then
+                            target:on_after_reach(squad)
+                        end
+                        squad.current_action = 1
+                        squad.arrive_time = now
+                        local faction_opts = warfare_options.options.factions[faction]
+                        if faction_opts and faction_opts.min_patrol_rest_time then
+                            squad.wait_time = math.random(faction_opts.min_patrol_rest_time, faction_opts.max_patrol_rest_time)
+                        else
+                            squad.wait_time = math.random(10, 60)
+                        end
+                        advance_move_times[squad_id] = nil
+                    end
+                end
+            else
+                -- Squad no longer moving or gone, stop tracking
+                advance_move_times[squad_id] = nil
+            end
+        end
+    end
+
+    -- Phase 2: Run smart terrain warfare updates (spawns, assignments, invasions)
+    for name, smart in pairs(SIMBOARD.smarts_by_names) do
+        if smart.props then
+            smart_terrain_warfare.smart_terrain_on_update(smart)
+        end
+    end
+end
+
+function advance_warfare_reset()
+    advance_move_times = {}
+end
+
 -- last update time
 local last_update
 
@@ -426,13 +502,17 @@ function actor_on_update()
 
     local time_delta = real_time:diffSec(warfare_time)
     if time_delta > MAX_TIME_STEP then
+        printf("gradual: step")
         -- Big time jump detected (sleep, time skip) - advance by one step only
         warfare_time = warfare_utils.add_time(warfare_time, MAX_TIME_STEP)
+        advance_warfare_step()  -- simulate squad movement and warfare for this step
         -- Disable throttle so next frame catches up another step in 1 sec
         last_update = tg + 1000
     elseif time_delta > 0 then
+        printf("gradual: sync")
         -- Normal operation - sync to real time
         warfare_time = real_time
+        advance_warfare_reset()
         -- set new update time
         last_update = tg + 10000
     else
