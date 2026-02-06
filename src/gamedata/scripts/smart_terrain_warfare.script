@@ -2419,6 +2419,16 @@ function update_resources(smart)
 	end
 end
 
+-- Advance all spawn timer timestamps forward by the given number of game seconds.
+-- Called at the night-to-day transition to preserve timer progress across night.
+function advance_spawn_timers(seconds)
+    for id, timer in pairs(defense_timers) do
+        defense_timers[id] = warfare_utils.add_time(timer, seconds)
+    end
+    for id, timer in pairs(patrol_timers) do
+        patrol_timers[id] = warfare_utils.add_time(timer, seconds)
+    end
+end
 
 function get_current_def_respawn_interval(faction)
     local min_respawn = warfare_options.options.factions[faction].min_faction_respawn
@@ -2432,6 +2442,7 @@ function get_current_def_respawn_interval(faction)
 end
 
 function spawn_defense(smart)
+    if warfare.is_spawn_blocked() then return end
     if defence_delay[smart.id] == nil then
         defence_delay[smart.id] = 0
     end
@@ -2476,6 +2487,7 @@ function get_current_patrol_respawn_interval(faction)
 end
 
 function spawn_patrols(smart)
+    if warfare.is_spawn_blocked() then return end
 	printd(0, smart:name())
     local respawn = get_current_patrol_respawn_interval(smart.owning_faction)
 

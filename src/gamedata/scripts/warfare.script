@@ -150,6 +150,8 @@ function save_state(m_data)
     m_data.warfare.influence_levels = influence_levels
     m_data.warfare.all_out_war_applied = all_out_war_applied
     m_data.warfare.warfare_time = warfare_time
+    m_data.warfare.night_accumulated = night_accumulated
+    m_data.warfare.was_night_wt = was_night_wt
     m_data.warfare.manual_control = pda_actor.manual_control
     m_data.warfare.manual_point = smart_terrain_warfare.manual_point
     m_data.warfare.invasions = smart_terrain_warfare.invasions
@@ -218,6 +220,8 @@ function load_state(m_data)
     influence_levels = m_data.warfare and m_data.warfare.influence_levels or {}
     all_out_war_applied = m_data.warfare and m_data.warfare.all_out_war_applied or false
     warfare_time = m_data.warfare and m_data.warfare.warfare_time or nil
+    night_accumulated = m_data.warfare and m_data.warfare.night_accumulated or 0
+    was_night_wt = m_data.warfare and m_data.warfare.was_night_wt or false
     pda_actor.manual_control = m_data.warfare and m_data.warfare.manual_control or false
     smart_terrain_warfare.manual_point = m_data.warfare and m_data.warfare.manual_point
 
@@ -513,22 +517,42 @@ function actor_on_update()
     end
 
     local time_delta = real_time:diffSec(warfare_time)
+
+    -- Save old warfare time for night computation before it changes
+    local old_wt = warfare.get_time()
+
+    local effective_delta = 0
     if warfare_options.options.enable_gradual_time_step and time_delta > MAX_TIME_STEP then
         printf("gradual: step")
         -- Big time jump detected (sleep, time skip) - advance by one step only
         warfare_time = warfare_utils.add_time(warfare_time, MAX_TIME_STEP)
-        advance_warfare_step()  -- simulate squad movement and warfare for this step
+        effective_delta = MAX_TIME_STEP
+        advance_warfare_step()
         -- Disable throttle so next frame catches up another step in 1 sec
         last_update = tg + 300
     elseif time_delta > 0 then
-        -- printf("gradual: sync")
-        -- Normal operation - sync to real time
         warfare_time = real_time
+        effective_delta = time_delta
         advance_warfare_reset()
-        -- set new update time
         last_update = tg + 10000
     else
         last_update = tg + 10000
+    end
+
+    -- Night time correction: analytically compute night seconds in the delta
+    -- Works correctly for both gradual steps and instant time jumps
+    if effective_delta > 0 then
+        local night_secs = warfare_utils.compute_night_seconds(old_wt, effective_delta)
+        night_accumulated = night_accumulated + night_secs
+
+        local new_is_night = warfare_utils.is_night()
+
+        if not new_is_night and night_accumulated > 0 then
+            smart_terrain_warfare.advance_spawn_timers(night_accumulated)
+            warfare_factions.advance_spawn_timers(night_accumulated)
+            night_accumulated = 0
+        end
+        was_night_wt = new_is_night
     end
 
     -- Update faction to account for switching factions or azazel mode.

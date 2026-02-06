@@ -92,6 +92,17 @@ end
 
 ]]
 
+-- Advance faction-level spawn timer timestamps forward by the given number of game seconds.
+-- Called at the night-to-day transition to preserve timer progress across night.
+function advance_spawn_timers(seconds)
+    for _, faction in pairs(factions) do
+        local info = faction_information[faction]
+        if info and info.last_random_patrol then
+            info.last_random_patrol = warfare_utils.add_time(info.last_random_patrol, seconds)
+        end
+    end
+end
+
 function update()
     for i, faction in pairs(factions) do
         if faction ~= "monster" then
@@ -240,7 +251,7 @@ function update_faction(faction)
             mod = mod + warfare_options.options.enemy_base_boost
         end
 
-        if (warfare_options.options.factions[faction].random_patrols) then
+        if (warfare_options.options.factions[faction].random_patrols) and not warfare.is_spawn_blocked() then
             if (warfare.get_time():diffSec(faction_information[faction].last_random_patrol) > faction_information[faction].next_random_patrol * 6) then
                 faction_information[faction].last_random_patrol = warfare_utils.add_time(faction_information[faction].last_random_patrol, faction_information[faction].next_random_patrol*6)
                 faction_information[faction].next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time) * (warfare_options.options.spawn_speed_multiplier or 1)
@@ -289,7 +300,7 @@ function update_faction(faction)
         end
 
         -- Emergency resurrection when faction has 0 bases
-        if (warfare_options.options.factions[faction].participate_in_warfare and (faction_information[faction].base_count + mod) < 1) then
+        if not warfare.is_spawn_blocked() and (warfare_options.options.factions[faction].participate_in_warfare and (faction_information[faction].base_count + mod) < 1) then
             if (warfare.get_time():diffSec(faction_information[faction].last_resurgence_attempt) > faction_information[faction].next_resurgence_attempt * 6) then
                 faction_information[faction].last_resurgence_attempt = warfare.get_time()
                 faction_information[faction].next_resurgence_attempt = math.random(min_resurgence_wait_time, max_resurgence_wait_time)
