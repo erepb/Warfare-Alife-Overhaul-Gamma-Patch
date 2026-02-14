@@ -644,6 +644,16 @@ function process_manual_capture(smart)
 				local closest_base = manual_point[3] and alife_object(manual_point[3])
 				local targeting_squad = manual_point[4] and alife_object(manual_point[4])
 
+				-- revalidate base ownership (may have been captured or lost defenders since STEP 1)
+				if closest_base and closest_base.owning_faction ~= warfare.actor_faction then
+					closest_base = nil
+				end
+
+				-- revalidate targeting squad (may have been killed since STEP 1)
+				if targeting_squad and targeting_squad:npc_count() < 1 then
+					targeting_squad = nil
+				end
+
 				-- base exists
 				if closest_base then
 					-- spawn squad at base and send it
