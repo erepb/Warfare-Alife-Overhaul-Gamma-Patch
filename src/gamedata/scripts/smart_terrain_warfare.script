@@ -2725,6 +2725,11 @@ function process_patrols(smart)
 					end
 				end
 
+				-- Attacking patrols that arrived get reassigned immediately (no idle time)
+				if sobj.attacking and squad.current_action == 1 then
+					find_target = true
+				end
+
 				if (find_target or squad.current_action == 1) then
 					if (not find_target and not (sobj.attacking or sobj.arrive_time)) then
 						patrol_squads[smart.id][squad_id].arrive_time = game.get_game_time()
