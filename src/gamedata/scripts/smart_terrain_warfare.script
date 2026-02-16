@@ -661,16 +661,11 @@ function process_manual_capture(smart)
 					local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
 					local squad = utils_obj.create_squad(section, closest_base:name())
 					sim_squad_warfare.set_target(squad, smart.id)
-					-- increase spawn timer of that base
-					local faction_bases = warfare_factions.faction_information[warfare.actor_faction].base_count + warfare_options.options.factions[warfare.actor_faction].base_count_modifier
-					local min_respawn = warfare_options.options.factions[warfare.actor_faction].min_faction_respawn
-					local max_respawn = warfare_options.options.factions[warfare.actor_faction].max_faction_respawn
-					local respawn_time = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1)) * (warfare_options.options.spawn_speed_multiplier or 1)
-					local respawn_multiplier = 1.2
-					if defence_delay[smart.id] == nil then
-                        defence_delay[smart.id] = 0
-                    end
-					defence_delay[smart.id] = defence_delay[smart.id] + 1
+					-- increase spawn timer of the sending base
+					if defence_delay[closest_base.id] == nil then
+						defence_delay[closest_base.id] = 0
+					end
+					defence_delay[closest_base.id] = defence_delay[closest_base.id] + 1
 					-- get info of base NPC for message info
 					local squads = SIMBOARD.smarts[closest_base.id].squads
 					local base_squad
