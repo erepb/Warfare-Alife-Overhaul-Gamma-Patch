@@ -43,6 +43,76 @@ hide_smarts = false -- altered by pda_warfare.script
 
 local sfind, is_factions_enemies, is_factions_friends = string.find, game_relations.is_factions_enemies, game_relations.is_factions_friends
 
+-- Cached level_id → "lvl_<name>_priority" key strings (populated on first use, never changes)
+local level_priority_key_cache = {}
+local function get_level_priority_key(level_id)
+    local key = level_priority_key_cache[level_id]
+    if not key then
+        key = "lvl_" .. alife():level_name(level_id) .. "_priority"
+        level_priority_key_cache[level_id] = key
+    end
+    return key
+end
+
+-- Precalculated smart terrain collections (built once after initialization, never changes)
+-- linked_smart_collection[level_id] = { smart_id1, smart_id2, ... } (current + linked levels)
+-- all_smart_collection = { smart_id1, smart_id2, ... } (all active levels)
+-- nonbase_smart_collection = { smart_id1, smart_id2, ... } (all active levels, bases excluded)
+local linked_smart_collection = {}
+local all_smart_collection = nil
+local nonbase_smart_collection = nil
+local smart_collections_built = false
+
+function build_smart_collections()
+    if smart_collections_built then return end
+    smart_collections_built = true
+
+    -- Build all-levels collection
+    all_smart_collection = {}
+    for _, lvl in pairs(level_targets.active_levels) do
+        local smarts = warfare_levels.level_information[lvl] and warfare_levels.level_information[lvl].smarts
+        if smarts then
+            for i = 1, #smarts do
+                all_smart_collection[#all_smart_collection + 1] = smarts[i]
+            end
+        end
+    end
+
+    -- Build per-level linked collections
+    for _, lvl in pairs(level_targets.active_levels) do
+        local collection = {}
+        local smarts = warfare_levels.level_information[lvl] and warfare_levels.level_information[lvl].smarts
+        if smarts then
+            for i = 1, #smarts do
+                collection[#collection + 1] = smarts[i]
+            end
+        end
+
+        local linked = level_targets.level_links[lvl]
+        if linked then
+            for linked_lvl, _ in pairs(linked) do
+                local linked_smarts = warfare_levels.level_information[linked_lvl] and warfare_levels.level_information[linked_lvl].smarts
+                if linked_smarts then
+                    for i = 1, #linked_smarts do
+                        collection[#collection + 1] = linked_smarts[i]
+                    end
+                end
+            end
+        end
+
+        linked_smart_collection[lvl] = collection
+    end
+
+    -- Build non-base collection (for find_random_patrol_target)
+    nonbase_smart_collection = {}
+    for i = 1, #all_smart_collection do
+        local smart = all_smart_collection[i] and alife_object(all_smart_collection[i])
+        if smart and smart.props and smart.props.base == 0 then
+            nonbase_smart_collection[#nonbase_smart_collection + 1] = all_smart_collection[i]
+        end
+    end
+end
+
 -- Timer used for capturing smart terrains.
 point_cap_timers = {}
 smart_owners = {}
@@ -4351,15 +4421,13 @@ function find_random_patrol_target(smart, faction, sid)
 
     local smart_level = smart and smart.level_id
 
-    -- Collect all smarts first
+    -- Use precalculated non-base smart collection, resolve to alife objects
+    local ids = nonbase_smart_collection or {}
     local smartCollection = {}
-    for _, lvl in pairs(level_targets.active_levels) do
-        local smarts = warfare_levels.level_information[lvl].smarts
-        for i = 1, #smarts do
-            local other = smarts[i] and alife_object(smarts[i])
-            if other and other.props.base == 0 then
-                smartCollection[#smartCollection + 1] = other
-            end
+    for i = 1, #ids do
+        local other = alife_object(ids[i])
+        if other and other.props then
+            smartCollection[#smartCollection + 1] = other
         end
     end
 
@@ -4414,8 +4482,7 @@ function find_random_patrol_target(smart, faction, sid)
                     priority = priority + (other.props.territory * faction_options.territory_priority)
                 end
 
-                local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
-                local p = "lvl_" .. other_level .. "_priority"
+                local p = get_level_priority_key(other.level_id)
                 if faction_options[p] then
                     priority = priority + faction_options[p]
                 end
@@ -4508,10 +4575,7 @@ end
 function find_targets(smart, faction_override, overflow_squad)
     printd(0, smart:name())
 
-    local level = game_graph():vertex(smart.m_game_vertex_id):level_id()
-    local linked = level_targets.level_links[level]
-    local currentLevelSmarts = warfare_levels.level_information[level].smarts
-    local smartCollection = {}
+    local level = smart.level_id
     local faction = smart.owning_faction or "none"
     local d = smart.defense_power or 0
 
@@ -4522,27 +4586,12 @@ function find_targets(smart, faction_override, overflow_squad)
 
     d = d * get_max_power_mult(smart) or 1
 
-    -- non-linked levels are included only for overflow squads
+    -- Use precalculated smart collections (built once on load)
+    local smartCollection
     if (warfare_options.options.factions[faction].linked_level_targeting) and not (overflow_squad) then
-        for i = 1, #currentLevelSmarts do
-            smartCollection[#smartCollection + 1] = currentLevelSmarts[i]
-        end
-
-        for lvl, _ in pairs(linked) do
-            local smarts = warfare_levels.level_information[lvl].smarts
-
-            for i = 1, #smarts do
-                smartCollection[#smartCollection + 1] = smarts[i]
-            end
-        end
+        smartCollection = linked_smart_collection[level] or {}
     else
-        for _, lvl in pairs(level_targets.active_levels) do
-            local smarts = warfare_levels.level_information[lvl].smarts
-
-            for i = 1, #smarts do
-                smartCollection[#smartCollection + 1] = smarts[i]
-            end
-        end
+        smartCollection = all_smart_collection or {}
     end
 
     local targets = {}
@@ -4610,8 +4659,7 @@ function find_targets(smart, faction_override, overflow_squad)
                 priority = -1000
             end
 
-            local other_lvl_name = alife():level_name(other_level)
-            local p = "lvl_" .. other_lvl_name .. "_priority"
+            local p = get_level_priority_key(other_level)
             if warfare_options.options.factions[faction][p] then
                 priority = priority + warfare_options.options.factions[faction][p]
             end
@@ -4713,10 +4761,7 @@ end
 -- overflow squads that arent part of an invasion force will be tasked to nearby empty valuable points, nearby bases that have capacity (or invasion force capacity), or hostile targets as a last resort
 function find_targets_for_overflow(smart, faction, search_all_levels)
 
-    local level = game_graph():vertex(smart.m_game_vertex_id):level_id()
-    local linked = level_targets.level_links[level]
-    local currentLevelSmarts = warfare_levels.level_information[level].smarts
-    local smartCollection = {}
+    local level = smart.level_id
     local targets = {}
     local d = smart.defense_power or 0
     local faction_props = warfare_options.options.factions[faction]
@@ -4727,28 +4772,12 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
 
     d = d * get_max_power_mult(smart) or 1
 
-    -- search all levels
+    -- Use precalculated smart collections
+    local smartCollection
     if (search_all_levels) or not (faction_props.linked_level_targeting) then
-        for _, lvl in pairs(level_targets.active_levels) do
-            local smarts = warfare_levels.level_information[lvl].smarts
-
-            for i = 1, #smarts do
-                smartCollection[#smartCollection + 1] = smarts[i]
-            end
-        end
-        -- accumulate valid smart terrains on-level and on linked-levels
+        smartCollection = all_smart_collection or {}
     else
-        for i = 1, #currentLevelSmarts do
-            smartCollection[#smartCollection + 1] = currentLevelSmarts[i]
-        end
-
-        for lvl, _ in pairs(linked) do
-            local smarts = warfare_levels.level_information[lvl].smarts
-
-            for i = 1, #smarts do
-                smartCollection[#smartCollection + 1] = smarts[i]
-            end
-        end
+        smartCollection = linked_smart_collection[level] or {}
     end
 
     if (faction == "monster") then
