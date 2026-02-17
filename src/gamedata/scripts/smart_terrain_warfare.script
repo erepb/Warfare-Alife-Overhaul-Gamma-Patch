@@ -4349,7 +4349,7 @@ end
 function find_random_patrol_target(smart, faction, sid)
     printd(0, "find_random_patrol_target: " .. (smart and smart:name() or "spawn"))
 
-    local smart_level = smart and game_graph():vertex(smart.m_game_vertex_id):level_id()
+    local smart_level = smart and smart.level_id
 
     -- Collect all smarts first
     local smartCollection = {}
@@ -4560,20 +4560,8 @@ function find_targets(smart, faction_override, overflow_squad)
             local priority = 0
             local other_faction = other.owning_faction or "none"
             local d2 = other.defense_power or 0
-            local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
+            local other_level = other.level_id
             local other_resources = warfare_levels.level_information[other_level].resource_count
-            local cName = translate_smart_name(smart:name())
-            local pName = translate_smart_name(other:name())
-
-            if not (cName) then
-                cName = smart:name()
-            end
-
-            if not (pName) then
-                pName = other:name()
-            else
-                pName = pName .. " (" .. other:name() .. ")"
-            end
 
             if (warfare.influence_levels[other.id] and faction == warfare.actor_faction) then
                 priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
@@ -4716,8 +4704,6 @@ function find_targets(smart, faction_override, overflow_squad)
 
     printd(1, smart:name())
 
-
-
     return targets
 end
 
@@ -4776,7 +4762,7 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
             local priority = 0
             local other_faction = other.owning_faction or "none"
             local d2 = other.defense_power or 0
-            local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
+            local other_level = other.level_id
 
             if (warfare.influence_levels[other.id] and faction == warfare.actor_faction) then
                 priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
