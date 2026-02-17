@@ -344,6 +344,7 @@ function advance_warfare_step()
     if not sim then return end
 
     warfare_utils.refresh_time_cache()
+    refresh_pop_cache()
 
     local now = get_time()
 
@@ -651,10 +652,20 @@ function get_stalker_pop_factor_value()
     return ui_options.get("alife/general/alife_stalker_pop")
 end
 
+-- Cached pop factors -- refreshed each warfare update cycle via refresh_pop_cache()
+local cached_stalker_pop = nil
+local cached_monster_pop = nil
+
+function refresh_pop_cache()
+    cached_stalker_pop = get_stalker_pop_factor_value()
+    cached_monster_pop = get_monster_pop_factor_value()
+end
+
 function get_stalker_pop_factor()
-    local value = get_stalker_pop_factor_value()
-    printd("stalker_pop_factor = %s", value)
-    return value
+    if not cached_stalker_pop then
+        cached_stalker_pop = get_stalker_pop_factor_value()
+    end
+    return cached_stalker_pop
 end
 
 function get_monster_pop_factor_value()
@@ -662,9 +673,10 @@ function get_monster_pop_factor_value()
 end
 
 function get_monster_pop_factor()
-    local value = get_monster_pop_factor_value()
-    printd("monster_pop_factor = %s, smr %s", value, smr_amain_mcm and "true" or "false")
-    return value
+    if not cached_monster_pop then
+        cached_monster_pop = get_monster_pop_factor_value()
+    end
+    return cached_monster_pop
 end
 
 -- for vanilla, probably create a custom simulation.ltx
