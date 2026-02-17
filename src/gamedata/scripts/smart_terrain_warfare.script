@@ -5023,6 +5023,10 @@ function find_targets(smart, faction_override, overflow_squad)
 
 	d = d * get_max_power_mult(smart) or 1
 
+	if (faction == "monster") then
+		return
+	end
+
 	-- Use precalculated smart collections (built once on load)
 	local smartCollection
 	if (warfare_options.options.factions[faction].linked_level_targeting) and not (overflow_squad) then
@@ -5032,155 +5036,181 @@ function find_targets(smart, faction_override, overflow_squad)
 	end
 
 	local targets = {}
+	local targets_n = 0
 
+    -- Localize frequently accessed tables (avoids repeated multi-level table lookups per candidate)
+    local ff = warfare_options.options.factions[faction]
+    local ff_faction_flag_priority     = ff.faction_flag_priority
+    local ff_base_priority             = ff.base_priority
+    local ff_resource_priority         = ff.resource_priority
+    local ff_territory_priority        = ff.territory_priority
+    local ff_is_being_targeted         = ff.is_being_targeted_priority
+    local ff_target_weaker             = ff.target_weaker_priority
+    local ff_target_stronger           = ff.target_stronger_priority
+    local ff_target_resource           = ff.target_resource_priority
+    local ff_target_same_level         = ff.target_on_same_level_priority
+    local ff_target_faction_weaker     = ff.target_faction_weaker_priority
+    local ff_target_faction_stronger   = ff.target_faction_stronger_priority
+    local opts = warfare_options.options
+    local actor_influence_weight = opts.actor_influence_weight
+    local prevent_mainbase        = opts.prevent_mainbase_attacks
+    local influence_levels        = warfare.influence_levels
+    local w_actor_faction         = warfare.actor_faction
+    local faction_info            = warfare_factions.faction_information[faction]
+    local faction_est             = faction_info and (faction_info.base_count + faction_info.resource_count) or 0
+    local smart_id                = smart.id
 
-	if (faction == "monster") then
-		return
-	end
+	-- Cache game state queries (constant within a single call)
+	local scorcher_done       = has_alife_info("bar_deactivate_radar_done")
+	local miracle_machine_off = has_alife_info("yan_labx16_switcher_primary_off")
+	local is_story_mode       = IsStoryMode()
+	local is_monolith         = faction == "monolith"
+	local is_isg              = faction == "isg"
+	local is_scorcher_immune  = is_monolith or faction == "greh" or faction == "zombied"
 
-	for i=1,#smartCollection do
-		-- Do not even factor in which level this base is on. We want to have fluid borders at this point.
-		local other = smartCollection[i] and alife_object(smartCollection[i])
+	for i = 1, #smartCollection do
+		local sid = smartCollection[i]
+		local other = alife_object(sid)
 
-		if (other and other.props) then
-			local priority = 0
-			local other_faction = other.owning_faction or "none"
-			local d2 = other.defense_power or 0
-			local other_level = other.level_id
-			local other_resources = warfare_levels.level_information[other_level].resource_count
+		if not (other and other.props) then
+			goto continue
+		end
 
-			if (warfare.influence_levels[other.id] and faction == warfare.actor_faction) then
-				priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
-			end
+		local other_props = other.props
+		local other_faction = other.owning_faction or "none"
+		local other_level = other.level_id
 
-			if other.props[faction] then
-				priority = priority + (other.props[faction] * warfare_options.options.factions[faction].faction_flag_priority)
-			end
+		-- Early skips for candidates that will always end up with priority <= 0.
+		-- Each of these originally set priority = -1000 which always fails the priority > 0 gate.
 
-			if (other.props.base > 0) then
-				priority = priority + (other.props.base * warfare_options.options.factions[faction].base_priority)
-			end
+		-- labs and underground locations will not be targets of bases
+		if (other_level > 19 and other_level < 27) or other_level == 29 or other_level == 31 then
+			goto continue
+		end
 
-			if (other.props.resource > 0) then
-				priority = priority + (other.props.resource * warfare_options.options.factions[faction].resource_priority)
-			end
+		-- heavily de-prioritize pure lairs
+		if other_props.resource < 1 and other_props.base < 1 and other_props.territory < 1 then
+			goto continue
+		end
 
-			if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1) then
-				priority = priority + (other.props.territory * warfare_options.options.factions[faction].territory_priority)
-			end
+		-- non-enemy, non-empty, non-loner/ecolog targets are not valid
+		if not (is_factions_enemies(faction, other_faction) or other_faction == "none") and (other_faction ~= "stalker") and (other_faction ~= "ecolog") then
+			goto continue
+		end
 
-			if (other.target_smarts) then
-				if (other.target_smarts[smart.id]) then
-					priority = priority + warfare_options.options.factions[faction].is_being_targeted_priority
-				end
-			end
+		-- normal factions cannot target Radar/Pripyat until Brain Scorcher disabled
+		if not is_scorcher_immune and (other_level == 13 or other_level == 16) and not scorcher_done then
+			goto continue
+		end
 
-			if (other.player_target_smarts) then
-				if (other.player_target_smarts[smart.id]) then
-					priority = priority + warfare_options.options.factions[faction].is_being_targeted_priority
-				end
-			end
+		-- normal factions cannot travel between Yantar/Dead City until Miracle Machine disabled
+		if not is_scorcher_immune and ((level == 10 and other_level == 11) or (level == 11 and other_level == 10)) and not miracle_machine_off then
+			goto continue
+		end
 
-			if (is_factions_enemies(faction, other_faction)) then
-				local diff = d - d2
+		-- Monolith non-actor cannot target southern levels (except Army Warehouses at level 9)
+		if is_monolith and is_story_mode and (other_level < 12 or other_level > 31) and faction ~= w_actor_faction and other_level ~= 9 then
+			goto continue
+		end
 
-				if (diff > 0) then
-					priority = priority + warfare_options.options.factions[faction].target_weaker_priority
-				else
-					priority = priority + warfare_options.options.factions[faction].target_stronger_priority
-				end
-			end
+		-- Compute priority
+		local priority = 0
+		local d2 = other.defense_power or 0
 
-			-- labs and underground locations will not be targets of bases
-			if ((other_level > 19) and (other_level < 27)) or (other_level == 29) or (other_level == 31) then
-				priority = -1000
-			end
+		if influence_levels[other.id] and faction == w_actor_faction then
+			priority = influence_levels[other.id] * actor_influence_weight
+		end
 
-			local p = get_level_priority_key(other_level)
-			if warfare_options.options.factions[faction][p] then
-				priority = priority + warfare_options.options.factions[faction][p]
-			end
+		if other_props[faction] then
+			priority = priority + other_props[faction] * ff_faction_flag_priority
+		end
 
-			if not (is_factions_enemies(faction, other_faction) or other_faction == "none") and (other_faction ~= "stalker") and (other_faction ~= "ecolog") then
-				priority = 0
-			end
+		if other_props.base > 0 then
+			priority = priority + other_props.base * ff_base_priority
+		end
 
-			-- slight priority boost for empty resources or bases, or resources owned by neutral loner/ecolog
-			if (other_faction == "none" or ((other_faction == "stalker" or other_faction == "ecolog") and other.props.base < 1 and not is_factions_enemies(faction, other_faction))) and (other.props.resource > 0 or other.props.base > 0) then
-				priority = priority * 1.2
-			end
+		if other_props.resource > 0 then
+			priority = priority + other_props.resource * ff_resource_priority
+		end
 
-			-- Monolith will not be allowed to target southern levels unless they are the player faction
-			if IsStoryMode() and (faction == "monolith") and ( (other_level < 12) or (other_level > 31) ) then
-				if (faction == warfare.actor_faction) or (other_level == 9) then
-					priority = priority * 0.2			-- lower priority for southern levels if actor faction or army warehouses
-				else
-					priority = -1000
-				end
-			end
+		if other_props.territory > 0 and other_props.resource < 1 and other_props.base < 1 then
+			priority = priority + other_props.territory * ff_territory_priority
+		end
 
-			-- normal factions will not be allowed to target Radar or Pripyat until the Brain Scorcher is disabled
-			if (faction ~= "monolith") and (faction ~= "greh") and (faction ~= "zombied") and ( (other_level == 13) or (other_level == 16) ) and not has_alife_info("bar_deactivate_radar_done") then
-				priority = -1000
-			end
+		if other.target_smarts and other.target_smarts[smart_id] then
+			priority = priority + ff_is_being_targeted
+		end
 
-			-- heavily de-prioritize pure lairs
-			if (other.props.resource < 1 and other.props.base < 1 and other.props.territory < 1) then
-				priority = -1000
-			end
+        if other.player_target_smarts and other.player_target_smarts[smart_id] then
+            priority = priority + ff_is_being_targeted
+        end
 
-			-- normal factions cannot travel between Yantar/Dead City until the Miracle Machine is disabled
-			if (faction ~= "monolith") and (faction ~= "greh") and (faction ~= "zombied") and ( (level == 10 and other_level == 11) or (level == 11 and other_level == 10) ) and not has_alife_info("yan_labx16_switcher_primary_off") then
-				priority = -1000
-			end
-
-			-- ISG extremely interested in targeting labs
-			if (faction == "isg") and lab_entrance_smarts[other:name()] then
-				priority = 10 * priority
-			end
-
-			if (priority > 0) then
-				priority = priority + (warfare_options.options.factions[faction].target_resource_priority * other_resources)
-
-				if (other_faction ~= "none" and warfare_factions.faction_information[faction] ~= nil) then
-					local faction_bases = warfare_factions.faction_information[faction].base_count
-					local faction_resources = warfare_factions.faction_information[faction].resource_count
-					local faction_est = faction_bases + faction_resources
-
-					if (warfare_factions.faction_information[other_faction] ~= nil) then
-						local other_faction_bases = warfare_factions.faction_information[other_faction].base_count
-						local other_faction_resources = warfare_factions.faction_information[other_faction].resource_count
-						local other_faction_est = other_faction_bases + other_faction_resources
-
-						if (faction_est > other_faction_est) then
-							priority = priority + warfare_options.options.factions[faction].target_faction_weaker_priority
-						elseif (other_faction_est > faction_est) then
-							priority = priority + warfare_options.options.factions[faction].target_faction_stronger_priority
-						end
-					end
-				end
-
-				if (other_level == level) then
-					priority = priority + warfare_options.options.factions[faction].target_on_same_level_priority
-				end
-
-				-- greatly de-prioritize loner/ecolog bases, but not to zero
-				if not (is_factions_enemies(faction, other_faction) or other_faction == "none") and (other.props.base > 0) and ((other_faction == "stalker") or (other_faction == "ecolog")) then
-					priority = priority / 1000
-				end
-
-				local distance = fetch_smart_distance(smart,other)
-				local inv_dist = (1 / distance)
-
-				-- prevent main base attacks if option is enabled
-				if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and (other_faction ~= "none") then
-					 inv_dist = inv_dist / 1000
-				end
-					targets[#targets+1] = { priority * inv_dist, other.id }  -- otherwise add to standard target array
-
-
+		if is_factions_enemies(faction, other_faction) then
+			if d > d2 then
+				priority = priority + ff_target_weaker
+			else
+				priority = priority + ff_target_stronger
 			end
 		end
+
+		local p = get_level_priority_key(other_level)
+		if ff[p] then
+			priority = priority + ff[p]
+		end
+
+		-- slight priority boost for empty resources or bases, or resources owned by neutral loner/ecolog
+		if (other_faction == "none" or ((other_faction == "stalker" or other_faction == "ecolog") and other_props.base < 1 and not is_factions_enemies(faction, other_faction))) and (other_props.resource > 0 or other_props.base > 0) then
+			priority = priority * 1.2
+		end
+
+		-- Monolith: lower priority for southern levels (non-actor non-warehouses case already skipped above)
+		if is_monolith and is_story_mode and (other_level < 12 or other_level > 31) then
+			priority = priority * 0.2
+		end
+
+		-- ISG extremely interested in targeting labs
+		if is_isg and lab_entrance_smarts[other:name()] then
+			priority = 10 * priority
+		end
+
+		if priority > 0 then
+			local other_resources = warfare_levels.level_information[other_level].resource_count
+			priority = priority + ff_target_resource * other_resources
+
+			if other_faction ~= "none" and faction_info then
+				local other_fi = warfare_factions.faction_information[other_faction]
+				if other_fi then
+					local other_faction_est = other_fi.base_count + other_fi.resource_count
+					if faction_est > other_faction_est then
+						priority = priority + ff_target_faction_weaker
+					elseif other_faction_est > faction_est then
+						priority = priority + ff_target_faction_stronger
+					end
+				end
+			end
+
+			if other_level == level then
+				priority = priority + ff_target_same_level
+			end
+
+			-- greatly de-prioritize loner/ecolog bases, but not to zero
+			if not (is_factions_enemies(faction, other_faction) or other_faction == "none") and other_props.base > 0 and (other_faction == "stalker" or other_faction == "ecolog") then
+				priority = priority / 1000
+			end
+
+			local distance = fetch_smart_distance(smart, other)
+			local inv_dist = 1 / distance
+
+			-- prevent main base attacks if option is enabled
+			if prevent_mainbase and main_bases[other:name()] and other_faction ~= "none" then
+				inv_dist = inv_dist / 1000
+			end
+
+			targets_n = targets_n + 1
+			targets[targets_n] = { priority * inv_dist, other.id }
+		end
+
+		::continue::
 	end
 
 	table.sort(targets, function(a, b)
