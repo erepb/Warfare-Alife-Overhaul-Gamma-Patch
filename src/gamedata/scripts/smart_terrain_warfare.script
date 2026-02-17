@@ -4495,9 +4495,14 @@ function find_random_patrol_target(smart, faction, sid)
         return backup_target.id
     end
 
+    if not smart then
+        printf("WARFARE: Failed to find any valid targets for random patrol spawn for faction %s!", faction)
+        return nil
+    end
+
     printd(1)
 
-    return smart.id                                                                        -- if no target is valid, the squad will sit on their current location until the next update
+    return smart.id
 end
 
 function find_targets(smart, faction_override, overflow_squad)
