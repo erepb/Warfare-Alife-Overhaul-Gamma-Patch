@@ -409,6 +409,8 @@ function advance_warfare_step()
             smart_terrain_warfare.smart_terrain_on_update(smart)
         end
     end
+
+    pop_dirty = false
 end
 
 function advance_warfare_reset()
@@ -658,10 +660,16 @@ end
 -- Cached pop factors -- refreshed each warfare update cycle via refresh_pop_cache()
 local cached_stalker_pop = nil
 local cached_monster_pop = nil
+pop_dirty = true  -- signals set_max_population to recalculate (exposed for smart_terrain_warfare)
 
 function refresh_pop_cache()
-    cached_stalker_pop = get_stalker_pop_factor_value()
-    cached_monster_pop = get_monster_pop_factor_value()
+    local new_stalker = get_stalker_pop_factor_value()
+    local new_monster = get_monster_pop_factor_value()
+    if new_stalker ~= cached_stalker_pop or new_monster ~= cached_monster_pop then
+        pop_dirty = true
+    end
+    cached_stalker_pop = new_stalker
+    cached_monster_pop = new_monster
 end
 
 function get_stalker_pop_factor()

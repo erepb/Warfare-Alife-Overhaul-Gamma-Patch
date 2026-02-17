@@ -344,7 +344,12 @@ function translate_smart_name(name)
 end
 
 function set_max_population(smart)
-    printd(0)
+    -- Skip recalculation if pop factors haven't changed since last cycle
+    if smart.pop_calculated and not warfare.pop_dirty then
+        return
+    end
+    smart.pop_calculated = true
+
     local stalker_pop_factor = warfare.get_stalker_pop_factor()
     local monster_pop_factor = warfare.get_monster_pop_factor()
 
@@ -353,7 +358,6 @@ function set_max_population(smart)
     else
         smart.max_population = round_idp(math.max(1, smart.default_max_population * monster_pop_factor))
     end
-    printd(1)
 end
 
 function smart_terrain_on_update(smart)
