@@ -512,7 +512,7 @@ function process_manual_capture(smart)
         -- autocapture data already exists for this smart
     elseif manual_check and (manual_point[1] == smart.id) then
         local startTime = manual_point[2]
-        local diff = round_idp(warfare.get_time():diffSec(startTime))
+        local diff = round_idp(warfare.get_time_ref():diffSec(startTime))
         -- STEP 2: wait for a few seconds before beginning autocapture process
         -- actor hasn't called for a squad yet
         if (manual_point[5] == 1) then
@@ -665,7 +665,7 @@ function process_manual_capture_old(smart)
 
             local startTime = manual_point[2]
 
-            local diff = round_idp(warfare.get_time():diffSec(startTime) / 60)
+            local diff = round_idp(warfare.get_time_ref():diffSec(startTime) / 60)
 
             if (diff >= (warfare_options.options.auto_capture_wait_time)) then
                 manual_point = nil
@@ -693,7 +693,7 @@ function process_manual_capture_old(smart)
 end
 
 function process_squads(smart)
-    if not (smart.process_squads_time) or (warfare.get_time():diffSec(smart.process_squads_time) >= smart.next_process_squads_time * 6) then
+    if not (smart.process_squads_time) or (warfare.get_time_ref():diffSec(smart.process_squads_time) >= smart.next_process_squads_time * 6) then
         if not smart.process_squads_time then
 		    smart.process_squads_time = warfare.get_time()
 		else
@@ -809,7 +809,7 @@ function process_squads(smart)
 end
 
 function surge_behavior(smart)
-    if not (surge_checker1[smart.id]) or (warfare.get_time():diffSec(surge_checker1[smart.id]) >= surge_checker2[smart.id] * 6) then
+    if not (surge_checker1[smart.id]) or (warfare.get_time_ref():diffSec(surge_checker1[smart.id]) >= surge_checker2[smart.id] * 6) then
         if not surge_checker1[smart.id] then
 		    surge_checker1[smart.id] = warfare.get_time()
 		else
@@ -947,7 +947,7 @@ function process_targets(smart)
         return
     end
 
-    if (warfare.get_time():diffSec(smart.process_targets_time) >= smart.next_process_targets_time * 6) then
+    if (warfare.get_time_ref():diffSec(smart.process_targets_time) >= smart.next_process_targets_time * 6) then
         smart.process_targets_time = warfare_utils.add_time(smart.process_targets_time, smart.next_process_targets_time*6)
         smart.next_process_targets_time = math.random(2, 15)        -- default 1 to 10, changed to ease script load
     else
@@ -1084,7 +1084,7 @@ function process_targets(smart)
                     invasions[smart.id][3] = warfare.get_time()            -- get time to send invasion
                 end
 
-                local diff = warfare.get_time():diffSec(invasions[smart.id][3])
+                local diff = warfare.get_time_ref():diffSec(invasions[smart.id][3])
                 local wait = invasions[smart.id][4] or 0
 
                 if (diff > (wait * 6)) then
@@ -1620,7 +1620,7 @@ function process_invasion_defense(smart)
         return
     end
 
-    if (warfare.get_time():diffSec(invasion_defense_timers[smart.id]) >= invasion_defense_next_update[smart.id] * 6) then
+    if (warfare.get_time_ref():diffSec(invasion_defense_timers[smart.id]) >= invasion_defense_next_update[smart.id] * 6) then
         invasion_defense_timers[smart.id] = warfare_utils.add_time(invasion_defense_timers[smart.id], invasion_defense_next_update[smart.id]*6)
         invasion_defense_next_update[smart.id] = math.random(3, 12)
     else
@@ -1873,7 +1873,7 @@ function process_invasion_defense(smart)
 end
 
 function update_resources(smart)
-    if not (smart.resource_timer) or warfare.get_time():diffSec(smart.resource_timer) > (smart.resource_next_update * 6) then
+    if not (smart.resource_timer) or warfare.get_time_ref():diffSec(smart.resource_timer) > (smart.resource_next_update * 6) then
         if not smart.resource_timer then
             smart.resource_timer = warfare.get_time()
         else
@@ -1927,7 +1927,7 @@ function spawn_defense(smart)
 		defense_timers[smart.id] = warfare.get_time()
 		reset_defense_timer[smart.id] = nil											-- timer reset only occurs when a base changes owners
 		return
-	elseif (warfare.get_time():diffSec(defense_timers[smart.id]) > (current_respawn*6) * (defence_delay[smart.id] + 1)) then
+	elseif (warfare.get_time_ref():diffSec(defense_timers[smart.id]) > (current_respawn*6) * (defence_delay[smart.id] + 1)) then
 		defense_timers[smart.id] = warfare_utils.add_time(defense_timers[smart.id], (current_respawn*6) * (defence_delay[smart.id] + 1))
 		defence_delay[smart.id] = 0
 	else
@@ -1965,7 +1965,7 @@ end
 -- unused function
 function process_defense(smart)
     -- TODO: interpolate between min and max respawn times (make two different sets of variables for defense and offense?)
-    if not (smart.process_defense_timer) or (warfare.get_time():diffSec(smart.process_defense_timer) > (smart.next_process_defense_update * 6)) then
+    if not (smart.process_defense_timer) or (warfare.get_time_ref():diffSec(smart.process_defense_timer) > (smart.next_process_defense_update * 6)) then
         if not smart.process_defense_timer then
             smart.process_defense_timer = warfare.get_time()
         else
@@ -1992,7 +1992,7 @@ function spawn_patrols(smart)
 	if not (patrol_timers[smart.id]) then
 		patrol_timers[smart.id] = warfare.get_time()
 		return
-	elseif (warfare.get_time():diffSec(patrol_timers[smart.id]) > (respawn*6)) then
+	elseif (warfare.get_time_ref():diffSec(patrol_timers[smart.id]) > (respawn*6)) then
 		patrol_timers[smart.id] = warfare_utils.add_time(patrol_timers[smart.id], respawn*6)
 	else
 		return
@@ -2176,7 +2176,7 @@ function process_patrols(smart)
         return
     end
 
-    if (warfare.get_time():diffSec(smart.process_patrols_timer) > (smart.next_process_patrols_update * 6)) then
+    if (warfare.get_time_ref():diffSec(smart.process_patrols_timer) > (smart.next_process_patrols_update * 6)) then
         smart.process_patrols_timer = warfare_utils.add_time(smart.process_patrols_timer, smart.next_process_patrols_update*6)
         smart.next_process_patrols_update = math.random(2, 10)
     else
@@ -2243,7 +2243,7 @@ function process_patrols(smart)
                         local min_idle = warfare_options.options.factions[squad:get_squad_community()].min_patrol_rest_time or 0
                         local max_idle = warfare_options.options.factions[squad:get_squad_community()].max_patrol_rest_time or 0
                         patrol_squads[smart.id][squad_id].stay_time = math.random(min_idle, max_idle)
-                    elseif (find_target or warfare.get_time():diffSec(sobj.arrive_time) >= (sobj.stay_time * 6)) then
+                    elseif (find_target or warfare.get_time_ref():diffSec(sobj.arrive_time) >= (sobj.stay_time * 6)) then
                         local night_chance = warfare_options.options.factions[smart.owning_faction].night_activity_chance
                         local isNight = warfare_utils.is_night()
 
@@ -2291,7 +2291,7 @@ function process_loners(smart)
         return
     end
 
-    if (warfare.get_time():diffSec(loner_timer[smart.id]) >= loners_next_update[smart.id] * 6) and not currently_surge then
+    if (warfare.get_time_ref():diffSec(loner_timer[smart.id]) >= loners_next_update[smart.id] * 6) and not currently_surge then
         loner_timer[smart.id] = warfare_utils.add_time(loner_timer[smart.id], loners_next_update[smart.id]*6)
         loners_next_update[smart.id] = math.random(30, 90)
     else
@@ -2711,7 +2711,7 @@ function process_ecolog(smart)
         return
     end
 
-    if (warfare.get_time():diffSec(ecolog_timer[smart.id]) >= ecolog_next_update[smart.id] * 6) and not currently_surge then
+    if (warfare.get_time_ref():diffSec(ecolog_timer[smart.id]) >= ecolog_next_update[smart.id] * 6) and not currently_surge then
         ecolog_timer[smart.id] = warfare_utils.add_time(ecolog_timer[smart.id], ecolog_next_update[smart.id]*6)
         ecolog_next_update[smart.id] = math.random(60, 180)
     else
@@ -3006,7 +3006,7 @@ function spawn_mutants(smart)
         spawn_mutant_next_update[smart.id] = math.random(min_respawn, max_respawn) * (warfare_options.options.spawn_speed_multiplier or 1)
         spawn_mutant_timers[smart.id] = warfare.get_time()            -- these timers and the update timers now get saved, and don't reset upon game load!
         return
-    elseif (warfare.get_time():diffSec(spawn_mutant_timers[smart.id]) > (spawn_mutant_next_update[smart.id] * 6)) then
+    elseif (warfare.get_time_ref():diffSec(spawn_mutant_timers[smart.id]) > (spawn_mutant_next_update[smart.id] * 6)) then
         --printf("time to spawn mutants on location: " .. smart:name())
         local min_respawn = warfare_options.options.monster_min_faction_respawn
         local max_respawn = warfare_options.options.monster_max_faction_respawn
@@ -3077,7 +3077,7 @@ end
 
 -- Will be used for handling mutant behavior, choosing new targets etc.
 function process_mutants(smart)
-    if not (process_mutant_timers[smart.id]) or (warfare.get_time():diffSec(process_mutant_timers[smart.id]) >= (process_mutant_next_update[smart.id] * 6)) then
+    if not (process_mutant_timers[smart.id]) or (warfare.get_time_ref():diffSec(process_mutant_timers[smart.id]) >= (process_mutant_next_update[smart.id] * 6)) then
         if not process_mutant_timers[smart.id] then
             process_mutant_timers[smart.id] = warfare.get_time()
         else
@@ -3121,7 +3121,7 @@ function process_mutants(smart)
             if (faction == "monster") and (not warfare.ignore[squad:section_name()]) and (not sim_offline_combat.stationary_squads[squad:section_name()]) then
                 if (squad.arrive_time and squad.wait_time) then
                     -- force a mutant squad to move off if they exceed the terrain capacity
-                    if (warfare.get_time():diffSec(squad.arrive_time) >= squad.wait_time * 6) or (mutant_squad_count > smart.max_population) then
+                    if (warfare.get_time_ref():diffSec(squad.arrive_time) >= squad.wait_time * 6) or (mutant_squad_count > smart.max_population) then
                         local max_active = warfare_options.options.monster_max_squads_per_level
 
                         local targets = {}
@@ -3696,7 +3696,7 @@ function get_target_info(smart, visible)
     props = props .. " \\n \\n"
 
     if (manual_point and manual_point[1] and smart.id == manual_point[1]) then
-        local diff = round_idp(warfare.get_time():diffSec(manual_point[2]) / 60)
+        local diff = round_idp(warfare.get_time_ref():diffSec(manual_point[2]) / 60)
         local remaining = (warfare_options.options.auto_capture_wait_time) - diff
 
         if (remaining >= 0) then
@@ -3729,7 +3729,7 @@ function get_warfare_info(smart)
     end
 
     if (manual_point and manual_point[1] and smart.id == manual_point[1]) then
-        local diff = round_idp(warfare.get_time():diffSec(manual_point[2]) / 60)
+        local diff = round_idp(warfare.get_time_ref():diffSec(manual_point[2]) / 60)
         local remaining = (warfare_options.options.auto_capture_wait_time) - diff
 
         if (remaining >= 0) then
@@ -3838,7 +3838,7 @@ function get_warfare_info(smart)
         props = props .. " \\n" .. clr_gr .. str_wrfr[15] .. ": " .. clr_w .. otherName .. "\\n"
         props = props .. " \\n" .. clr_gr .. str_wrfr[16] .. ": " .. clr_w .. invasions[smart.id][2] .. "\\n"
 
-        local diff = warfare.get_time():diffSec(invasions[smart.id][3] or warfare.get_time())
+        local diff = warfare.get_time_ref():diffSec(invasions[smart.id][3] or warfare.get_time())
         local wait = invasions[smart.id][4] or 0
 
         local remaining = wait - (diff / 60)
@@ -4191,7 +4191,7 @@ function check_owner(smart)
         previous_owner[smart.id] = owner
     end
 
-    if smart_owners[smart.id] ~= nil and smart_owners[smart.id] ~= "none" and warfare.get_time():diffSec(smart.check_owner_timer) < 300 then
+    if smart_owners[smart.id] ~= nil and smart_owners[smart.id] ~= "none" and warfare.get_time_ref():diffSec(smart.check_owner_timer) < 300 then
         smart.owning_faction = smart_owners[smart.id]
         smart.last_owner = smart_owners[smart.id]
     elseif (smart.last_owner ~= "none" and warfare_options.options.factions[smart.last_owner].keep_last_base) then
@@ -4951,7 +4951,7 @@ function check_unique_npcs(smart)
         return
     end
 
-    if (warfare.get_time():diffSec(smart.last_unique_check) >= (smart.next_unique_check * 6)) then
+    if (warfare.get_time_ref():diffSec(smart.last_unique_check) >= (smart.next_unique_check * 6)) then
         smart.last_unique_check = warfare_utils.add_time(smart.last_unique_check, smart.next_unique_check*6)
         local min_respawn = 45
         local max_respawn = 75
