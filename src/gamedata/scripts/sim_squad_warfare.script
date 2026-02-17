@@ -259,7 +259,7 @@ random_patrols[squad.id] = {
 ]]
 
 function process_random_patrol(squad)
-    if not (squad.patrol_timer) or warfare.get_time():diffSec(squad.patrol_timer) > (squad.next_patrol_update * 6) then
+    if not (squad.patrol_timer) or warfare.get_time_ref():diffSec(squad.patrol_timer) > (squad.next_patrol_update * 6) then
         if not squad.patrol_timer then
             squad.patrol_timer = warfare.get_time()
         else

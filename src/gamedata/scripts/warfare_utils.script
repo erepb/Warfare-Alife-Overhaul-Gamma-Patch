@@ -82,31 +82,40 @@ end
 -- Returns h, m, s from a CTime object (or warfare virtual clock if none given)
 function get_warfare_hms(time_obj)
     local Y, M, D, h, m, s, ms = 0, 0, 0, 0, 0, 0, 0
-    Y, M, D, h, m, s, ms = (time_obj or warfare.get_time()):get(Y, M, D, h, m, s, ms)
+    Y, M, D, h, m, s, ms = (time_obj or warfare.get_time_ref()):get(Y, M, D, h, m, s, ms)
     return h, m, s
 end
 
 -- Night: 9PM (21:00) to 6AM (05:59)
+-- Per-cycle cache for time-of-day checks (hour is constant within a warfare update cycle)
+local cached_hour = nil
+
+function refresh_time_cache()
+    cached_hour = get_warfare_hour()
+end
+
+-- Night: 10PM (22:00) to 6AM (05:59)
 function is_night()
-    local h = get_warfare_hour()
+    local h = cached_hour or get_warfare_hour()
     return h < 6 or h >= 22
 end
 
 -- Daylight: 6AM (06:00) to 5PM (16:59)
 function is_daylight()
-    local h = get_warfare_hour()
+    local h = cached_hour or get_warfare_hour()
     return h >= 6 and h < 17
 end
 
--- Sunset: 5PM (17:00) to 9PM (20:59)
+-- Sunset: 5PM (17:00) to 10PM (21:59)
 function is_sunset()
-    local h = get_warfare_hour()
+    local h = cached_hour or get_warfare_hour()
     return h >= 17 and h < 22
 end
 
--- Not night (daylight or sunset): 6AM (06:00) to 9PM (20:59)
+-- Not night (daylight or sunset): 6AM (06:00) to 10PM (21:59)
 function is_not_night()
-    return not is_night()
+    local h = cached_hour or get_warfare_hour()
+    return h >= 6 and h < 22
 end
 
 -- Night boundaries in seconds from midnight
@@ -151,7 +160,7 @@ end
 -- return real game-seconds until spawn, projecting through night periods.
 -- During night the timer is effectively frozen, so real time includes the skip.
 function get_real_seconds_until_spawn(timer, interval)
-    local diff = warfare.get_time():diffSec(timer)
+    local diff = warfare.get_time_ref():diffSec(timer)
     -- Subtract accumulated night so far (timer hasn't been corrected yet)
     if is_night() then
         diff = diff - warfare.night_accumulated
@@ -161,7 +170,7 @@ function get_real_seconds_until_spawn(timer, interval)
 
     -- Current time of day in seconds
     local Y, M, D, h, m, s, ms = 0, 0, 0, 0, 0, 0, 0
-    Y, M, D, h, m, s, ms = warfare.get_time():get(Y, M, D, h, m, s, ms)
+    Y, M, D, h, m, s, ms = warfare.get_time_ref():get(Y, M, D, h, m, s, ms)
     local now = h * 3600 + m * 60 + s
 
     local real = 0

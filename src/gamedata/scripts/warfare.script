@@ -84,6 +84,12 @@ function get_time()
     return game.get_game_time()
 end
 
+-- Get warfare time reference without copying (for diffSec comparisons only)
+-- DO NOT store the returned value into persistent variables -- use get_time() for that
+function get_time_ref()
+    return warfare_time or game.get_game_time()
+end
+
 -- Variable to see if all_out_war was applied at the start of a new game (maintain compatibility with dynamic relations)
 all_out_war_applied = false
 
@@ -337,6 +343,8 @@ function advance_warfare_step()
     local sim = alife()
     if not sim then return end
 
+    warfare_utils.refresh_time_cache()
+
     local now = get_time()
 
     -- Phase 1: Teleport moving offline squads that have traveled long enough
@@ -515,6 +523,7 @@ function actor_on_update()
     if not warfare_time then
         warfare_time = real_time
     end
+    warfare_utils.refresh_time_cache()
 
     local time_delta = real_time:diffSec(warfare_time)
 

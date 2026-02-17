@@ -145,7 +145,7 @@ function update_faction(faction)
         faction_information[faction].last_random_patrol = warfare.get_time()
     end
 
-    if (not faction_information[faction].timer or warfare.get_time():diffSec(faction_information[faction].timer) >= (faction_information[faction].next_update * 6)) then
+    if (not faction_information[faction].timer or warfare.get_time_ref():diffSec(faction_information[faction].timer) >= (faction_information[faction].next_update * 6)) then
         printd(0, faction or "nil faction")
 
         local min_resurgence_wait_time = warfare_options.options.factions[faction].min_resurgence_wait_time
@@ -252,7 +252,7 @@ function update_faction(faction)
         end
 
         if (warfare_options.options.factions[faction].random_patrols) and not warfare.is_spawn_blocked() then
-            if (warfare.get_time():diffSec(faction_information[faction].last_random_patrol) > faction_information[faction].next_random_patrol * 6) then
+            if (warfare.get_time_ref():diffSec(faction_information[faction].last_random_patrol) > faction_information[faction].next_random_patrol * 6) then
                 faction_information[faction].last_random_patrol = warfare_utils.add_time(faction_information[faction].last_random_patrol, faction_information[faction].next_random_patrol*6)
                 faction_information[faction].next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time) * (warfare_options.options.spawn_speed_multiplier or 1)
 
@@ -290,7 +290,7 @@ function update_faction(faction)
                         local current_level = start.level_id
                         local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count, current_level)
                         local squad = utils_obj.create_squad(section, start:name())
-                        printdbg("WARFARE DEBUG: spawning ranom patrol squad faction: %s, resources: %s", faction, faction_information[faction].resource_count)
+                        printdbg("WARFARE DEBUG: spawning random patrol squad faction: %s, resources: %s", faction, faction_information[faction].resource_count)
 
                         smart_terrain_warfare.random_patrols[squad.id] = faction
                         sim_squad_warfare.set_target(squad, target_id)
@@ -301,7 +301,7 @@ function update_faction(faction)
 
         -- Emergency resurrection when faction has 0 bases
         if not warfare.is_spawn_blocked() and (warfare_options.options.factions[faction].participate_in_warfare and (faction_information[faction].base_count + mod) < 1) then
-            if (warfare.get_time():diffSec(faction_information[faction].last_resurgence_attempt) > faction_information[faction].next_resurgence_attempt * 6) then
+            if (warfare.get_time_ref():diffSec(faction_information[faction].last_resurgence_attempt) > faction_information[faction].next_resurgence_attempt * 6) then
                 faction_information[faction].last_resurgence_attempt = warfare.get_time()
                 faction_information[faction].next_resurgence_attempt = math.random(min_resurgence_wait_time, max_resurgence_wait_time)
 

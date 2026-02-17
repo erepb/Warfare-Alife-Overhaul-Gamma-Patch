@@ -476,7 +476,7 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
         local is_attacking = squad.current_action == 1
         local has_enough_npcs = squad:npc_count() >= squad_def.num
         local has_stay_time = squad.stay_time ~= nil
-        local within_stay_time = (not squad_def.stay_time) or (squad_def.stay_time and (warfare.get_time():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time)))
+        local within_stay_time = (not squad_def.stay_time) or (squad_def.stay_time and (warfare.get_time_ref():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time)))
         local is_not_scripted = squad_def.scripted or (not squad:get_script_target())
         local no_script_target = not squad:get_script_target()
 
@@ -707,7 +707,7 @@ function tasks_smart_control.evaluate_smarts_squads(task_id, tbl, smart, squad_d
                 and (
                 (
                         squad.stay_time
-                                and ((not squad_def.stay_time) or (squad_def.stay_time and (warfare.get_time():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time))))
+                                and ((not squad_def.stay_time) or (squad_def.stay_time and (warfare.get_time_ref():diffSec(squad.stay_time) <= tonumber(squad_def.stay_time))))
                                 and (squad_def.scripted or (not squad:get_script_target()))
                 ) or not squad:get_script_target()
         )
