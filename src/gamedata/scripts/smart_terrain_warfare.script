@@ -4118,7 +4118,7 @@ function get_neutral_info(smart)
 
 			if (other) then
 				local otherWarfare = translate_smart_name(other:name()) or other:name()
-				local other_level = game.translate_string(alife():level_name(game_graph():vertex(other.m_game_vertex_id):level_id()))
+				local other_level = game.translate_string(alife():level_name(other.level_id))
 
 				props = props .. "\\n" .. clr_gr .. otherWarfare .. "\\n"
 			end
@@ -4279,7 +4279,7 @@ function get_warfare_info(smart)
 
 			if (other) then
 				local otherWarfare = translate_smart_name(other:name()) or other:name()
-				local other_level = game.translate_string(alife():level_name(game_graph():vertex(other.m_game_vertex_id):level_id()))
+				local other_level = game.translate_string(alife():level_name(other.level_id))
 
 --				props = props .. "\\n" .. clr_gr .. otherWarfare .. " ("..other_level..")\\n"
 				props = props .. "\\n" .. clr_gr .. otherWarfare .. "\\n"
@@ -4290,7 +4290,7 @@ function get_warfare_info(smart)
 	if (invasions[smart.id]) then
 		local other = invasions[smart.id][1] and alife_object(invasions[smart.id][1])
 		local otherName = translate_smart_name(other:name())
-		local other_level = game.translate_string(alife():level_name(game_graph():vertex(other.m_game_vertex_id):level_id()))
+		local other_level = game.translate_string(alife():level_name(other.level_id))
 		otherName = otherName or smart:name()
 
 		--props = props .. clr_b .. " \\n \\n------------------------"
@@ -4739,7 +4739,7 @@ function calculate_target_density(smart)
 
 		if (other and other.props) then
 			local owner = other.owning_faction
-			local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
+			local other_level = other.level_id
 
 			if not (smart.global_position) then
 				global_position.from(smart)
@@ -4785,7 +4785,7 @@ end
 function find_random_patrol_target(smart, faction, sid)
 	printd(0, "find_random_patrol_target: "..(smart and smart:name() or "spawn"))
 
-	local smart_level = smart and game_graph():vertex(smart.m_game_vertex_id):level_id()
+	local smart_level = smart and smart.level_id
 	local smartCollection = {}
 	local targets = {}
 	local backup_targets = {}
@@ -4809,7 +4809,7 @@ function find_random_patrol_target(smart, faction, sid)
 		if (smart) then																								-- only check priorities if the squad has spawned
 			if (other) then
 				local other_faction = other.owning_faction or "none"
-				local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
+				local other_level = other.level_id
 
 				-- Duty random patrols target lairs only. Other factions operate normally
 				if (faction ~= "dolg") then
@@ -4889,7 +4889,7 @@ function find_random_patrol_target(smart, faction, sid)
 		elseif (other.owning_faction == "none")	then	-- if the squad has trouble spawning, spawn them on any vacant location in the south
 			priority = 0
 			if other then
-				local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
+				local other_level = other.level_id
 				if (other_level < 12) then	-- only south spawns
 					priority = 1
 				end
@@ -4990,20 +4990,8 @@ function find_targets(smart, faction_override, overflow_squad)
 			local priority = 0
 			local other_faction = other.owning_faction or "none"
 			local d2 = other.defense_power or 0
-			local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
+			local other_level = other.level_id
 			local other_resources = warfare_levels.level_information[other_level].resource_count
-			local cName = translate_smart_name(smart:name())
-			local pName = translate_smart_name(other:name())
-
-			if not (cName) then
-				cName = smart:name()
-			end
-
-			if not (pName) then
-				pName = other:name()
-			else
-				pName = pName.." ("..other:name()..")"
-			end
 
 			if (warfare.influence_levels[other.id] and faction == warfare.actor_faction) then
 				priority = priority + (warfare.influence_levels[other.id] * warfare_options.options.actor_influence_weight)
@@ -5206,7 +5194,7 @@ function find_offlevel_targets_for_overflow(smart, faction, search_all_levels)
 		if other and other.props then
 			local priority = 0
 			local other_faction = other.owning_faction or "none"
-			local other_level = game_graph():vertex(other.m_game_vertex_id):level_id()
+			local other_level = other.level_id
 
 			if (other.props.base > 0) then
 				if base_has_vacancy(other, faction) then
