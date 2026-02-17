@@ -345,6 +345,7 @@ function advance_warfare_step()
 
     warfare_utils.refresh_time_cache()
     refresh_pop_cache()
+    smart_terrain_warfare.build_smart_collections()
 
     local now = get_time()
 
@@ -585,6 +586,7 @@ function actor_on_update()
 
         initialize()
         warfare_levels.update()
+        smart_terrain_warfare.build_smart_collections()
         warfare_factions.update()
     end
 
