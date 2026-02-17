@@ -136,6 +136,21 @@
                                 <type name="Optional"/>
                             </typeDescriptor>
                         </plugin>
+                        <plugin name="KVMA">
+                            <!--<designer.metadata.do.not.edit> {"name":"KVMA"}-->
+                            <description>
+                                Restores the base mod_offline_combat_simulator_warfare.ltx, overwriting the GAMMA patch version.
+
+                                Use this if you do not have Dux's Innumerable Characters Kit enabled.
+                            </description>
+                            <files>
+                                <folder source="patches\KVMA"
+                                        destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
                     </plugins>
                 </group>
             </optionalFileGroups>
