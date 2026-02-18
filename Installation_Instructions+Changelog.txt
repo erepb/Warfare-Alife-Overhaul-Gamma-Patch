@@ -1,5 +1,5 @@
 Warfare Alife Overhaul
-version: 1.4.5
+version: 1.4.6
 by Vintar
 
 for Anomaly 1.5.3
@@ -32,6 +32,7 @@ This addon is compatible with existing Anomaly 1.5.1/1.5.2 Warfare save files, a
 
 Version Log:
 
+1.4.6 - When loading a save from before 1.4.3, defense and patrol spawn timers are now staggered randomly on load to prevent all bases from spawning at once. Mutant spawn timers saved to file are now clamped to the current option maximum on load, so reducing the max mutant respawn time setting takes effect immediately rather than waiting for existing timers to expire.
 1.4.5 - Added global spawn speed option allowing players to adjust overall spawn pacing. Squads no longer spawn during nighttime (night spawn pause). Spawn timers now advance gradually after time travel (sleep/wait). Randomized next spawn timers on game start for more organic initial pacing. Fixed mutant overspawn issue. Fixed crash on base capture when the sending base was lost. Fixed distance-based combat multiplier calculation. Fixed spawn timer regression. New preset added with preset cleanup. Fixed veteran spawn chances. Fixed tasks_smart_control squad evaluation.
 1.4.4 - Fixed fast travel optional path to scripts.
 1.4.3 - Added distance-based combat multipliers to offline combat, so squads further from each other fight less effectively. Spawn timers now properly advance when spawns occur during time travel (sleep, wait). Random patrols no longer target bases, preventing unintended territory expansion via patrols. Added option for new emergency resurgence logic. Spawn timers immediately recalculate when smart terrain count changes. Squad rank now gradually increases over time. Increased veteran spawn chance for smaller factions, which rarely own enough resources for meaningful veteran spawns. Fixed army spawn quality calculation. Simplified main base attack prevention logic. Fixed two crashes, including one in find_random_patrol_target for monster factions.
