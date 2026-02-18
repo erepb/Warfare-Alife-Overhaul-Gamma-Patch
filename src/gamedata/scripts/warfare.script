@@ -251,6 +251,15 @@ function load_state(m_data)
     smart_terrain_warfare.spawn_mutant_next_update = m_data.warfare and m_data.warfare.spawn_mutant_next_update or {}
     smart_terrain_warfare.process_mutant_timers = m_data.warfare and m_data.warfare.process_mutant_timers or {}
     smart_terrain_warfare.process_mutant_next_update = m_data.warfare and m_data.warfare.process_mutant_next_update or {}
+
+    -- Clamp saved mutant timer durations to current option max so setting reductions take effect immediately
+    local _max_mutant = warfare_options.options.monster_max_faction_respawn
+    for id, v in pairs(smart_terrain_warfare.spawn_mutant_next_update) do
+        if v > _max_mutant then smart_terrain_warfare.spawn_mutant_next_update[id] = _max_mutant end
+    end
+    for id, v in pairs(smart_terrain_warfare.process_mutant_next_update) do
+        if v > _max_mutant then smart_terrain_warfare.process_mutant_next_update[id] = _max_mutant end
+    end
     smart_terrain_warfare.loner_timer = m_data.warfare and m_data.warfare.loner_timer or {}
     smart_terrain_warfare.loners_next_update = m_data.warfare and m_data.warfare.loners_next_update or {}
     smart_terrain_warfare.ecolog_timer = m_data.warfare and m_data.warfare.ecolog_timer or {}
