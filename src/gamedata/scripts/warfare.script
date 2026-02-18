@@ -215,6 +215,7 @@ function save_state(m_data)
 end
 
 loaded_squads = false
+legacy_save_stagger = false  -- set true when loading a save that has no persisted defense/patrol timers
 
 function load_state(m_data)
     printd(0, "load_state")
@@ -235,6 +236,10 @@ function load_state(m_data)
 
     smart_terrain_warfare.invasions = m_data.warfare and m_data.warfare.invasions or {}
     warfare_faction_control.player_heli = m_data.warfare and m_data.warfare.player_heli
+
+    -- Detect legacy save (pre-1.4.5): defence_delay was introduced after 1.4.2.
+    -- Old saves have warfare data but no defence_delay key.
+    legacy_save_stagger = m_data.warfare ~= nil and m_data.warfare.defence_delay == nil
 
     smart_terrain_warfare.defense_timers = m_data.warfare and m_data.warfare.defense_timers or {}
     smart_terrain_warfare.defence_delay = m_data.warfare and m_data.warfare.defence_delay or {}
@@ -914,6 +919,35 @@ function fill_start_position_on_load()
     end
 end
 
+-- When loading a legacy save (pre-1.4.5, detected via missing defence_delay),
+-- stagger defense/patrol timers randomly so all bases don't fire their first spawn in the same wave.
+-- Mirrors the stagger applied during fill_start_position for new games.
+function stagger_legacy_spawn_timers()
+    if not legacy_save_stagger then return end
+    legacy_save_stagger = false
+
+    local speed_mult = warfare_options.options.spawn_speed_multiplier or 1
+
+    for name, smart in pairs(SIMBOARD.smarts_by_names) do
+        if not smart.props then
+            simulation_objects.get_props(smart)
+        end
+
+        if smart.props and smart.props.base > 0 then
+            local faction = smart_terrain_warfare.smart_owners[smart.id] or smart.owning_faction
+            if faction and faction ~= "none" then
+                local ff = warfare_options.options.factions[faction]
+                if ff then
+                    local def_interval = ff.min_faction_respawn * speed_mult
+                    local pat_interval = ff.min_patrol_time * speed_mult
+                    smart_terrain_warfare.defense_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(def_interval * 6)))
+                    smart_terrain_warfare.patrol_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(pat_interval * 6)))
+                end
+            end
+        end
+    end
+end
+
 function initialize_random_starting_locations()
     printd(0)
     local bases = {}
@@ -1148,6 +1182,7 @@ function on_game_start()
 
     local function on_game_load()
         ignore = sim_offline_combat.get_ignore_list()
+        stagger_legacy_spawn_timers()
         CreateTimeEvent(0, "reset_warfare_callbacks", 60, resetter)
     end
     RegisterScriptCallback("on_game_load", on_game_load)
