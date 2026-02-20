@@ -60,7 +60,7 @@ function get_defense_timer(smart)
     local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
     local next_defense = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] or 10
 
-    local delay = smart_terrain_warfare.defence_delay[smart.id] or 0
+    local delay = smart_terrain_warfare.defense_delay[smart.id] or 0
     local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer, (next_defense * 6) * (delay + 1))
     return format_time_remaining(remaining)
 end
@@ -256,7 +256,7 @@ function render_faction_smart_info(smart, faction)
         if reset_timer then
             ImGui.Text("  Timer Status: Pending Reset")
         elseif defense_timer_val and next_update_val then
-            local delay = smart_terrain_warfare.defence_delay[smart.id] or 0
+            local delay = smart_terrain_warfare.defense_delay[smart.id] or 0
             local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer_val, (next_update_val * 6) * (delay + 1))
 
             local time_status = format_time_remaining(remaining)

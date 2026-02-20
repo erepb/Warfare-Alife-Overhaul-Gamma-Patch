@@ -141,7 +141,7 @@ local reset_defense_timer = {}
 local previous_owner = {}										-- have to use this, since using smart.last_owner messes with the pda icons
 
 defense_timers = {}
-defence_delay = {} -- stores how many times base sent capture squads while having 0 avail. 0 value means no delay
+defense_delay = {} -- stores how many times base sent capture squads while having 0 avail. 0 value means no delay
 patrol_timers = {}
 spawn_mutant_timers = {}
 spawn_mutant_next_update = {}
@@ -736,10 +736,10 @@ function process_manual_capture(smart)
 					local squad = utils_obj.create_squad(section, closest_base:name())
 					sim_squad_warfare.set_target(squad, smart.id)
 					-- increase spawn timer of the sending base
-					if defence_delay[closest_base.id] == nil then
-						defence_delay[closest_base.id] = 0
+					if defense_delay[closest_base.id] == nil then
+						defense_delay[closest_base.id] = 0
 					end
-					defence_delay[closest_base.id] = defence_delay[closest_base.id] + 1
+					defense_delay[closest_base.id] = defense_delay[closest_base.id] + 1
 					-- get info of base NPC for message info
 					local squads = SIMBOARD.smarts[closest_base.id].squads
 					local base_squad
@@ -2522,17 +2522,17 @@ end
 
 function spawn_defense(smart)
     if warfare.is_spawn_blocked() then return end
-    if defence_delay[smart.id] == nil then
-        defence_delay[smart.id] = 0
+    if defense_delay[smart.id] == nil then
+        defense_delay[smart.id] = 0
     end
 	local current_respawn = get_current_def_respawn_interval(smart.owning_faction)
 	if not (defense_timers[smart.id]) or reset_defense_timer[smart.id] then
 		defense_timers[smart.id] = warfare.get_time()
 		reset_defense_timer[smart.id] = nil											-- timer reset only occurs when a base changes owners
 		return
-	elseif (warfare.get_time_ref():diffSec(defense_timers[smart.id]) > (current_respawn*6) * (defence_delay[smart.id] + 1)) then
-		defense_timers[smart.id] = warfare_utils.add_time(defense_timers[smart.id], (current_respawn*6) * (defence_delay[smart.id] + 1))
-		defence_delay[smart.id] = 0
+	elseif (warfare.get_time_ref():diffSec(defense_timers[smart.id]) > (current_respawn*6) * (defense_delay[smart.id] + 1)) then
+		defense_timers[smart.id] = warfare_utils.add_time(defense_timers[smart.id], (current_respawn*6) * (defense_delay[smart.id] + 1))
+		defense_delay[smart.id] = 0
 	else
 		--printf("not ready to spawn squad at " .. smart:name() .. " more time needed: " .. warfare.get_time_ref():diffSec(defense_timers[smart.id]) .. " out of " .. (current_respawn*6))
 		return
@@ -4301,10 +4301,10 @@ function get_warfare_info(smart)
 		local defense_timer = defense_timers[smart.id]
 		local next_defense = get_current_def_respawn_interval(smart.owning_faction)
 
-		if defence_delay[smart.id] == nil then
-            defence_delay[smart.id] = 0
+		if defense_delay[smart.id] == nil then
+            defense_delay[smart.id] = 0
 	    end
-	    local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer, (next_defense*60) * (defence_delay[smart.id] + 1))
+	    local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer, (next_defense * 6) * (defense_delay[smart.id] + 1))
 
 		-- xQd, show the timer in hours and minutes
 		--remaining = round_idp(remaining / 60)

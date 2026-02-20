@@ -163,7 +163,7 @@ function save_state(m_data)
     m_data.warfare.invasions = smart_terrain_warfare.invasions
     m_data.warfare.player_heli = warfare_faction_control.player_heli
     m_data.warfare.defense_timers = smart_terrain_warfare.defense_timers
-    m_data.warfare.defence_delay = smart_terrain_warfare.defence_delay
+    m_data.warfare.defense_delay = smart_terrain_warfare.defense_delay
     m_data.warfare.patrol_timers = smart_terrain_warfare.patrol_timers
 
     m_data.warfare.patrol_squads = smart_terrain_warfare.patrol_squads
@@ -237,12 +237,12 @@ function load_state(m_data)
     smart_terrain_warfare.invasions = m_data.warfare and m_data.warfare.invasions or {}
     warfare_faction_control.player_heli = m_data.warfare and m_data.warfare.player_heli
 
-    -- Detect legacy save (pre-1.4.5): defence_delay was introduced after 1.4.2.
-    -- Old saves have warfare data but no defence_delay key.
-    legacy_save_stagger = m_data.warfare ~= nil and m_data.warfare.defence_delay == nil
+    -- Detect legacy save (pre-1.4.5): defense_delay was introduced after 1.4.2.
+    -- Old saves have warfare data but no defense_delay key.
+    legacy_save_stagger = m_data.warfare ~= nil and m_data.warfare.defense_delay == nil
 
     smart_terrain_warfare.defense_timers = m_data.warfare and m_data.warfare.defense_timers or {}
-    smart_terrain_warfare.defence_delay = m_data.warfare and m_data.warfare.defence_delay or {}
+    smart_terrain_warfare.defense_delay = m_data.warfare and m_data.warfare.defense_delay or {}
     smart_terrain_warfare.patrol_timers = m_data.warfare and m_data.warfare.patrol_timers  or {}
     smart_terrain_warfare.patrol_squads = m_data.warfare and m_data.warfare.patrol_squads or {}
     smart_terrain_warfare.random_patrols = m_data.warfare and m_data.warfare.random_patrols or {}
@@ -918,7 +918,7 @@ function fill_start_position_on_load()
     end
 end
 
--- When loading a legacy save (pre-1.4.5, detected via missing defence_delay),
+-- When loading a legacy save (pre-1.4.5, detected via missing defense_delay),
 -- stagger defense/patrol timers randomly so all bases don't fire their first spawn in the same wave.
 -- Mirrors the stagger applied during fill_start_position for new games.
 function stagger_legacy_spawn_timers()
