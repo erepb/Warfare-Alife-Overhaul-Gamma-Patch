@@ -5165,7 +5165,7 @@ function find_targets(smart, faction_override, overflow_squad)
 
 		-- Monolith: lower priority for southern levels (non-actor non-warehouses case already skipped above)
 		if is_monolith and is_story_mode and (other_level < 12 or other_level > 31) then
-			priority = priority * 0.2
+			priority = priority * 0.05
 		end
 
 		-- ISG extremely interested in targeting labs
@@ -5308,7 +5308,7 @@ function find_offlevel_targets_for_overflow(smart, faction, search_all_levels)
 			-- Monolith will onlu be allowed to target southern levels if they are the player faction or there is literally no other option
 			if IsStoryMode() and (faction == "monolith") and ( (other_level < 12) or (other_level > 31) ) then
 				if (faction == warfare.actor_faction) or (other_level == 9) then
-					priority = priority * 0.2			-- lower priority for southern levels if actor faction or army warehouses
+					priority = priority * 0.05			-- lower priority for southern levels if actor faction or army warehouses
 				else
 					priority = 0.0001 * priority
 				end
