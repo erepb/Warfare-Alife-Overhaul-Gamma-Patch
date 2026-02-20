@@ -1240,8 +1240,8 @@ end
 
 function process_overflow_squad(smart, squad, bases)
 --[[
-	Deals with overflow and squatter squads by moving them to, in order of priority, on-level, linked-level, or anywhere in the Zone.
-	If nowhere exists for them to go to, they are deleted.
+	Deals with overflow and squatter squads by moving them to, in order of priority, on-level or linked-level bases.
+	If nowhere exists for them to go to within linked levels, they are deleted.
 
 	Inputs:
 		smart: smart terrain to move the squad off of
@@ -1266,7 +1266,7 @@ function process_overflow_squad(smart, squad, bases)
 		end
 		break
 	end
-	-- If no bases on-level, try to move them off-level
+	-- If no bases on-level, try to move them to linked levels
 	if (movedSquad == false) then
 		local targets = find_offlevel_targets_for_overflow(smart, faction)
 		if targets and (#targets > 0) then
@@ -1274,18 +1274,12 @@ function process_overflow_squad(smart, squad, bases)
 			movedSquad = true
 		end
 	end
-	-- If didn't find anything on linked levels, search entire Zone
-	if (movedSquad == false) then
-		local targets = find_offlevel_targets_for_overflow(smart, faction, true)  -- search whole Zone
-		if targets and (#targets > 0) then
-			pick_target(smart, squad, targets)
-		elseif not warfare_options.options.disable_smart_pop_cap then
-			-- Literally nowhere in the Zone for them to go, so delete them
-			sim_squad_warfare.remove_squad(squad)
-			squad:remove_squad()
-			if enable_debug then
-				printf("deleting %s overflow squad from %s", faction, smart:name())
-			end
+	-- If nothing found within linked levels, delete the squad (if pop cap enabled)
+	if (movedSquad == false) and (not warfare_options.options.disable_smart_pop_cap) then
+		sim_squad_warfare.remove_squad(squad)
+		squad:remove_squad()
+		if enable_debug then
+			printf("deleting %s overflow squad from %s", faction, smart:name())
 		end
 	end
 end
