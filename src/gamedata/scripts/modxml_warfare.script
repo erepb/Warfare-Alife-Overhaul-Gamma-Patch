@@ -51,7 +51,7 @@ function ui_options.init_opt_coder()
         { id = "min_patrol_rest_time", type = "track", val = 2, def = 60, min = 0, max = 5000, step = 10, hint = "alife_warfare_faction_min_patrol_rest_time" },
         { id = "max_patrol_rest_time", type = "track", val = 2, def = 240, min = 0, max = 5000, step = 10, hint = "alife_warfare_faction_max_patrol_rest_time" },
 
-        { id = "min_resurgence_wait_time", type = "track", val = 2, def = 10000, min = 0, max = 500000, step = 1000, hint = "alife_warfare_faction_min_resurgence_wait_time" },
+        { id = "min_resurgence_wait_time", type = "track", val = 2, def = 10000, min = 1000, max = 500000, step = 1000, hint = "alife_warfare_faction_min_resurgence_wait_time" },
         { id = "max_resurgence_wait_time", type = "track", val = 2, def = 50000, min = 0, max = 1000000, step = 1000, hint = "alife_warfare_faction_max_resurgence_wait_time" },
 
         { id = "random_squad_count", type = "check", val = 1, def = true, hint = "alife_warfare_faction_random_squad_count" },
