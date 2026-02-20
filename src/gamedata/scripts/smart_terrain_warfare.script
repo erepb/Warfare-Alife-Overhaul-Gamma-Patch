@@ -4937,11 +4937,6 @@ function find_random_patrol_target(smart, faction, sid)
 						priority = -1000
 					end
 
-					local p = get_level_priority_key(other.level_id)
-					if faction_options[p] then
-						priority = priority + faction_options[p]
-					end
-
 					-- ISG extremely interested in targeting labs
 					if (faction == "isg") and lab_entrance_smarts[other:name()] then
 						priority = 10 * priority
