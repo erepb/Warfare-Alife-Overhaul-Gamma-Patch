@@ -1099,6 +1099,12 @@ function process_resource_squads(smart)
 						sim_squad_warfare.set_target(squad, base_id)
 						break
 					end
+				else
+					-- No same-level bases found; try linked levels so squads do not get permanently stuck
+					local targets = find_offlevel_targets_for_overflow(smart, faction)
+					if targets and (#targets > 0) then
+						pick_target(smart, squad, targets, true)
+					end
 				end
 			end
 		end
@@ -1162,6 +1168,12 @@ function process_territory_squads(smart)
 						local base_id = hostile_bases[i][1]
 						sim_squad_warfare.set_target(squad, base_id)
 						break
+					end
+				else
+					-- No same-level bases found; try linked levels so squads do not get permanently stuck
+					local targets = find_offlevel_targets_for_overflow(smart, faction)
+					if targets and (#targets > 0) then
+						pick_target(smart, squad, targets, true)
 					end
 				end
 			end
