@@ -29,53 +29,31 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Bump version and generate changelog
+      - name: Read version and check tag
         id: version
         run: |
-          CURRENT=$(cat version)
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          VERSION=$(cat version)
+          if [ -n "${{ github.event.inputs.version_tag }}" ]; then
+            VERSION="${VERSION}-${{ github.event.inputs.version_tag }}"
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+
+          if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
+            echo "Tag ${VERSION} already exists. Skipping release."
+            echo "SKIP=true" >> $GITHUB_OUTPUT
+          else
+            echo "New version: ${VERSION}"
+            echo "SKIP=false" >> $GITHUB_OUTPUT
+          fi
 
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "Last tag: ${LAST_TAG}"
           if [ -z "$LAST_TAG" ]; then
             COMMITS=$(git log --pretty=format:"%s")
           else
             COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s")
           fi
 
-          BUMP="none"
-          while IFS= read -r msg; do
-            if echo "$msg" | grep -qE "^[a-z]+(\(.+\))?!:|BREAKING CHANGE"; then
-              BUMP="major"
-              break
-            elif echo "$msg" | grep -qE "^feat(\(.+\))?:"; then
-              [ "$BUMP" != "major" ] && BUMP="minor"
-            elif echo "$msg" | grep -qE "^(fix|perf|refactor)(\(.+\))?:"; then
-              [ "$BUMP" = "none" ] && BUMP="patch"
-            fi
-          done <<< "$COMMITS"
-
-          if [ "$BUMP" = "none" ]; then
-            echo "No releasable commits since last tag. Skipping."
-            exit 0
-          fi
-
-          if [ "$BUMP" = "major" ]; then
-            MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
-          elif [ "$BUMP" = "minor" ]; then
-            MINOR=$((MINOR + 1)); PATCH=0
-          else
-            PATCH=$((PATCH + 1))
-          fi
-
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          if [ -n "${{ github.event.inputs.version_tag }}" ]; then
-            NEW_VERSION="${NEW_VERSION}-${{ github.event.inputs.version_tag }}"
-          fi
-          echo "$NEW_VERSION" > version
-          echo "VERSION=${NEW_VERSION}" >> $GITHUB_OUTPUT
-          echo "Bumped: $CURRENT → $NEW_VERSION ($BUMP)"
-
-          # Generate changelog grouped by conventional commit type
           BREAKING="" FEATURES="" FIXES="" PERF="" REFACTOR="" OTHER=""
           while IFS= read -r msg; do
             DESC=$(echo "$msg" | sed -E 's/^[a-z]+(\([^)]+\))?!?: //')
@@ -129,18 +107,16 @@ jobs:
             fi
           } > changelog.md
 
-      - name: Commit version bump and push tag
-        if: github.event_name != 'pull_request'
+      - name: Create and push tag
+        if: github.event_name != 'pull_request' && steps.version.outputs.SKIP == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add version
-          git commit -m "chore: bump version to ${{ steps.version.outputs.VERSION }} [skip ci]"
           git tag ${{ steps.version.outputs.VERSION }}
-          git push
           git push origin ${{ steps.version.outputs.VERSION }}
 
       - name: Prepare build structure
+        if: steps.version.outputs.SKIP == 'false'
         run: |
           mkdir -p build_temp
           cp -r fomod build_temp/
@@ -153,15 +129,17 @@ jobs:
           ls -la build_temp/
 
       - name: Create 7z archive
+        if: steps.version.outputs.SKIP == 'false'
         uses: edgarrc/action-7z@v1
         with:
           args: 7z a -t7z -mx=9 warfare-alife-overhaul-${{ steps.version.outputs.VERSION }}.7z ./build_temp/* -r
 
       - name: Clean up
+        if: steps.version.outputs.SKIP == 'false'
         run: rm -rf fomod
 
       - name: Create GitHub Release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.version.outputs.SKIP == 'false'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
