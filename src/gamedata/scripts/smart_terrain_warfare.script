@@ -519,8 +519,8 @@ function smart_terrain_on_update(smart)
 			-- Pure resource point updates
 			elseif (smart.props.resource > 0) then
 				process_resource_squads(smart)
-			--elseif (smart.props.territory > 0 and smart.props.lair < 1) then
-				--process_territory_squads(smart)  -- Pure territories also send squads back at night
+			elseif (smart.props.territory > 0 and smart.props.lair < 1) then
+				process_territory_squads(smart)  -- Pure territories also send squads back at night
 			end
 
 			process_loners(smart)
