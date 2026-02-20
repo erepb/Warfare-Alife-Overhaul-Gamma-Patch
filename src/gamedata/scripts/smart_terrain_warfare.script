@@ -4486,11 +4486,6 @@ function find_random_patrol_target(smart, faction, sid)
                     priority = priority + (other.props.territory * faction_options.territory_priority)
                 end
 
-                local p = get_level_priority_key(other.level_id)
-                if faction_options[p] then
-                    priority = priority + faction_options[p]
-                end
-
                 -- Check hostile locations
                 if (other_faction ~= "none") and (is_factions_enemies(faction, other_faction)) and (sid) then
                     local squad = sid and alife_object(sid)

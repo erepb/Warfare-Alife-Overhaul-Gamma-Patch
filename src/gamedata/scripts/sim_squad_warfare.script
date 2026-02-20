@@ -787,53 +787,6 @@ function get_warfare_info(squad)
     return props
 end
 
---[[
-	targets[#targets+1] = { dist/priority, other.id }
-	targets = warfare.sort_priority_table(targets)
-]]
-
-function find_random_patrol_target(squad)
-    printd(0, squad:name())
-
-    local faction = squad:get_squad_community()
-    local lvl = game_graph():vertex(squad.m_game_vertex_id):level_id()
-    local current_info = warfare_levels.level_information[lvl]
-
-    local priority_targets = {}
-
-    for _, smart_id in pairs(current_info.smarts) do
-        local smart = smart_id and alife_object(smart_id)
-
-        if (smart) then
-            local priority = smart.props and smart.props[faction]
-            local p1 = global_position.from(squad)
-            local p2 = global_position.from(smart)
-            local dist = math.pow(warfare.distance_to_xz_sqr(p1, p2), 2)
-
-            priority_targets[#priority_targets + 1] = { (dist / priority), smart.id }
-        end
-    end
-
-    for i, _ in pairs(level_targets.level_links[lvl]) do
-        local other_info = warfare_levels.level_information[lvl]
-
-        for _, smart_id in pairs(other_info.smarts) do
-            local smart = smart_id and alife_object(smart_id)
-
-            if (smart) then
-                local priority = smart.props and smart.props[faction]
-                local p1 = global_position.from(squad)
-                local p2 = global_position.from(smart)
-                local d = 1 + 1 / (math.min(1, math.pow(warfare.distance_to_xz_sqr(p1, p2), 2)))
-
-                priority_targets[#priority_targets + 1] = { (dist / priority), smart.id }
-            end
-        end
-    end
-
-    printd(1, squad:name())
-end
-
 local BASE_WEIGHT = 3
 local RESOURCE_WEIGHT = 1
 
