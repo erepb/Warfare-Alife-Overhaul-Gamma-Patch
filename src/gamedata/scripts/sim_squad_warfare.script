@@ -931,6 +931,11 @@ function set_target(squad, target)
         return
     end
 
+    -- Don't pull squads away while they are engaged in offline combat
+    if sim_offline_combat and sim_offline_combat.opponents[squad.id] then
+        return
+    end
+
     if (warfare.ignore[squad:section_name()]) then
         return
     end

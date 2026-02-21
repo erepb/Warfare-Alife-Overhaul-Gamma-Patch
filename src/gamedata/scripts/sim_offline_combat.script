@@ -63,6 +63,7 @@ ocs_power = {}
 opponents = {}
 squads_by_level = {}
 local faction_power = {}
+local combat_saved_targets = {} -- [squad_id] = current_target_id saved at combat start, restored on fight end
 
 local c_cnt, c_tbl = 0, {} -- enemies collector
 local tbl_smart = {}
@@ -576,6 +577,19 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
         return
     end
 
+    -- On first engagement, save both targets and redirect the attacker toward the victim's target
+    -- so they converge instead of drifting to separate terrains. The victim's own path is
+    -- unchanged. The set_target guard in sim_squad_warfare then blocks further reassignment.
+    -- Saved targets are restored for the winner in remove_squad_info once opponents[] is cleared.
+    if _G.WARFARE and opponents[id_1] ~= id_2 then
+        combat_saved_targets[id_1] = squad_1.current_target_id
+        combat_saved_targets[id_2] = squad_2.current_target_id
+        local converge_target = squad_2.current_target_id
+        if converge_target then
+            sim_squad_warfare.set_target(squad_1, converge_target)
+        end
+    end
+
     -- Make both squads targeting themselves
     opponents[id_1] = id_2
     --squad_1.assigned_target_id = id_2
@@ -711,6 +725,20 @@ function remove_squad_info(squad_2, id_2, id_1, lid)
     if squads_by_level[lid] then
         squads_by_level[lid][id_2] = nil
     end
+
+    -- Restore winner's saved target so they resume normal movement.
+    -- opponents[] is already cleared above so the set_target guard will pass.
+    if id_1 then
+        local saved = combat_saved_targets[id_1]
+        if saved then
+            local winner = alife():object(id_1)
+            if winner and not winner.online then
+                sim_squad_warfare.set_target(winner, saved)
+            end
+            combat_saved_targets[id_1] = nil
+        end
+    end
+    combat_saved_targets[id_2] = nil
 end
 
 
