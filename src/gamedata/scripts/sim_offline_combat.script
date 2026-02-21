@@ -622,7 +622,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
         end
 
         -- Kill the victim NPC if the damage dealt exceeds its rank
-    elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2, squad2) then
+    elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2, squad_2) then
 
         if enable_debug then
             --printf("~ OCS | Squad [%s] lost NPC [%s] | Remaining power: %s | Moment: %s sec", squad_2:name(), se_victim:name(), ocs_power[id_2], math_ceil(time_global()/1000))
