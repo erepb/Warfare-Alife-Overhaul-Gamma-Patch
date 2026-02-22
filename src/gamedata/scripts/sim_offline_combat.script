@@ -148,6 +148,11 @@ local function smart_terrain_on_update(smart)
                             end
                             return
                         end
+                        local sq_t = sim:object(id_t)
+                        local _dist_sqr = sq_t and distance_to_xz_sqr(squad_1.position, sq_t.position)
+                        if sq_t and _dist_sqr and _dist_sqr > 2500 then
+                            disengage_combat(id_1, squad_1, id_t, sq_t)
+                        end
                     end
 
                     -- Otherwise, scan for squads in the same map
@@ -215,6 +220,11 @@ local function squad_on_update(squad_1)
                         --printf("------------------------------------------------------------------------")
                     end
                     return
+                end
+                local sq_t = sim:object(id_t)
+                local _dist_sqr = sq_t and distance_to_xz_sqr(squad_1.position, sq_t.position)
+                if sq_t and _dist_sqr and _dist_sqr > 2500 then
+                    disengage_combat(id_1, squad_1, id_t, sq_t)
                 end
             end
 
@@ -705,6 +715,30 @@ function set_battle_outcome(victory, id_1, id_2, squad_1, squad_2, community_1, 
         end
 
     end
+end
+
+function disengage_combat(id_1, squad_1, id_t, sq_t)
+    -- Clear fight lock (opponents[] cleared so set_target guard passes)
+    opponents[id_1] = nil
+    opponents[id_t] = nil
+    -- Restore attacker's saved target
+    local saved_1 = combat_saved_targets[id_1]
+    if saved_1 then
+        if squad_1 and not squad_1.online then
+            sim_squad_warfare.set_target(squad_1, saved_1)
+        end
+        combat_saved_targets[id_1] = nil
+    end
+    -- Restore victim's saved target
+    local saved_t = combat_saved_targets[id_t]
+    if saved_t then
+        if sq_t and not sq_t.online then
+            sim_squad_warfare.set_target(sq_t, saved_t)
+        end
+        combat_saved_targets[id_t] = nil
+    end
+    -- Allow fresh START log if they meet again
+    battle_starts[btag] = nil
 end
 
 function remove_squad_info(squad_2, id_2, id_1, lid)
