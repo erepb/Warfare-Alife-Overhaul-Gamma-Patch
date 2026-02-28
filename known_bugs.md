@@ -3,7 +3,6 @@ Current issues:
 |---------------------------------------------------------|----------|
 | quest spawn affected by warfare squad size              | https://discord.com/channels/912320241713958912/1172337845025919006/1476581503793107127     |
 | zombie spawn are enormous                               | https://discord.com/channels/912320241713958912/1172337845025919006/1476506759035093052     |
-| taking quest from beard fails living legend             | https://discord.com/channels/912320241713958912/1172337845025919006/1475640840880656567     |
 | mutants don't spawn in player's level due to global cap | https://discord.com/channels/912320241713958912/1172337845025919006/1475620815591444605     |
 
 Past issues:
@@ -13,3 +12,4 @@ Past issues:
 | some quests have no fail condlist and are not cancelled when task giver dies | https://discord.com/channels/912320241713958912/1172337845025919006/1477173130316480594     | forced task_giver_alive condlist to all quests checks |
 | generated/spawned traders/mechanics/medics give dynamic tasks through taskboard despite unable to do so through dialog | https://discord.com/channels/912320241713958912/1172337845025919006/1477171086629015644     | tasks for warfare traders are now generated with is_sim false flag |
 | dead city barman is actually barman_mlr but "barman" still getting spawned and unable to turn in tasks (tasks related to bug above) | https://discord.com/channels/912320241713958912/1172337845025919006/1477151268303667220     | added aslan to barman exceptions list|
+| taking quest from beard fails living legend             | https://discord.com/channels/912320241713958912/1172337845025919006/1475640840880656567     | guess he was registered with warfare and went away and died, so added him to ignored squads|
