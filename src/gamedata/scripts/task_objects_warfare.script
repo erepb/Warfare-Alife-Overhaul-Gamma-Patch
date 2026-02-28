@@ -1,9 +1,10 @@
-if not IsWarfare() then
-    return
-end
-
 local old_task_objects_cgeneraltask_check_task = task_objects.CGeneralTask.check_task
 function task_objects.CGeneralTask.check_task(self, tm)
+    if not IsWarfare() then
+        old_task_objects_cgeneraltask_check_task(self, tm)
+        return
+    end
+
     local previous_last_check_task = self.last_check_task
     old_task_objects_cgeneraltask_check_task(self, tm)
     local last_check_task = self.last_check_task
