@@ -7,6 +7,7 @@ Current issues:
 | mutants don't spawn in player's level due to global cap | https://discord.com/channels/912320241713958912/1172337845025919006/1475620815591444605     |
 | generated/spawned traders/mechanics/medics give dynamic tasks through taskboard despite unable to do so through dialog | https://discord.com/channels/912320241713958912/1172337845025919006/1477171086629015644     |
 | dead city barman is actually barman_mlr but "barman" still getting spawned and unable to turn in tasks (tasks related to bug above) | https://discord.com/channels/912320241713958912/1172337845025919006/1477151268303667220     |
+| some quests have no fail condlist and are not cancelled when task giver dies | https://discord.com/channels/912320241713958912/1172337845025919006/1477173130316480594     |
 
 Past issues:
 | Description                                             | Link | Comments |
