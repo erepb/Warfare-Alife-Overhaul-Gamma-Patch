@@ -246,7 +246,11 @@ function CheckUniqueSquad:is_npc_mechanic(squad_name)
     if not self.yar_str then
         self.yar_str = "yar"
     end
-    return self.sfind(squad_name, self.mechanic) or self.sfind(squad_name, self.tech_str) or self.sfind(squad_name, self.mechanic_str) or self.sfind(squad_name, self.mechan_str) or self.sfind(squad_name, self.yar_str)
+    return self.sfind(squad_name, self.mechanic)
+            or self.sfind(squad_name, self.tech_str)
+            or self.sfind(squad_name, self.mechanic_str)
+            or self.sfind(squad_name, self.mechan_str)
+            or self.sfind(squad_name, self.yar_str)
 end
 
 function CheckUniqueSquad:is_npc_barman(squad_name)
@@ -262,7 +266,15 @@ function CheckUniqueSquad:is_npc_barman(squad_name)
     if not self.povar_str then
         self.povar_str = "povar"
     end
-    return self.sfind(squad_name, self.barman) or self.sfind(squad_name, self.barman_str) or self.sfind(squad_name, self.barmen_str) or self.sfind(squad_name, self.barkeep_str) or self.sfind(squad_name, self.povar_str)
+    if not self.aslan_str then
+        self.aslan_str = "aslan" --cit_killers_merc_stalker_aslan_squad
+    end
+    return self.sfind(squad_name, self.barman)
+            or self.sfind(squad_name, self.barman_str)
+            or self.sfind(squad_name, self.barmen_str)
+            or self.sfind(squad_name, self.barkeep_str)
+            or self.sfind(squad_name, self.povar_str)
+            or self.sfind(squad_name, self.aslan_str)
 end
 
 function CheckUniqueSquad:is_npc_trader(squad_name)
@@ -284,7 +296,13 @@ function CheckUniqueSquad:is_npc_trader(squad_name)
     if not self.petrenko_str then
         self.petrenko_str = "petrenko"
     end
-    return self.sfind(squad_name, self.trader) or self.sfind(squad_name, self.trader_str) or self.sfind(squad_name, self.trade_str) or self.sfind(squad_name, self.sakharov_str) or self.sfind(squad_name, self.ashot_str) or self.sfind(squad_name, self.scientist_str) or self.sfind(squad_name, self.petrenko_str)
+    return self.sfind(squad_name, self.trader)
+            or self.sfind(squad_name, self.trader_str)
+            or self.sfind(squad_name, self.trade_str)
+            or self.sfind(squad_name, self.sakharov_str)
+            or self.sfind(squad_name, self.ashot_str)
+            or self.sfind(squad_name, self.scientist_str)
+            or self.sfind(squad_name, self.petrenko_str)
 end
 
 function CheckUniqueSquad:is_npc_medic(squad_name)
@@ -297,5 +315,8 @@ function CheckUniqueSquad:is_npc_medic(squad_name)
     if not self.medik_str then
         self.medik_str = "medik"
     end
-    return self.sfind(squad_name, self.medic) or self.sfind(squad_name, self.medic_str) or self.sfind(squad_name, self.doctor_str) or self.sfind(squad_name, self.medik_str)
+    return self.sfind(squad_name, self.medic)
+            or self.sfind(squad_name, self.medic_str)
+            or self.sfind(squad_name, self.doctor_str)
+            or self.sfind(squad_name, self.medik_str)
 end
