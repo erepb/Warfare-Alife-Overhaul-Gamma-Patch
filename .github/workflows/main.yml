@@ -39,11 +39,11 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
           if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
-            echo "Tag ${VERSION} already exists. Skipping release."
-            echo "SKIP=true" >> $GITHUB_OUTPUT
+            echo "Tag ${VERSION} already exists. Will overwrite release."
+            echo "TAG_EXISTS=true" >> $GITHUB_OUTPUT
           else
             echo "New version: ${VERSION}"
-            echo "SKIP=false" >> $GITHUB_OUTPUT
+            echo "TAG_EXISTS=false" >> $GITHUB_OUTPUT
           fi
 
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
@@ -107,8 +107,16 @@ jobs:
             fi
           } > changelog.md
 
+      - name: Delete existing tag and release
+        if: github.event_name != 'pull_request' && steps.version.outputs.TAG_EXISTS == 'true'
+        run: |
+          gh release delete ${{ steps.version.outputs.VERSION }} --yes || true
+          git push --delete origin ${{ steps.version.outputs.VERSION }} || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create and push tag
-        if: github.event_name != 'pull_request' && steps.version.outputs.SKIP == 'false'
+        if: github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -116,7 +124,6 @@ jobs:
           git push origin ${{ steps.version.outputs.VERSION }}
 
       - name: Prepare build structure
-        if: steps.version.outputs.SKIP == 'false'
         run: |
           mkdir -p build_temp
           cp -r fomod build_temp/
@@ -129,17 +136,15 @@ jobs:
           ls -la build_temp/
 
       - name: Create 7z archive
-        if: steps.version.outputs.SKIP == 'false'
         uses: edgarrc/action-7z@v1
         with:
           args: 7z a -t7z -mx=9 warfare-alife-overhaul-${{ steps.version.outputs.VERSION }}.7z ./build_temp/* -r
 
       - name: Clean up
-        if: steps.version.outputs.SKIP == 'false'
         run: rm -rf fomod
 
       - name: Create GitHub Release
-        if: github.event_name != 'pull_request' && steps.version.outputs.SKIP == 'false'
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
