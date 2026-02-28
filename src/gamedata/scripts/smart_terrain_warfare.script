@@ -5439,16 +5439,7 @@ function check_unique_npcs(smart)
 		faction = "merc"
 	end
 
-	local trader = faction .. "_sim_squad_trader"
-	local mechanic = faction .. "_sim_squad_mechanic"
-	local medic = faction .. "_sim_squad_medic"
-	local barman = faction .. "_sim_squad_barman"
-
-	local location = nil
-	local spawnTrader = false
-	local spawnMechanic = false
-	local spawnMedic = false
-	local spawnBarman = false
+	local uniqueSquad = warfare_utils.CheckUniqueSquad(faction)
 
 	if (uniques[sm_name]) then
 		local tbl = uniques[sm_name]
@@ -5470,20 +5461,20 @@ function check_unique_npcs(smart)
 				local sq_name = s:name()
 
 				-- make sure there are no vanilla traders or mechanics
-				if sfind(sq_name, mechanic) or sfind(sq_name, "tech") or sfind(sq_name, "mechanic") or sfind(sq_name, "mechan") or sfind(sq_name, "yar") then
+				if uniqueSquad:is_npc_mechanic(sq_name) then
 					mechanicCount = mechanicCount + 1
-				elseif sfind(sq_name, barman) or sfind(sq_name, "barman") or sfind(sq_name, "barmen") or sfind(sq_name, "barkeep") or sfind(sq_name, "barkeeper") or sfind(sq_name, "povar") then
+				elseif uniqueSquad:is_npc_barman(sq_name) then
 					barmanCount = barmanCount + 1
-				elseif sfind(sq_name, trader) or sfind(sq_name, "trader") or sfind(sq_name, "trade") or sfind(sq_name, "sakharov") or sfind(sq_name, "ashot") or sfind(sq_name, "scientist") or sfind(sq_name, "petrenko") then
+				elseif uniqueSquad:is_npc_trader(sq_name) then
 					traderCount = traderCount + 1
-				elseif sfind(sq_name, medic) or sfind(sq_name, "medic") or sfind(sq_name, "doctor") or sfind(sq_name, "medik") then
+				elseif uniqueSquad:is_npc_medic(sq_name) then
 					medicCount = medicCount + 1
 				end
 			end
 		end
 
 		while traderCount < maxTraders do
-			local squad = utils_obj.create_squad(trader, sm_name)
+			local squad = utils_obj.create_squad(uniqueSquad:trader_squad(), sm_name)
 
 			sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
 			printf("SPAWNED TRADER AT "..sm_name)
@@ -5491,7 +5482,7 @@ function check_unique_npcs(smart)
 		end
 
 		while mechanicCount < maxMechanics do
-			local squad = utils_obj.create_squad(mechanic, sm_name)
+			local squad = utils_obj.create_squad(uniqueSquad:mechanic_squad(), sm_name)
 
 			sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
 			printf("SPAWNED MECHANIC AT "..sm_name)
@@ -5499,7 +5490,7 @@ function check_unique_npcs(smart)
 		end
 
 		while medicCount < maxMedics do
-			local squad = utils_obj.create_squad(medic, sm_name)
+			local squad = utils_obj.create_squad(uniqueSquad:medic_squad(), sm_name)
 
 			sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
 			printf("SPAWNED MEDIC AT "..sm_name)
@@ -5507,7 +5498,7 @@ function check_unique_npcs(smart)
 		end
 
 		while barmanCount < maxBarmen do
-			local squad = utils_obj.create_squad(barman, sm_name)
+			local squad = utils_obj.create_squad(uniqueSquad:barman_squad(), sm_name)
 
 			sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
 			printf("SPAWNED BARMAN AT "..sm_name)
