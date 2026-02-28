@@ -124,4 +124,122 @@
         <text>Задание %s отменено из-за непредвиденной гибели %s.</text>
     </string>
 
+    <!--
+        Template is: st_warfare_<faction>_created_
+        where <faction> is one of:
+        "stalker","bandit","csky","dolg","freedom","killer","army","ecolog","monolith","renegade","greh","isg"
+        with these arguments:
+        $smart - name of the smart terrain where the squad was created
+        $role - translated name of assigned role (Barman, Trader, Medic, Mechanic)
+        -->
+    <string id="st_warfare_stalker_created_1">
+        <text>Сталкеры, всем привет, я ваш новый $role. Жду вас на $smart.</text>
+    </string>
+    <string id="st_warfare_stalker_created_2">
+        <text>Мужики, привет. Раз желающих нет, то я занял роль $role на $smart</text>
+    </string>
+    <string id="st_warfare_stalker_created_3">
+        <text>Сидорович отправил меня сюда как $role, закупайтесь у меня на $smart.</text>
+    </string>
+    <string id="st_warfare_bandit_created_1">
+        <text>Эй, братва, новый $role на $smart. Подъезжайте, цены — огонь!</text>
+    </string>
+    <string id="st_warfare_bandit_created_2">
+        <text>Слышь, пацаны, я теперь $role на $smart. Заходите, не стесняйтесь.</text>
+    </string>
+    <string id="st_warfare_bandit_created_3">
+        <text>Привет, браток! Твой новый $role обосновался на $smart. Заглядывай по делам.</text>
+    </string>
+    <string id="st_warfare_csky_created_1">
+        <text>Внимание, учёные! Новый $role на $smart. Приходите за припасами.</text>
+    </string>
+    <string id="st_warfare_csky_created_2">
+        <text>Коллеги, я занял должность $role на $smart. Жду вас для снабжения.</text>
+    </string>
+    <string id="st_warfare_csky_created_3">
+        <text>Лебедев назначил меня $role на $smart. Обращайтесь по необходимости.</text>
+    </string>
+    <string id="st_warfare_dolg_created_1">
+        <text>Внимание всем бойцам! Новый $role на $smart. Явка обязательна.</text>
+    </string>
+    <string id="st_warfare_dolg_created_2">
+        <text>Товарищи, приказом Генерала я назначен $role на $smart. Жду по уставу.</text>
+    </string>
+    <string id="st_warfare_dolg_created_3">
+        <text>Бойцы Долга, ваш $role развернул позицию на $smart. Подходите за снаряжением.</text>
+    </string>
+    <string id="st_warfare_freedom_created_1">
+        <text>Йо, анархисты! Ваш $role на $smart открыт для бизнеса. Налетай!</text>
+    </string>
+    <string id="st_warfare_freedom_created_2">
+        <text>Братья по свободе, я теперь $role на $smart. Заходите, всегда рад своим.</text>
+    </string>
+    <string id="st_warfare_freedom_created_3">
+        <text>Че, народ! Теперь я $role на $smart. Приходите, обсудим дела за пивком.</text>
+    </string>
+    <string id="st_warfare_killer_created_1">
+        <text>Контракт выполнен. Я теперь $role на $smart. Только по делу.</text>
+    </string>
+    <string id="st_warfare_killer_created_2">
+        <text>Новый $role на $smart. Если нужны услуги — знаешь расценки.</text>
+    </string>
+    <string id="st_warfare_killer_created_3">
+        <text>Занял позицию $role на $smart. Без лишних слов, только бизнес.</text>
+    </string>
+    <string id="st_warfare_army_created_1">
+        <text>Внимание! По приказу командования развёрнут $role на $smart. Явка строго обязательна.</text>
+    </string>
+    <string id="st_warfare_army_created_2">
+        <text>Солдаты, я назначен $role на $smart. Докладывать по регламенту.</text>
+    </string>
+    <string id="st_warfare_army_created_3">
+        <text>Личному составу: $role на $smart к вашим услугам. Соблюдайте дисциплину.</text>
+    </string>
+    <string id="st_warfare_ecolog_created_1">
+        <text>Коллеги-учёные, я назначен $role на $smart. Жду для обмена данными.</text>
+    </string>
+    <string id="st_warfare_ecolog_created_2">
+        <text>Внимание, исследовательская группа! Ваш $role развернул базу на $smart. Заходите за отчётами.</text>
+    </string>
+    <string id="st_warfare_ecolog_created_3">
+        <text>Сахаров утвердил меня как $role на $smart. Обращайтесь по научным вопросам.</text>
+    </string>
+    <string id="st_warfare_monolith_created_1">
+        <text>Монолит повелевает! Я назначен $role на $smart. Приходите за благословением.</text>
+    </string>
+    <string id="st_warfare_monolith_created_2">
+        <text>Братья по вере, Монолит направил меня как $role на $smart. Служим!</text>
+    </string>
+    <string id="st_warfare_monolith_created_3">
+        <text>Монолит велик! Ваш $role ждёт верных на $smart. Слава Монолиту!</text>
+    </string>
+    <string id="st_warfare_renegade_created_1">
+        <text>Эй, отбросы! Ваш $role на $smart. Кто с бабками — заходи.</text>
+    </string>
+    <string id="st_warfare_renegade_created_2">
+        <text>Слышь, падла, я теперь $role на $smart. Цены — для своих.</text>
+    </string>
+    <string id="st_warfare_renegade_created_3">
+        <text>Че надо? Я $role на $smart. Не базарь много, делай дело.</text>
+    </string>
+    <string id="st_warfare_greh_created_1">
+        <text>Грешники... Зона приняла меня как $role на $smart. Искупление близко...</text>
+    </string>
+    <string id="st_warfare_greh_created_2">
+        <text>Слепые видят истину... Я теперь $role на $smart. Зона покажет путь...</text>
+    </string>
+    <string id="st_warfare_greh_created_3">
+        <text>Зона милосердна... $role на $smart ждёт кающихся. Придите за прощением...</text>
+    </string>
+    <string id="st_warfare_isg_created_1">
+        <text>Оперативник на связи. $role на $smart. Только деловое общение.</text>
+    </string>
+    <string id="st_warfare_isg_created_2">
+        <text>Позывной подтверждён. Я $role на $smart. Конфиденциально.</text>
+    </string>
+    <string id="st_warfare_isg_created_3">
+        <text>Секретный протокол. $role развёрнут на $smart. Без лишних вопросов.</text>
+    </string>
+
+
 </string_table>

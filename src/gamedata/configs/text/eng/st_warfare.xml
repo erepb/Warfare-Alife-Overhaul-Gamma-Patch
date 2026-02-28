@@ -125,4 +125,123 @@
         <text>%s is cancelled due to %s's unfortunate death.</text>
     </string>
 
+    <!--
+        Template is: st_warfare_<faction>_created_
+        where <faction> is one of:
+        "stalker","bandit","csky","dolg","freedom","killer","army","ecolog","monolith","renegade","greh","isg"
+        with these arguments:
+        $smart - name of the smart terrain where the squad was created
+        $role - translated name of assigned role (Barman, Trader, Medic, Mechanic)
+        -->
+    <string id="st_warfare_stalker_created_1">
+        <text>Guys, nice to meet you, I'm our new $role. Come meet me at $smart.</text>
+    </string>
+    <string id="st_warfare_stalker_created_2">
+        <text>Hey, stalkers, I'm your new $role, here at $smart.</text>
+    </string>
+    <string id="st_warfare_stalker_created_3">
+        <text>Sidorovich sent me here as $role, providing my services at $smart.</text>
+    </string>
+    <string id="st_warfare_bandit_created_1">
+        <text>Listen up, scumbags - I'm your new $role at $smart. Don't even think about ripping me off.</text>
+    </string>
+    <string id="st_warfare_bandit_created_2">
+        <text>Yo, bandits! Got ourselves a new $role here at $smart. My prices ain't negotiable, got it?</text>
+    </string>
+    <string id="st_warfare_bandit_created_3">
+        <text>New $role in town at $smart. You need my services, you pay up front - no exceptions.</text>
+    </string>
+    <string id="st_warfare_csky_created_1">
+        <text>Attention all Clear Sky operatives - new $role assigned to $smart. Report for briefing.</text>
+    </string>
+    <string id="st_warfare_csky_created_2">
+        <text>Clear Sky command has deployed a $role to $smart. All personnel, take note.</text>
+    </string>
+    <string id="st_warfare_csky_created_3">
+        <text>This is your new $role at $smart. Here to support Clear Sky operations in the area.</text>
+    </string>
+    <string id="st_warfare_dolg_created_1">
+        <text>Attention, Duty members - new $role deployed to $smart. Maintain order and discipline.</text>
+    </string>
+    <string id="st_warfare_dolg_created_2">
+        <text>Duty command has assigned a $role to $smart. All soldiers, acknowledge and proceed.</text>
+    </string>
+    <string id="st_warfare_dolg_created_3">
+        <text>New $role reporting for duty at $smart. Here to serve Duty and maintain Zone security.</text>
+    </string>
+    <string id="st_warfare_freedom_created_1">
+        <text>Hey brothers, new $role here at $smart. Freedom doesn't restrict trade - come by anytime!</text>
+    </string>
+    <string id="st_warfare_freedom_created_2">
+        <text>What's up, stalkers? Your new $role at $smart. No rules, no restrictions - just good business.</text>
+    </string>
+    <string id="st_warfare_freedom_created_3">
+        <text>Freedom's got a new $role at $smart. Drop by whenever you want, we're always open.</text>
+    </string>
+    <string id="st_warfare_killer_created_1">
+        <text>New $role operational at $smart. Services available to paying clients only.</text>
+    </string>
+    <string id="st_warfare_killer_created_2">
+        <text>Mercenary $role now stationed at $smart. Cash transactions only - no exceptions.</text>
+    </string>
+    <string id="st_warfare_killer_created_3">
+        <text>Professional $role at $smart. You get what you pay for - nothing more, nothing less.</text>
+    </string>
+    <string id="st_warfare_army_created_1">
+        <text>Military command has assigned a $role to $smart. All personnel, follow protocol.</text>
+    </string>
+    <string id="st_warfare_army_created_2">
+        <text>Attention - new $role deployed to $smart by military command. Unauthorized access forbidden.</text>
+    </string>
+    <string id="st_warfare_army_created_3">
+        <text>This is your assigned $role at $smart. Military personnel only - civilians stay clear.</text>
+    </string>
+    <string id="st_warfare_ecolog_created_1">
+        <text>Ecologists have assigned a $role to $smart for research support. All personnel are welcome for scientific cooperation.</text>
+    </string>
+    <string id="st_warfare_ecolog_created_2">
+        <text>Scientific expedition has deployed a $role to $smart. Services available for Zone research purposes.</text>
+    </string>
+    <string id="st_warfare_ecolog_created_3">
+        <text>New $role reporting at $smart. Here to provide scientific support and maintain research operations.</text>
+    </string>
+    <string id="st_warfare_monolith_created_1">
+        <text>The Monolith has blessed us with a $role at $smart. Rejoice, brothers!</text>
+    </string>
+    <string id="st_warfare_monolith_created_2">
+        <text>Praise the Monolith! A new $role serves at $smart in the name of the Great Crystal.</text>
+    </string>
+    <string id="st_warfare_monolith_created_3">
+        <text>The Monolith's will be done - new $role now serves at $smart. Glory to the Monolith!</text>
+    </string>
+    <string id="st_warfare_renegade_created_1">
+        <text>Got a new $role at $smart. Don't like it? Too bad - we run this place now.</text>
+    </string>
+    <string id="st_warfare_renegade_created_2">
+        <text>Listen up, maggots - new $role here at $smart. You want something, you better show respect.</text>
+    </string>
+    <string id="st_warfare_renegade_created_3">
+        <text>New $role operating at $smart. Cross us and you'll regret it - we don't play nice.</text>
+    </string>
+    <string id="st_warfare_greh_created_1">
+        <text>The Zone has granted us a $role at $smart. We see with eyes beyond sight - redemption awaits in darkness!</text>
+    </string>
+    <string id="st_warfare_greh_created_2">
+        <text>Brothers in darkness, the Zone provides a $role at $smart. We who are blind shall lead the seeing to salvation!</text>
+    </string>
+    <string id="st_warfare_greh_created_3">
+        <text>The divine Zone speaks through us - new $role serves at $smart. Embrace the darkness, embrace redemption!</text>
+    </string>
+    <string id="st_warfare_isg_created_1">
+        <text>UN operative assigned to $smart as $role. Clearance level required for further information.</text>
+    </string>
+    <string id="st_warfare_isg_created_2">
+        <text>ISG has deployed a $role to $smart. This is classified information - maintain operational security.</text>
+    </string>
+    <string id="st_warfare_isg_created_3">
+        <text>New $role now operational at $smart under UN mandate. Details are need-to-know only.</text>
+    </string>
+
+
+
 </string_table>
