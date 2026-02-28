@@ -41,7 +41,7 @@ end
 
 -- Get action status
 function get_action_status(squad)
-    return squad.current_action .. " (" .. get_action_state(squad) .. ")"
+    return (squad.current_action or "no action") .. " (" .. get_action_state(squad) .. ")"
 end
 
 function get_squad_smart(squad)
