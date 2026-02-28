@@ -41,12 +41,14 @@ jobs:
           if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
             echo "Tag ${VERSION} already exists. Will overwrite release."
             echo "TAG_EXISTS=true" >> $GITHUB_OUTPUT
+            # Get the tag before the current one
+            LAST_TAG=$(git tag --sort=-version:refname | grep -v "^${VERSION}$" | head -n 1)
           else
             echo "New version: ${VERSION}"
             echo "TAG_EXISTS=false" >> $GITHUB_OUTPUT
+            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           fi
 
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           echo "Last tag: ${LAST_TAG}"
           if [ -z "$LAST_TAG" ]; then
             COMMITS=$(git log --pretty=format:"%s")
