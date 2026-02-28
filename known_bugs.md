@@ -5,6 +5,7 @@ Current issues:
 | zombie spawn are enormous                               | https://discord.com/channels/912320241713958912/1172337845025919006/1476506759035093052     |
 | taking quest from beard fails living legend             | https://discord.com/channels/912320241713958912/1172337845025919006/1475640840880656567     |
 | mutants don't spawn in player's level due to global cap | https://discord.com/channels/912320241713958912/1172337845025919006/1475620815591444605     |
+| generated/spawned traders/mechanics/medics  doesn't take back the quest | https://discord.com/channels/912320241713958912/1172337845025919006/1476861670394691634     |
 
 Past issues:
 | Description                                             | Link | Comments |
