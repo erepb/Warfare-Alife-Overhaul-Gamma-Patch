@@ -112,6 +112,7 @@ jobs:
         run: |
           gh release delete ${{ steps.version.outputs.VERSION }} --yes || true
           git push --delete origin ${{ steps.version.outputs.VERSION }} || true
+          git tag -d ${{ steps.version.outputs.VERSION }} || true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
