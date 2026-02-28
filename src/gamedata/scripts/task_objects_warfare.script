@@ -1,0 +1,18 @@
+if not IsWarfare() then
+    return
+end
+
+local old_task_objects_cgeneraltask_check_task = task_objects.CGeneralTask.check_task
+function task_objects.CGeneralTask.check_task(self, tm)
+    local previous_last_check_task = self.last_check_task
+    old_task_objects_cgeneraltask_check_task(self, tm)
+    local last_check_task = self.last_check_task
+    if previous_last_check_task ~= last_check_task or self.storyline then
+        return
+    end
+
+    if not xr_conditions.task_giver_alive(nil, nil, {self.id}) then
+        self.last_check_task = "fail"
+        return
+    end
+end
