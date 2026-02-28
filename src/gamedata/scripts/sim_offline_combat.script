@@ -813,8 +813,8 @@ function calculate_squad_power(squad, community, raw)
         end
     end
 
-    power = math_ceil(power)
     power = power * calculate_squad_distance_combat_multiplier(squad)
+    power = math_ceil(power)
 
     --printf("-pwr [%s] = %s", squad:name(), power)
     if (not raw) then
