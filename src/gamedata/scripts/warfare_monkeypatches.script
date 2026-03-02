@@ -922,8 +922,20 @@ function task_objects.CGeneralTask.check_task(self, tm)
         return
     end
 
-    if not xr_conditions.task_giver_alive(nil, nil, {self.id}) then
-        self.last_check_task = "fail"
+    tm = task_manager.get_task_manager()
+    local tsk = tm.task_info[self.id]
+    if not (tsk) then
         return
     end
+
+    local se_obj = tsk.task_giver_id and alife_object(tsk.task_giver_id)
+    if (not se_obj or not se_obj.alive ) then
+        return
+    end
+
+    if xr_conditions.task_giver_alive(nil, nil, {self.id}) then
+        return
+    end
+
+    self.last_check_task = "fail"
 end

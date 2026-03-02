@@ -99,7 +99,7 @@ function update_ctrl_text(ctrl, path, value)
     elseif type == "meters" then
         ctrl:SetText(string.format("%sm", value))
     elseif type == "time_d" or type == "time_dh" or type == "time_dhm" or type == "time_dhms" then
-        local v = tonumber(value) or 0
+        local v = (tonumber(value) or 0) * 6
         local all = { { math.floor(v / 86400), "d" }, { math.floor((v % 86400) / 3600), "h" }, { math.floor((v % 3600) / 60), "m" }, { math.floor(v % 60), "s" } }
         local max_i = type == "time_d" and 1 or type == "time_dh" and 2 or type == "time_dhm" and 3 or 4
         local parts = {}
