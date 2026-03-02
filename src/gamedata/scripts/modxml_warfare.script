@@ -1,3 +1,117 @@
+local ui_options_UIOptions_callback_track = ui_options.UIOptions.Callback_Track
+function ui_options.UIOptions.Callback_Track(self, ctrl, path, opt, v, value)
+    ui_options_UIOptions_callback_track(self, ctrl, path, opt, v, value)
+    init_settings_map()
+    update_ctrl_text(ctrl, ui_options.cc(path, opt), value)
+end
+
+local ui_options_UIOptions_register_track = ui_options.UIOptions.Register_Track
+function ui_options.UIOptions.Register_Track(self, xml, handler, path, opt, v, flags)
+    local h = ui_options_UIOptions_register_track(self, xml, handler, path, opt, v, flags)
+    init_settings_map()
+    local id = ui_options.cc(path, opt)
+    local track = self._Track[id]
+    local ctrl = track.txt
+    update_ctrl_text(ctrl, id, track.value)
+    return h
+end
+
+local ui_options_UIOptions_on_cancel = ui_options.UIOptions.On_Cancel
+function ui_options.UIOptions.On_Cancel(self)
+    settings_map = {}
+    ui_options_UIOptions_on_cancel(self)
+end
+
+--- map of setting_id and type
+local settings_map = {}
+function init_settings_map()
+    if #settings_map > 0 then
+        return
+    end
+
+    -- General settings
+    local general = "alife/warfare/general/"
+    settings_map[general .. "random_stalker_chance"] = "percent"
+    settings_map[general .. "random_monster_chance"] = "percent"
+    settings_map[general .. "purge_zone_percentage"] = "percent"
+    settings_map[general .. "monster_rare_chance_south"] = "percent"
+    settings_map[general .. "monster_rare_chance_north"] = "percent"
+    settings_map[general .. "monster_rare_chance_lab"] = "percent"
+    settings_map[general .. "offline_combat_distance"] = "meters"
+    settings_map[general .. "distance_combat_max_distance"] = "meters"
+    settings_map[general .. "monster_min_faction_respawn"] = "time_dhms"
+    settings_map[general .. "monster_max_faction_respawn"] = "time_dhms"
+    settings_map[general .. "auto_capture_max_distance"] = "meters"
+    settings_map[general .. "auto_capture_wait_time"] = "time_dhm"
+    settings_map[general .. "fog_of_war_distance"] = "meters"
+
+    -- Per-faction settings
+    local factions = { "stalker", "bandit", "csky", "army", "freedom", "dolg", "ecolog", "killer", "monolith", "renegade", "greh", "isg", "zombied" }
+    local faction_percent = {
+        "expansion_aggression",
+        "night_activity_chance",
+        "patrol_hunt_chance",
+        "resurgence_chance",
+    }
+    local faction_time_dh = {
+    }
+    local faction_time_dhm = {
+        "min_invasion_depart_time",
+        "max_invasion_depart_time",
+    }
+    local faction_time_dhms = {
+        "min_faction_respawn",
+        "max_faction_respawn",
+        "min_patrol_time",
+        "max_patrol_time",
+        "min_patrol_rest_time",
+        "max_patrol_rest_time",
+        "min_resurgence_wait_time",
+        "max_resurgence_wait_time",
+        "min_random_patrol_time",
+        "max_random_patrol_time",
+    }
+
+    for _, faction in ipairs(factions) do
+        local base = "alife/warfare/" .. faction .. "/"
+        for _, id in ipairs(faction_percent) do
+            settings_map[base .. id] = "percent"
+        end
+        for _, id in ipairs(faction_time_dhm) do
+            settings_map[base .. id] = "time_dh"
+        end
+        for _, id in ipairs(faction_time_dhm) do
+            settings_map[base .. id] = "time_dhm"
+        end
+        for _, id in ipairs(faction_time_dhms) do
+            settings_map[base .. id] = "time_dhms"
+        end
+    end
+end
+
+function update_ctrl_text(ctrl, path, value)
+    if not (settings_map[path]) then
+        return
+    end
+    local type = settings_map[path]
+    if type == "percent" then
+        ctrl:SetText(string.format("%s%%", value))
+    elseif type == "meters" then
+        ctrl:SetText(string.format("%sm", value))
+    elseif type == "time_d" or type == "time_dh" or type == "time_dhm" or type == "time_dhms" then
+        local v = tonumber(value) or 0
+        local all = { { math.floor(v / 86400), "d" }, { math.floor((v % 86400) / 3600), "h" }, { math.floor((v % 3600) / 60), "m" }, { math.floor(v % 60), "s" } }
+        local max_i = type == "time_d" and 1 or type == "time_dh" and 2 or type == "time_dhm" and 3 or 4
+        local parts = {}
+        for i = 1, max_i do
+            if all[i][1] ~= 0 or #parts > 0 then
+                parts[#parts + 1] = all[i][1] .. all[i][2]
+            end
+        end
+        ctrl:SetText(#parts > 0 and table.concat(parts, " ") or "0" .. all[max_i][2])
+    end
+end
+
 local old_ui_options_init_opt_coder = ui_options.init_opt_coder
 function ui_options.init_opt_coder()
     local alife_options_index = 5
@@ -137,7 +251,7 @@ function ui_options.init_opt_coder()
             { id = "random_monster_chance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
             { id = "auto_capture", type = "check", val = 1, def = false },
             { id = "auto_capture_max_distance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 5 },
-            { id = "auto_capture_wait_time", type = "track", val = 2, def = 1, min = 0, max = 10, step = 0.5 },
+            { id = "auto_capture_wait_time", type = "track", val = 2, def = 1, min = 0, max = 10, step = 1 },
             { id = "fog_of_war", type = "check", val = 1, def = false },
             { id = "fog_of_war_distance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
             { id = "hide_unfriendly_squads", type = "check", val = 1, def = true },
