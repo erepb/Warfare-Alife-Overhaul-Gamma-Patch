@@ -13,10 +13,6 @@ on:
         description: 'Version tag'
         required: false
         default: ''
-      description:
-        description: 'Release description'
-        required: false
-        default: 'Automatic release'
 
 jobs:
   release:
@@ -39,87 +35,24 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
 
           if git rev-parse "refs/tags/${VERSION}" >/dev/null 2>&1; then
-            echo "Tag ${VERSION} already exists. Will overwrite release."
-            echo "TAG_EXISTS=true" >> $GITHUB_OUTPUT
-            # Get the tag before the current one
-            LAST_TAG=$(git tag --sort=-version:refname | grep -v "^${VERSION}$" | head -n 1)
+            echo "Tag ${VERSION} already exists. Skipping release."
+            echo "SKIP=true" >> $GITHUB_OUTPUT
           else
             echo "New version: ${VERSION}"
-            echo "TAG_EXISTS=false" >> $GITHUB_OUTPUT
-            LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            echo "SKIP=false" >> $GITHUB_OUTPUT
           fi
 
-          echo "Last tag: ${LAST_TAG}"
-          if [ -z "$LAST_TAG" ]; then
-            COMMITS=$(git log --pretty=format:"%s")
-          else
-            COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s")
-          fi
-
-          BREAKING="" FEATURES="" FIXES="" PERF="" REFACTOR="" OTHER=""
-          while IFS= read -r msg; do
-            DESC=$(echo "$msg" | sed -E 's/^[a-z]+(\([^)]+\))?!?: //')
-            if echo "$msg" | grep -qE "^[a-z]+(\(.+\))?!:|BREAKING CHANGE"; then
-              BREAKING="${BREAKING}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^feat(\(.+\))?:"; then
-              FEATURES="${FEATURES}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^fix(\(.+\))?:"; then
-              FIXES="${FIXES}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^perf(\(.+\))?:"; then
-              PERF="${PERF}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^refactor(\(.+\))?:"; then
-              REFACTOR="${REFACTOR}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^(chore|ci|build|docs|style|test)(\(.+\))?:"; then
-              : # skip maintenance commits
-            else
-              OTHER="${OTHER}- ${msg}\n"
-            fi
-          done <<< "$COMMITS"
-
-          {
-            DESCRIPTION="${{ github.event.inputs.description }}"
-            if [ -n "$DESCRIPTION" ] && [ "$DESCRIPTION" != "Automatic release" ]; then
-              echo "$DESCRIPTION"
-              echo ""
-            fi
-            echo "## What's Changed"
-            if [ -n "$BREAKING" ]; then
-              echo ""; echo "### Breaking Changes"
-              printf "%b" "$BREAKING" | grep -v '^$'
-            fi
-            if [ -n "$FEATURES" ]; then
-              echo ""; echo "### New Features"
-              printf "%b" "$FEATURES" | grep -v '^$'
-            fi
-            if [ -n "$FIXES" ]; then
-              echo ""; echo "### Bug Fixes"
-              printf "%b" "$FIXES" | grep -v '^$'
-            fi
-            if [ -n "$PERF" ]; then
-              echo ""; echo "### Performance"
-              printf "%b" "$PERF" | grep -v '^$'
-            fi
-            if [ -n "$REFACTOR" ]; then
-              echo ""; echo "### Refactoring"
-              printf "%b" "$REFACTOR" | grep -v '^$'
-            fi
-            if [ -n "$OTHER" ]; then
-              echo ""; echo "### Other Changes"
-              printf "%b" "$OTHER" | grep -v '^$'
-            fi
-          } > changelog.md
-
-      - name: Delete existing tag and release
-        if: github.event_name != 'pull_request' && steps.version.outputs.TAG_EXISTS == 'true'
+      - name: Read release notes
+        if: steps.version.outputs.SKIP == 'false'
         run: |
-          gh release delete ${{ steps.version.outputs.VERSION }} --yes || true
-          git push --delete origin ${{ steps.version.outputs.VERSION }} || true
-          git tag -d ${{ steps.version.outputs.VERSION }} || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if [ ! -f RELEASE_NOTES.md ]; then
+            echo "ERROR: RELEASE_NOTES.md not found. Create it before releasing." >&2
+            exit 1
+          fi
+          cp RELEASE_NOTES.md changelog.md
 
       - name: Create and push tag
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.version.outputs.SKIP == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -127,6 +60,7 @@ jobs:
           git push origin ${{ steps.version.outputs.VERSION }}
 
       - name: Prepare build structure
+        if: steps.version.outputs.SKIP == 'false'
         run: |
           mkdir -p build_temp
           cp -r fomod build_temp/
@@ -139,15 +73,17 @@ jobs:
           ls -la build_temp/
 
       - name: Create 7z archive
+        if: steps.version.outputs.SKIP == 'false'
         uses: edgarrc/action-7z@v1
         with:
           args: 7z a -t7z -mx=9 warfare-alife-overhaul-${{ steps.version.outputs.VERSION }}.7z ./build_temp/* -r
 
       - name: Clean up
+        if: steps.version.outputs.SKIP == 'false'
         run: rm -rf fomod
 
       - name: Create GitHub Release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.version.outputs.SKIP == 'false'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
