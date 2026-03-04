@@ -13,10 +13,6 @@ on:
         description: 'Version tag'
         required: false
         default: ''
-      description:
-        description: 'Release description'
-        required: false
-        default: 'Automatic release'
 
 jobs:
   release:
@@ -46,66 +42,14 @@ jobs:
             echo "SKIP=false" >> $GITHUB_OUTPUT
           fi
 
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          echo "Last tag: ${LAST_TAG}"
-          if [ -z "$LAST_TAG" ]; then
-            COMMITS=$(git log --pretty=format:"%s")
-          else
-            COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s")
+      - name: Read release notes
+        if: steps.version.outputs.SKIP == 'false'
+        run: |
+          if [ ! -f RELEASE_NOTES.md ]; then
+            echo "ERROR: RELEASE_NOTES.md not found. Create it before releasing." >&2
+            exit 1
           fi
-
-          BREAKING="" FEATURES="" FIXES="" PERF="" REFACTOR="" OTHER=""
-          while IFS= read -r msg; do
-            DESC=$(echo "$msg" | sed -E 's/^[a-z]+(\([^)]+\))?!?: //')
-            if echo "$msg" | grep -qE "^[a-z]+(\(.+\))?!:|BREAKING CHANGE"; then
-              BREAKING="${BREAKING}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^feat(\(.+\))?:"; then
-              FEATURES="${FEATURES}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^fix(\(.+\))?:"; then
-              FIXES="${FIXES}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^perf(\(.+\))?:"; then
-              PERF="${PERF}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^refactor(\(.+\))?:"; then
-              REFACTOR="${REFACTOR}- ${DESC}\n"
-            elif echo "$msg" | grep -qE "^(chore|ci|build|docs|style|test)(\(.+\))?:"; then
-              : # skip maintenance commits
-            else
-              OTHER="${OTHER}- ${msg}\n"
-            fi
-          done <<< "$COMMITS"
-
-          {
-            DESCRIPTION="${{ github.event.inputs.description }}"
-            if [ -n "$DESCRIPTION" ] && [ "$DESCRIPTION" != "Automatic release" ]; then
-              echo "$DESCRIPTION"
-              echo ""
-            fi
-            echo "## What's Changed"
-            if [ -n "$BREAKING" ]; then
-              echo ""; echo "### Breaking Changes"
-              printf "%b" "$BREAKING" | grep -v '^$'
-            fi
-            if [ -n "$FEATURES" ]; then
-              echo ""; echo "### New Features"
-              printf "%b" "$FEATURES" | grep -v '^$'
-            fi
-            if [ -n "$FIXES" ]; then
-              echo ""; echo "### Bug Fixes"
-              printf "%b" "$FIXES" | grep -v '^$'
-            fi
-            if [ -n "$PERF" ]; then
-              echo ""; echo "### Performance"
-              printf "%b" "$PERF" | grep -v '^$'
-            fi
-            if [ -n "$REFACTOR" ]; then
-              echo ""; echo "### Refactoring"
-              printf "%b" "$REFACTOR" | grep -v '^$'
-            fi
-            if [ -n "$OTHER" ]; then
-              echo ""; echo "### Other Changes"
-              printf "%b" "$OTHER" | grep -v '^$'
-            fi
-          } > changelog.md
+          cp RELEASE_NOTES.md changelog.md
 
       - name: Create and push tag
         if: github.event_name != 'pull_request' && steps.version.outputs.SKIP == 'false'
