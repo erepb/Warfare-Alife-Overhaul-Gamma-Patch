@@ -1,16 +1,16 @@
 --[[
 
 =======================================================================================
-	Original creator: Werejew
-	Edit log: 
-	2020/05/25 - Vintar
-	2020/11/07 - Vintar - reads in resurgence chance
-	2021/02/13 - Vintar - reads in overflow override, loner fog of war
-	2021/02/16 - Vintar - added min smart targets per base
-	2021/11/09 - Vintar - added goodwill on kill options, added back "hide all smarts" option, added 'old autocapture' option
-	2022/02/26 - Vintar - added main base attack deprioritization option
+    Original creator: Werejew
+    Edit log: 
+    2020/05/25 - Vintar
+    2020/11/07 - Vintar - reads in resurgence chance
+    2021/02/13 - Vintar - reads in overflow override, loner fog of war
+    2021/02/16 - Vintar - added min smart targets per base
+    2021/11/09 - Vintar - added goodwill on kill options, added back "hide all smarts" option, added 'old autocapture' option
+    2022/02/26 - Vintar - added main base attack deprioritization option
 
-	This file reads the main menu options for warfare so that script functions can access them.
+    This file reads the main menu options for warfare so that script functions can access them.
 =======================================================================================
 
 --]]
@@ -25,14 +25,14 @@ function update_settings()
     options.factions = {}
     options.factions.monster = {}
 
-    --	options.simulate_offline_combat_at_smarts 		= ui_options.get("alife/warfare/general/simulate_offline_combat_at_smarts")
-    --	options.disable_offline_combat					= ui_options.get("alife/warfare/general/disable_offline_combat")
-    --	options.offline_combat_distance					= ui_options.get("alife/warfare/general/offline_combat_distance")
+    --    options.simulate_offline_combat_at_smarts         = ui_options.get("alife/warfare/general/simulate_offline_combat_at_smarts")
+    --    options.disable_offline_combat                    = ui_options.get("alife/warfare/general/disable_offline_combat")
+    --    options.offline_combat_distance                    = ui_options.get("alife/warfare/general/offline_combat_distance")
     options.random_starting_locations = ui_options.get("alife/warfare/general/random_starting_locations")
     options.random_starting_character = ui_options.get("alife/warfare/general/random_starting_character")
     options.random_stalker_chance = ui_options.get("alife/warfare/general/random_stalker_chance")
     options.random_monster_chance = ui_options.get("alife/warfare/general/random_monster_chance")
-    --	options.disable_linked_levels 					= ui_options.get("alife/warfare/general/disable_linked_levels")
+    --    options.disable_linked_levels                     = ui_options.get("alife/warfare/general/disable_linked_levels")
     options.hide_smarts = ui_options.get("alife/warfare/general/hide_smarts")
     options.hide_lair_smarts = ui_options.get("alife/warfare/general/hide_lair_smarts")
     options.fog_of_war = ui_options.get("alife/warfare/general/fog_of_war")
@@ -53,9 +53,9 @@ function update_settings()
     options.hide_unfriendly_squads = ui_options.get("alife/warfare/general/hide_unfriendly_squads")
     options.enable_mutant_offline_combat = ui_options.get("alife/warfare/general/enable_mutant_offline_combat")
 
-    --	options.randomize_squad_count					= ui_options.get("alife/warfare/general/randomize_squad_count")
-    --	options.min_squad_count							= ui_options.get("alife/warfare/general/min_squad_count")
-    --	options.max_squad_count							= ui_options.get("alife/warfare/general/max_squad_count")
+    --    options.randomize_squad_count                    = ui_options.get("alife/warfare/general/randomize_squad_count")
+    --    options.min_squad_count                            = ui_options.get("alife/warfare/general/min_squad_count")
+    --    options.max_squad_count                            = ui_options.get("alife/warfare/general/max_squad_count")
 
     options.enemy_resource_boost = ui_options.get("alife/warfare/general/enemy_resource_boost")
     options.enemy_base_boost = ui_options.get("alife/warfare/general/enemy_base_boost")
@@ -85,29 +85,29 @@ function update_settings()
     options.prevent_mainbase_attacks = ui_options.get("alife/warfare/general/prevent_mainbase_attacks")
 
     options.all_out_war = ui_options.get("alife/warfare/general/all_out_war")
-    --	options.factions_keep_last_base 				= ui_options.get("alife/warfare/general/factions_keep_last_base")
+    --    options.factions_keep_last_base                 = ui_options.get("alife/warfare/general/factions_keep_last_base")
     options.novice_squad_price = ui_options.get("alife/warfare/general/novice_squad_price")
     options.advanced_squad_price = ui_options.get("alife/warfare/general/advanced_squad_price")
     options.veteran_squad_price = ui_options.get("alife/warfare/general/veteran_squad_price")
     options.heli_price = ui_options.get("alife/warfare/general/heli_price")
     options.zombies_act_as_faction = ui_options.get("alife/warfare/general/zombies_act_as_faction")
-    --	options.zombie_mode                           	= ui_options.get("alife/warfare/general/zombie_mode")
-    --	options.enable_offline_news 					= ui_options.get("alife/warfare/general/enable_offline_news")
-    --	options.offline_news_display_percentage			= ui_options.get("alife/warfare/general/offline_news_display_percentage")
+    --    options.zombie_mode                               = ui_options.get("alife/warfare/general/zombie_mode")
+    --    options.enable_offline_news                     = ui_options.get("alife/warfare/general/enable_offline_news")
+    --    options.offline_news_display_percentage            = ui_options.get("alife/warfare/general/offline_news_display_percentage")
 
     options.distance_based_combat_multiplier = ui_options.get("alife/warfare/general/distance_based_combat_multiplier")
-	options.distance_combat_min_multiplier   = ui_options.get("alife/warfare/general/distance_combat_min_multiplier")
-	options.distance_combat_max_multiplier_base = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_base")
-	options.distance_combat_max_multiplier_resource = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_resource")
-	options.distance_combat_max_multiplier_territory = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_territory")
-	options.distance_combat_max_multiplier_lair = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_lair")
-	options.distance_combat_max_distance     = ui_options.get("alife/warfare/general/distance_combat_max_distance")
-	options.use_new_resurgence_logic			= ui_options.get("alife/warfare/general/use_new_resurgence_logic")
-	local spawn_speed_ui = ui_options.get("alife/warfare/general/spawn_speed_multiplier") or 1
-	options.spawn_speed_multiplier			= 1 / spawn_speed_ui
-	options.enable_gradual_time_step		= ui_options.get("alife/warfare/general/enable_gradual_time_step")
+    options.distance_combat_min_multiplier   = ui_options.get("alife/warfare/general/distance_combat_min_multiplier")
+    options.distance_combat_max_multiplier_base = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_base")
+    options.distance_combat_max_multiplier_resource = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_resource")
+    options.distance_combat_max_multiplier_territory = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_territory")
+    options.distance_combat_max_multiplier_lair = ui_options.get("alife/warfare/general/distance_combat_max_multiplier_lair")
+    options.distance_combat_max_distance     = ui_options.get("alife/warfare/general/distance_combat_max_distance")
+    options.use_new_resurgence_logic            = ui_options.get("alife/warfare/general/use_new_resurgence_logic")
+    local spawn_speed_ui = ui_options.get("alife/warfare/general/spawn_speed_multiplier") or 1
+    options.spawn_speed_multiplier            = 1 / spawn_speed_ui
+    options.enable_gradual_time_step        = ui_options.get("alife/warfare/general/enable_gradual_time_step")
 
-	options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count
+    options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count
     options.azazel_respawn_as_companions = ui_options.get("alife/warfare/azazel/respawn_as_companions")
     options.azazel_respawn_as_actor_faction = ui_options.get("alife/warfare/azazel/respawn_as_actor_faction")
     options.azazel_respawn_as_allies = ui_options.get("alife/warfare/azazel/respawn_as_allies")
@@ -159,11 +159,11 @@ function update_settings()
         options.factions[faction].min_invasion_depart_time = ui_options.get("alife/warfare/" .. faction .. "/min_invasion_depart_time")
         options.factions[faction].max_invasion_depart_time = ui_options.get("alife/warfare/" .. faction .. "/max_invasion_depart_time")
 
-        --options.factions[faction].invasion_departure_chance		= ui_options.get("alife/warfare/"..faction.."/invasion_departure_chance")
+        --options.factions[faction].invasion_departure_chance        = ui_options.get("alife/warfare/"..faction.."/invasion_departure_chance")
         options.factions[faction].min_invasion_size = ui_options.get("alife/warfare/" .. faction .. "/min_invasion_size")
         options.factions[faction].max_invasion_size = ui_options.get("alife/warfare/" .. faction .. "/max_invasion_size")
-        --options.factions[faction].min_active_squads 			    = ui_options.get("alife/warfare/"..faction.."/min_active_squads")
-        --options.factions[faction].max_active_squads 			    = ui_options.get("alife/warfare/"..faction.."/max_active_squads")
+        --options.factions[faction].min_active_squads                 = ui_options.get("alife/warfare/"..faction.."/min_active_squads")
+        --options.factions[faction].max_active_squads                 = ui_options.get("alife/warfare/"..faction.."/max_active_squads")
 
         options.factions[faction].min_patrol_squads = ui_options.get("alife/warfare/" .. faction .. "/min_patrol_squads")
         options.factions[faction].max_patrol_squads = ui_options.get("alife/warfare/" .. faction .. "/max_patrol_squads")
@@ -179,7 +179,7 @@ function update_settings()
         options.factions[faction].min_resurgence_wait_time = ui_options.get("alife/warfare/" .. faction .. "/min_resurgence_wait_time")
         options.factions[faction].max_resurgence_wait_time = ui_options.get("alife/warfare/" .. faction .. "/max_resurgence_wait_time")
         options.factions[faction].resurgence_chance = ui_options.get("alife/warfare/" .. faction .. "/resurgence_chance")
-        --		options.factions[faction].max_active_squads_per_target 	    = ui_options.get("alife/warfare/"..faction.."/max_active_squads_per_target")
+        --        options.factions[faction].max_active_squads_per_target         = ui_options.get("alife/warfare/"..faction.."/max_active_squads_per_target")
         options.factions[faction].min_smart_targets_per_base = ui_options.get("alife/warfare/" .. faction .. "/min_smart_targets_per_base")
         options.factions[faction].max_smart_targets_per_base = ui_options.get("alife/warfare/" .. faction .. "/max_smart_targets_per_base")
         options.factions[faction].base_priority = ui_options.get("alife/warfare/" .. faction .. "/base_priority")

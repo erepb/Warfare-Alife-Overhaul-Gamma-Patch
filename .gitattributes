@@ -1,0 +1,5 @@
+* text=auto
+
+*.script eol=crlf
+*.ltx    eol=crlf
+*.xml    eol=crlf

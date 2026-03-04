@@ -1,14 +1,14 @@
 --[[
 
 =======================================================================================
-	Original creator: Werejew
-	Edit log:
-	2020/11/07 - Vintar - Resurgence chance added to resurgence calculation
-	2021/02/19 - Vintar - stronger resurgence attempts, now uses fetch_smart_distance(), debug messages
-	2021/03/27 - Vintar - loners exempt from random patrol targeting. Random patrols no longer spawn too close to actor.
-	2021/11/22 - Vintar - slight change to resurgence base count
+    Original creator: Werejew
+    Edit log:
+    2020/11/07 - Vintar - Resurgence chance added to resurgence calculation
+    2021/02/19 - Vintar - stronger resurgence attempts, now uses fetch_smart_distance(), debug messages
+    2021/03/27 - Vintar - loners exempt from random patrol targeting. Random patrols no longer spawn too close to actor.
+    2021/11/22 - Vintar - slight change to resurgence base count
 
-	This file handles faction-level warfare stuff like random patrols, resurgences, etc.
+    This file handles faction-level warfare stuff like random patrols, resurgences, etc.
 =======================================================================================
 
 --]]
@@ -78,17 +78,17 @@ end
 
 --[[
 
-	faction_information[faction] = {
-		base_count,
-		resource_count,
-		total_power,
-		defense_squads, -- current_action == 1 and (target.props.base > 0 or target.props.resource > 0)
-		offense_squads, -- current_action == 0 and (target.props.base > 0 or target.props.resource > 0)
-		patrol_squads,	-- current_action == 0 and (target.props.base == 0 and target.props.resource == 0)
-		relations = {
-			[faction] = value
-		},
-	}
+    faction_information[faction] = {
+        base_count,
+        resource_count,
+        total_power,
+        defense_squads, -- current_action == 1 and (target.props.base > 0 or target.props.resource > 0)
+        offense_squads, -- current_action == 0 and (target.props.base > 0 or target.props.resource > 0)
+        patrol_squads,    -- current_action == 0 and (target.props.base == 0 and target.props.resource == 0)
+        relations = {
+            [faction] = value
+        },
+    }
 
 ]]
 

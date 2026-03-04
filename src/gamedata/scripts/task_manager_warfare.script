@@ -1,11 +1,11 @@
 --[[
 
 =======================================================================================
-	Original creator: SaloEater
+    Original creator: SaloEater
     Prevent s
-	Edit log:
+    Edit log:
     2025/09/15 - SaloEater - Allow the test to be cancelled when task givers are killed
-	2025/09/19 - SheBang   - Still fail the task if the task giver is killed by the actor
+    2025/09/19 - SheBang   - Still fail the task if the task giver is killed by the actor
 
     This file deals with task closure upon the death of the task givers.
 =======================================================================================
