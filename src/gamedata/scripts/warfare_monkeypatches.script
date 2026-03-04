@@ -62,36 +62,36 @@ end
 -- Warfare documents selling patch for dialogs.script - defer to hard change for now, since people are still having issues
 old_trade_important_documents = dialogs.st_trade_important_documents
 function dialogs.st_trade_important_documents(a,b,typ,txt)
-	if IsWarfare() then
-		local important_docs_warfare_names = {
-			["stalker"] = "bar_visitors_barman_stalker_trader",
-			["bandit"] = "zat_b7_bandit_boss_sultan",
-			["csky"] = "mar_smart_terrain_base_stalker_leader_marsh",
-			["dolg"] = "bar_dolg_leader",
-			["army"] = "agr_smart_terrain_1_6_near_2_military_colonel_kovalski",
-			["killer"] = "cit_killers_merc_trader_stalker",
-			["ecolog"] = "yan_stalker_sakharov",
-			["freedom"] = "mil_smart_terrain_7_7_freedom_leader_stalker",
-		}
-		
-		local npc = dialogs.who_is_npc(a, b)
-		local npc_name
-		local se_obj = alife_object(npc:id())
-		local comm = se_obj:community()
-		npc_name = important_docs_warfare_names[comm]
-		if not npc_name then
-			npc_name = npc:section()
-			if npc_name == "m_trader" then
-				npc_name = npc:name()
-			end
-		end
-		
-		local str = game.translate_string("st_trade_important_documents_".. typ .. "_" .. npc_name)
-		str = strformat(str,txt)
-		return str
-	end
-	
-	old_trade_important_documents(a,b,typ,txt)
+    if IsWarfare() then
+        local important_docs_warfare_names = {
+            ["stalker"] = "bar_visitors_barman_stalker_trader",
+            ["bandit"] = "zat_b7_bandit_boss_sultan",
+            ["csky"] = "mar_smart_terrain_base_stalker_leader_marsh",
+            ["dolg"] = "bar_dolg_leader",
+            ["army"] = "agr_smart_terrain_1_6_near_2_military_colonel_kovalski",
+            ["killer"] = "cit_killers_merc_trader_stalker",
+            ["ecolog"] = "yan_stalker_sakharov",
+            ["freedom"] = "mil_smart_terrain_7_7_freedom_leader_stalker",
+        }
+        
+        local npc = dialogs.who_is_npc(a, b)
+        local npc_name
+        local se_obj = alife_object(npc:id())
+        local comm = se_obj:community()
+        npc_name = important_docs_warfare_names[comm]
+        if not npc_name then
+            npc_name = npc:section()
+            if npc_name == "m_trader" then
+                npc_name = npc:name()
+            end
+        end
+        
+        local str = game.translate_string("st_trade_important_documents_".. typ .. "_" .. npc_name)
+        str = strformat(str,txt)
+        return str
+    end
+    
+    old_trade_important_documents(a,b,typ,txt)
 end
 --]]
 
@@ -146,12 +146,12 @@ end
 -- old functions were overly complicated and had a weird minimum at 80% resource ownership where your squads would be worse on average
 -- new functions are monotonically increasing so that each point of resource is always a sizeable benefit
 function faction_expansions.get_advanced_chance(resource)
-    --	return -1 * (100 * (1 / math.pow(warfare.resource_count / 2, 2))) * math.pow((resource - (warfare.resource_count / 2)), 2) + 100
+    --    return -1 * (100 * (1 / math.pow(warfare.resource_count / 2, 2))) * math.pow((resource - (warfare.resource_count / 2)), 2) + 100
     return 150 * (math.pow((resource / warfare.resource_count), 0.8))
 end
 
 function faction_expansions.get_veteran_chance(resource)
-    --	return -100 + (100 / (warfare.resource_count / 2)) * resource
+    --    return -100 + (100 / (warfare.resource_count / 2)) * resource
     return 80 * (math.pow((resource / warfare.resource_count), 0.8))
 end
 
@@ -538,18 +538,18 @@ function tasks_smart_control.evaluate_squads_smarts(task_id, var, smart, smrt)
 end
 
 local trade_names = {
-    ["stalker"] 	= "items\\trade\\trade_stalker_owl.ltx",
-    ["bandit"] 		= "items\\trade\\trade_bandit.ltx",
-    ["csky"] 		= "items\\trade\\trade_csky_spore.ltx",
-    ["army"] 		= "items\\trade\\trade_military.ltx",
-    ["freedom"] 	= "items\\trade\\trade_freedom.ltx",
-    ["dolg"] 		= "items\\trade\\trade_duty.ltx",
-    ["ecolog"] 		= "items\\trade\\trade_ecolog_sakharov.ltx",
-    ["killer"] 		= "items\\trade\\trade_mercenary.ltx",
-    ["monolith"] 	= "items\\trade\\trade_monolith.ltx",
-    ["renegade"] 	= "items\\trade\\trade_renegade.ltx",
-    ["greh"] 		= "items\\trade\\trade_greh.ltx",
-    ["isg"] 		= "items\\trade\\trade_isg.ltx",
+    ["stalker"]     = "items\\trade\\trade_stalker_owl.ltx",
+    ["bandit"]         = "items\\trade\\trade_bandit.ltx",
+    ["csky"]         = "items\\trade\\trade_csky_spore.ltx",
+    ["army"]         = "items\\trade\\trade_military.ltx",
+    ["freedom"]     = "items\\trade\\trade_freedom.ltx",
+    ["dolg"]         = "items\\trade\\trade_duty.ltx",
+    ["ecolog"]         = "items\\trade\\trade_ecolog_sakharov.ltx",
+    ["killer"]         = "items\\trade\\trade_mercenary.ltx",
+    ["monolith"]     = "items\\trade\\trade_monolith.ltx",
+    ["renegade"]     = "items\\trade\\trade_renegade.ltx",
+    ["greh"]         = "items\\trade\\trade_greh.ltx",
+    ["isg"]         = "items\\trade\\trade_isg.ltx",
 }
 
 local xr_logic_configure_schemes = xr_logic.configure_schemes

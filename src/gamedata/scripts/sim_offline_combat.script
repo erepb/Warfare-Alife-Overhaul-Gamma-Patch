@@ -1,23 +1,23 @@
 --[[
 
 =======================================================================================
-	Original creator: Tronex
-	Edit log: 
-	2019/09/27 - Tronex
-	2020/05/27 - Vintar
-	2020/05/29 - Vintar - longer connecting distance for Hybrid in story mode
-	2021/02/04 - Vintar - removed Hybrid mode, re-enabled slider support for offline combat distance, changed ignore_list handling
-	2021/02/13 - Vintar - fixed warfare exclusions and missing monster factions related to call of pripyat allspawn mutants
-	2022/05/01 - Vintar - remove exemptions for `task_squads` and `task_giver_squads` to eliminate exempt squad buildup over time
-	2022/05/21 - Vintar - remove squad cap limitation, which wasn't correctly implemented for Warfare anyway
+    Original creator: Tronex
+    Edit log: 
+    2019/09/27 - Tronex
+    2020/05/27 - Vintar
+    2020/05/29 - Vintar - longer connecting distance for Hybrid in story mode
+    2021/02/04 - Vintar - removed Hybrid mode, re-enabled slider support for offline combat distance, changed ignore_list handling
+    2021/02/13 - Vintar - fixed warfare exclusions and missing monster factions related to call of pripyat allspawn mutants
+    2022/05/01 - Vintar - remove exemptions for `task_squads` and `task_giver_squads` to eliminate exempt squad buildup over time
+    2022/05/21 - Vintar - remove squad cap limitation, which wasn't correctly implemented for Warfare anyway
 
-	Offline Combat Simulator
-	Full simulation: When 2 enemy squads get close to each other, a battle will be simulated
-	Smart simulation: enemies assigned to the same smart terrain will fight each others
+    Offline Combat Simulator
+    Full simulation: When 2 enemy squads get close to each other, a battle will be simulated
+    Smart simulation: enemies assigned to the same smart terrain will fight each others
 
-	More powerful squads have higher chance to win, power is determind by the sum of NPC ranks of the squad
-	If dynamic relations are on, offline battles will anticipate in relation changes
-	In addition, dominators will get more rank, and their kill stats will be recorded
+    More powerful squads have higher chance to win, power is determind by the sum of NPC ranks of the squad
+    If dynamic relations are on, offline battles will anticipate in relation changes
+    In addition, dominators will get more rank, and their kill stats will be recorded
 =======================================================================================
 
 --]]
@@ -133,7 +133,7 @@ local function smart_terrain_on_update(smart)
             lid_1 = lid_1 or game_graph():vertex(squad_1.m_game_vertex_id):level_id()
             if lid_1 and squads_by_level[lid_1] then
 
-                --				if (not task_squads[id_1]) and (not task_giver_squads[id_1]) then
+                --                if (not task_squads[id_1]) and (not task_giver_squads[id_1]) then
                 -- disable offline combat for ignore list when Warfare is active
                 if not _G.WARFARE or (_G.WARFARE and not ignore_list[section]) then
                     -- If squad already have an opponent, no need for full scan
@@ -167,7 +167,7 @@ local function smart_terrain_on_update(smart)
                         end
                     end
                 end
-                --				end
+                --                end
             end
         end
     end
@@ -207,7 +207,7 @@ local function squad_on_update(squad_1)
     if lid_1 and squads_by_level[lid_1] then
 
         -- Only simulate for non-task squads
-        --		if (not task_squads[id_1]) and (not task_giver_squads[id_1]) then
+        --        if (not task_squads[id_1]) and (not task_giver_squads[id_1]) then
         -- disable offline combat for ignore list when Warfare is active
         if not _G.WARFARE or (_G.WARFARE and not ignore_list[section]) then
             -- If squad already have an opponent, no need for full scan
@@ -239,7 +239,7 @@ local function squad_on_update(squad_1)
                 end
             end
         end
-        --		end
+        --        end
     end
 
     --[[ Pick enemy to target if no opponent found
@@ -254,97 +254,97 @@ end
 -- Distance-based combat functions
 -------------------------------
 function calculate_distance_combat_multiplier(pos, community)
-	-- printf("offline_simulation | calculate_distance_combat_multiplier - pos: %s, community: %s", pos, community)
-	if not _G.WARFARE then
-		return 1.0 -- No modification if warfare is not active
-	end
+    -- printf("offline_simulation | calculate_distance_combat_multiplier - pos: %s, community: %s", pos, community)
+    if not _G.WARFARE then
+        return 1.0 -- No modification if warfare is not active
+    end
 
-	local opts = warfare_options.options
-	if not opts.distance_based_combat_multiplier then
-		return 1.0 -- No modification if feature is disabled
-	end
+    local opts = warfare_options.options
+    if not opts.distance_based_combat_multiplier then
+        return 1.0 -- No modification if feature is disabled
+    end
 
-	-- Cache option lookups outside loop
-	local global_max_distance = opts.distance_combat_max_distance
-	local min_multiplier = opts.distance_combat_min_multiplier
-	local mult_base = opts.distance_combat_max_multiplier_base
-	local mult_resource = opts.distance_combat_max_multiplier_resource
-	local mult_territory = opts.distance_combat_max_multiplier_territory
-	local mult_lair = opts.distance_combat_max_multiplier_lair
+    -- Cache option lookups outside loop
+    local global_max_distance = opts.distance_combat_max_distance
+    local min_multiplier = opts.distance_combat_min_multiplier
+    local mult_base = opts.distance_combat_max_multiplier_base
+    local mult_resource = opts.distance_combat_max_multiplier_resource
+    local mult_territory = opts.distance_combat_max_multiplier_territory
+    local mult_lair = opts.distance_combat_max_multiplier_lair
 
-	local best_multiplier = 0
-	local distance = 0
-	local multiplier = 0
-	local max_mult = 0
-	local max_distance = 0
-	local distance_factor = 0
-	local props
+    local best_multiplier = 0
+    local distance = 0
+    local multiplier = 0
+    local max_mult = 0
+    local max_distance = 0
+    local distance_factor = 0
+    local props
 
-	-- Iterate through all smart terrains to find smarts of the specified type owned by the same faction
-	for name,smart in pairs(SIMBOARD.smarts_by_names) do
-		props = smart and smart.props
-		if props then
-			-- Check if this smart is owned by the same faction
-			if smart.owning_faction == community then
-				-- Calculate distance using the existing warfare system function
-				distance = math.max(1, warfare.distance_to_xz_sqr(global_position.from(smart), pos))
-				distance = math.pow(distance, 0.5)
+    -- Iterate through all smart terrains to find smarts of the specified type owned by the same faction
+    for name,smart in pairs(SIMBOARD.smarts_by_names) do
+        props = smart and smart.props
+        if props then
+            -- Check if this smart is owned by the same faction
+            if smart.owning_faction == community then
+                -- Calculate distance using the existing warfare system function
+                distance = math.max(1, warfare.distance_to_xz_sqr(global_position.from(smart), pos))
+                distance = math.pow(distance, 0.5)
 
-				multiplier = min_multiplier
+                multiplier = min_multiplier
 
-				if props.base and props.base > 0 then
-					max_mult = mult_base
-				elseif props.resource and props.resource > 0 then
-					max_mult = mult_resource
-				elseif props.territory and props.territory > 0 then
-					max_mult = mult_territory
-				elseif props.lair and props.lair > 0 then
-					max_mult = mult_lair
-				else
-					max_mult = 1
-				end
+                if props.base and props.base > 0 then
+                    max_mult = mult_base
+                elseif props.resource and props.resource > 0 then
+                    max_mult = mult_resource
+                elseif props.territory and props.territory > 0 then
+                    max_mult = mult_territory
+                elseif props.lair and props.lair > 0 then
+                    max_mult = mult_lair
+                else
+                    max_mult = 1
+                end
 
-				max_distance = global_max_distance * max_mult
+                max_distance = global_max_distance * max_mult
 
-				-- If squad is within max distance, calculate multiplier
-				if distance < max_distance then
-					-- Exponential interpolation between max and min multipliers based on distance
+                -- If squad is within max distance, calculate multiplier
+                if distance < max_distance then
+                    -- Exponential interpolation between max and min multipliers based on distance
 
-					distance_factor = distance / max_distance
+                    distance_factor = distance / max_distance
 
-					-- Exponential decay formula: y = a * e^(-b * x) + c
-					-- where a + c = max_mult, and c = min_multiplier
-					-- We want the curve to reach min_multiplier at max_distance
-					-- a = max_mult - min_multiplier
-					-- b = -math.log(0.01 / a)
-					multiplier = (max_mult - min_multiplier) * math.exp(math.log(0.01 / (max_mult - min_multiplier)) * distance_factor) + min_multiplier
-				end
+                    -- Exponential decay formula: y = a * e^(-b * x) + c
+                    -- where a + c = max_mult, and c = min_multiplier
+                    -- We want the curve to reach min_multiplier at max_distance
+                    -- a = max_mult - min_multiplier
+                    -- b = -math.log(0.01 / a)
+                    multiplier = (max_mult - min_multiplier) * math.exp(math.log(0.01 / (max_mult - min_multiplier)) * distance_factor) + min_multiplier
+                end
 
-				if multiplier > best_multiplier then
-				    -- printf("better mult. max mult: %s, distance: %s, mult: %s", max_mult, distance, multiplier)
-					best_multiplier = multiplier
-				end
-			end
-		end
-	end
+                if multiplier > best_multiplier then
+                    -- printf("better mult. max mult: %s, distance: %s, mult: %s", max_mult, distance, multiplier)
+                    best_multiplier = multiplier
+                end
+            end
+        end
+    end
 
-	return best_multiplier > 0 and best_multiplier or 1.0
+    return best_multiplier > 0 and best_multiplier or 1.0
 end
 
 local function calculate_squad_distance_combat_multiplier(squad)
-	-- printf("offline_simulation | calculate_squad_distance_combat_multiplier - squad: %s", squad and squad:name() or "nil")
-	if not squad then
-		printf("-offline_simulation | calculate_squad_distance_combat_multiplier - squad is nil, returning nil")
-		return 1
-	end
+    -- printf("offline_simulation | calculate_squad_distance_combat_multiplier - squad: %s", squad and squad:name() or "nil")
+    if not squad then
+        printf("-offline_simulation | calculate_squad_distance_combat_multiplier - squad is nil, returning nil")
+        return 1
+    end
 
-	local squad_community = squad:get_squad_community()
-	if not squad_community then
-		printf("-offline_simulation | calculate_squad_distance_combat_multiplier - squad_community is nil, returning nil")
-		return 1
-	end
+    local squad_community = squad:get_squad_community()
+    if not squad_community then
+        printf("-offline_simulation | calculate_squad_distance_combat_multiplier - squad_community is nil, returning nil")
+        return 1
+    end
 
-	return calculate_distance_combat_multiplier(global_position.from(squad), squad_community)
+    return calculate_distance_combat_multiplier(global_position.from(squad), squad_community)
 end
 
 local function coordinator()
@@ -430,7 +430,7 @@ local function coordinator()
         if squad and section
                 and ((_G.WARFARE and not ignore_list[section])
                 or ((not _G.WARFARE) and (not sid) and ini_sys:r_bool_ex(section, "common")))
-        --		and (not task_squads[id])
+        --        and (not task_squads[id])
         then
             local lid = gg:vertex(squad.m_game_vertex_id):level_id()
 
@@ -493,8 +493,8 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
     if squad_2
             and (not squad_2.online)
             and ((opponents[id_2] == id_1) or (opponents[id_2] == nil)) -- target is not occupied
-            --	and (not task_squads[id_2])
-            --	and (not task_giver_squads[id_2])
+            --    and (not task_squads[id_2])
+            --    and (not task_giver_squads[id_2])
             and (not _G.WARFARE or (_G.WARFARE and not ignore_list[section]))
     then
 
@@ -624,7 +624,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
     ocs_power[id_2] = ocs_power[id_2] - damage
 
     -- local npc_pow = calculate_npc_power(se_victim, community_2, squad2)
-	--printf("/ OCS | %s | Victim [%s]: Raw power - %s, new power - %s, delta - %s, npc power - %s", alife():level_name(lid), squad_2:name(), raw_power, ocs_power[id_2], raw_power - ocs_power[id_2], npc_pow)
+    --printf("/ OCS | %s | Victim [%s]: Raw power - %s, new power - %s, delta - %s, npc power - %s", alife():level_name(lid), squad_2:name(), raw_power, ocs_power[id_2], raw_power - ocs_power[id_2], npc_pow)
 
     -- Release victim squad if it got rekt
     if (ocs_power[id_2] <= 0) then

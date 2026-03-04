@@ -1,15 +1,15 @@
 --[[
 
 =======================================================================================
-	Original creator: Werejew
-	Edit log:
-	2020/09/22 - Vintar - loners no longer see other loner squads outside of fog of war (without PDA v2 or v3)
-	2021/02/13 - Vintar - added toggle capability for loner fog of war
-	2021/02/18 - Vintar - friendly random patrol squads are now labeled
-	2021/11/09 - Vintar - added goodwill on kill functionality
+    Original creator: Werejew
+    Edit log:
+    2020/09/22 - Vintar - loners no longer see other loner squads outside of fog of war (without PDA v2 or v3)
+    2021/02/13 - Vintar - added toggle capability for loner fog of war
+    2021/02/18 - Vintar - friendly random patrol squads are now labeled
+    2021/11/09 - Vintar - added goodwill on kill functionality
 
-	This file contains mostly retired functions, but still handles some squad-level stuff
-	such as PDA squad spots and Warfare squad registration
+    This file contains mostly retired functions, but still handles some squad-level stuff
+    such as PDA squad spots and Warfare squad registration
 =======================================================================================
 
 --]]
@@ -231,19 +231,19 @@ function squad_warfare_update(squad)
                     end
                 end
             end--[[
-		else
-			local levelID = game_graph():vertex(squad.m_game_vertex_id):level_id()
+        else
+            local levelID = game_graph():vertex(squad.m_game_vertex_id):level_id()
 
-			if (warfare_levels.level_information[levelID] and warfare_levels.level_information[levelID].smarts) then
-				for i,sm in pairs(warfare_levels.level_information[levelID].smarts) do
-					local smart = sm and alife_object(sm)
+            if (warfare_levels.level_information[levelID] and warfare_levels.level_information[levelID].smarts) then
+                for i,sm in pairs(warfare_levels.level_information[levelID].smarts) do
+                    local smart = sm and alife_object(sm)
 
-					if (smart) then
-						--printf(smart:name())
-						sim_squad_warfare.set_target(squad, smart.id)
-					end
-				end
-			end]]
+                    if (smart) then
+                        --printf(smart:name())
+                        sim_squad_warfare.set_target(squad, smart.id)
+                    end
+                end
+            end]]
         end
     end
 
@@ -252,9 +252,9 @@ end
 
 --[[
 random_patrols[squad.id] = {
-	target = smart.id,
-	stay_time = math.random(min_idle, max_idle),
-	arrive_time = warfare.get_time()
+    target = smart.id,
+    stay_time = math.random(min_idle, max_idle),
+    arrive_time = warfare.get_time()
 }
 ]]
 
@@ -608,8 +608,8 @@ function get_enemy_info(squad)
     local squadName = squad:name()
     local section = squad:section_name()
     local name = ui_warfare_options_hints.get_name(squad:section_name()) or warfare_names.faction_names[squad.player_id]
-    -- xr_Sanya	local faction = game.translate_string(squad:get_squad_community())
-    -- xr_Sanya	local relation = game_relations.get_squad_relation_to_actor_by_id(squad.id)
+    -- xr_Sanya    local faction = game.translate_string(squad:get_squad_community())
+    -- xr_Sanya    local relation = game_relations.get_squad_relation_to_actor_by_id(squad.id)
     local npc_count = squad:npc_count()
     local atarget = squad.current_target_id
     local ase_target = atarget and alife_object(atarget)
@@ -665,8 +665,8 @@ function get_warfare_info(squad)
     local squadName = squad:name()
     local section = squad:section_name()
     local name = ui_warfare_options_hints.get_name(squad:section_name()) or warfare_names.faction_names[squad.player_id]
-    -- xr_Sanya	local faction = game.translate_string(squad:get_squad_community())
-    -- xr_Sanya	local relation = game_relations.get_squad_relation_to_actor_by_id(squad.id)
+    -- xr_Sanya    local faction = game.translate_string(squad:get_squad_community())
+    -- xr_Sanya    local relation = game_relations.get_squad_relation_to_actor_by_id(squad.id)
     local npc_count = squad:npc_count()
     local power = sim_offline_combat.calculate_squad_power(squad)
     local atarget = squad.current_target_id

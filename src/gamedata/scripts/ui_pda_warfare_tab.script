@@ -1,14 +1,14 @@
 --[[
 
 =======================================================================================
-	Original creator: Tronex
-	Edit log: 
-	2020/05/24 - Vintar
+    Original creator: Tronex
+    Edit log: 
+    2020/05/24 - Vintar
 
-	New PDA tab for Warfare mode: faction war
-	This file converts the 'contacts' tab into a faction ranking info tab. Faction squad
-	count, base count, and resource count are provided. Ranking is based on number of
-	bases and resources owned versus the total available in the Zone.
+    New PDA tab for Warfare mode: faction war
+    This file converts the 'contacts' tab into a faction ranking info tab. Faction squad
+    count, base count, and resource count are provided. Ranking is based on number of
+    bases and resources owned versus the total available in the Zone.
 =======================================================================================
 
 --]]
@@ -171,13 +171,13 @@ function pda_warfare_tab:Reset()
     -- Gather faction squads in each active level
     --local faction_territory = {}
     --for lvl,v in pairs(self.faction_smarts_lvls) do
-    --	for f,num in pairs(v) do
-    --		if (not faction_territory[f]) then
-    --			faction_territory[f] = {lvl,num}
-    --		elseif faction_territory[f] and (faction_territory[f][2] < num) then
-    --			faction_territory[f] = {lvl,num}
-    --		end
-    --	end
+    --    for f,num in pairs(v) do
+    --        if (not faction_territory[f]) then
+    --            faction_territory[f] = {lvl,num}
+    --        elseif faction_territory[f] and (faction_territory[f][2] < num) then
+    --            faction_territory[f] = {lvl,num}
+    --        end
+    --    end
     --end
 
     -- Show

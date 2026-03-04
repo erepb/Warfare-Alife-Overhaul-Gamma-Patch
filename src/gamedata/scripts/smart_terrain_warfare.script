@@ -1,35 +1,35 @@
 --[[
 
 =======================================================================================
-	Original creator: Werejew
-	Edit log: 
-	2020/05/28 - Vintar - added lairs to patrol squad targeting, added surge/emission cover-seeking behavior
-	2020/05/29 - Vintar - changed respawn times to be inversely proportional to base count, base respawn time is re-calculated when ownership changes
-	2020/05/30 - Vintar - loner/ecolog don't get sent out during emissions, patrol spawns also depend on base count
-	2020/06/06 - Vintar - added cover-seeking behavior for psi-storms
-	2020/06/23 - Vintar - added sending overflow squads with no valid target to a target from all active levels
-	2020/09/22 - Vintar - loner players no longer see other loner bases outside of fog of war
-	2020/10/16 - Vintar - Fix resetting base spawn timers from visiting loner/ecolog squads
-	2020/10/22 - Vintar - Updated loner targeting to be smarter about attacking hostile resource points
-	2020/10/24 - Vintar - Random patrol targeting also accounts for squad powers now, with no more suicide attacks
-	2021/02/04 - Vintar - modified functions for Anomaly 1.5.1, more mechanic keywords, new handling of ignored/stationary squads
-	2021/02/13 - Vintar - Invasion schema overhauled. Optimization of process_squads. Fixed stationary squads being affected by invasions. Added toggle capability for loner fog of war. Fixed targeting of loner/ecolog bases. Allowed multi-targeting. Duty random patrols target only lairs
-	2021/02/19 - Vintar - Added invasion defense logic. New invasion planning logic. Added shuffling of squads to contribute to invasion forces. Re-check targets and invasion when a faction loses a base/resource. Added ability to quickly capture empty terrains. New min/max targets per base added. New overflow squad targeting. Now stores and saves distances between smarts. Added relation penalty for stealing a contested smart. 
-	2021/02/22 - Vintar - Better accounting for stationary squads. Bases will no longer donate squads to nearby invasion forces if they are under attack. Invasions are no longer planned on neutral loner/ecolog resources, or empty locations. Underground areas can no longer be targets of bases. Invasions are now also re-calculated upon base/resource loss. Fixed ceasefire check on diplomatic relation hit for 'stealing' smart terrain targets. Fixed formula for invasion size factor linear interpolation. 
-	2021/03/02 - Vintar - Useless smarts are hidden with option. Better messaging of player about invasion defense. Active 'forgetting' of loner/ecolog random patrols. Remove squad functionality moved to overflow squads with no valid targets anywhere. Night activity check is now checked once per night per smart. Added immediate invasion capability. Now exlude target base from reinforcement calculation. Random patrols preferentially spawn on allied locations. Loner random patrols can spawn on any neutral location. Code optimizations
-	2021/03/08 - Vintar - Monolith can't target south unless actor's faction. Normal factions can't target Radar if Scorcher still on. Fixed lab x8, jup underground not having rare mutants / targeting exclusion
-	2021/03/27 - Vintar - Loner/ecolog random patrols tracked again, but only affected by their process functions. Fixed negative level priorities not counting. 
-	2021/04/02 - Vintar - Loners/ecolog evacuate neutral positions under attack. Code optimizations to remove unnecessary inv_dist calculations.
-	2021/11/09 - Vintar - Overhauled autocapture. Reintroduced 'hide all smarts' functionality via code refactoring. Changed text strings to use st_warfare.xml.
-	2022/02/12 - Vintar - fixed rare crash instance of autocapture "owned" base but no squads on that base.
-	2022/02/26 - Vintar - added main base attack deprioritization option, monster spawns on already-occupied lairs will be identical to the existing mutant type, UNISG actually prioritizes lab entrances now
-	2022/03/06 - Vintar - monster spawn numbers based on level lair capacity
-	2022/04/15 - Ace - Fix for crash when dead allied defenders try to send a message after invasion force is defeated
-	2022/04/22 - Vintar - Mutants from X8 and Pripyat Underpass can no longer transition out
-	2022/04/30 - Vintar - Main base attack prevention also applies to mutants
-	
-	This file handles the majority of warfare-related script tasks, such as squad behavior,
-	targeting, smart terrain updates, ownership checks, patrol behavior, etc.
+    Original creator: Werejew
+    Edit log: 
+    2020/05/28 - Vintar - added lairs to patrol squad targeting, added surge/emission cover-seeking behavior
+    2020/05/29 - Vintar - changed respawn times to be inversely proportional to base count, base respawn time is re-calculated when ownership changes
+    2020/05/30 - Vintar - loner/ecolog don't get sent out during emissions, patrol spawns also depend on base count
+    2020/06/06 - Vintar - added cover-seeking behavior for psi-storms
+    2020/06/23 - Vintar - added sending overflow squads with no valid target to a target from all active levels
+    2020/09/22 - Vintar - loner players no longer see other loner bases outside of fog of war
+    2020/10/16 - Vintar - Fix resetting base spawn timers from visiting loner/ecolog squads
+    2020/10/22 - Vintar - Updated loner targeting to be smarter about attacking hostile resource points
+    2020/10/24 - Vintar - Random patrol targeting also accounts for squad powers now, with no more suicide attacks
+    2021/02/04 - Vintar - modified functions for Anomaly 1.5.1, more mechanic keywords, new handling of ignored/stationary squads
+    2021/02/13 - Vintar - Invasion schema overhauled. Optimization of process_squads. Fixed stationary squads being affected by invasions. Added toggle capability for loner fog of war. Fixed targeting of loner/ecolog bases. Allowed multi-targeting. Duty random patrols target only lairs
+    2021/02/19 - Vintar - Added invasion defense logic. New invasion planning logic. Added shuffling of squads to contribute to invasion forces. Re-check targets and invasion when a faction loses a base/resource. Added ability to quickly capture empty terrains. New min/max targets per base added. New overflow squad targeting. Now stores and saves distances between smarts. Added relation penalty for stealing a contested smart. 
+    2021/02/22 - Vintar - Better accounting for stationary squads. Bases will no longer donate squads to nearby invasion forces if they are under attack. Invasions are no longer planned on neutral loner/ecolog resources, or empty locations. Underground areas can no longer be targets of bases. Invasions are now also re-calculated upon base/resource loss. Fixed ceasefire check on diplomatic relation hit for 'stealing' smart terrain targets. Fixed formula for invasion size factor linear interpolation. 
+    2021/03/02 - Vintar - Useless smarts are hidden with option. Better messaging of player about invasion defense. Active 'forgetting' of loner/ecolog random patrols. Remove squad functionality moved to overflow squads with no valid targets anywhere. Night activity check is now checked once per night per smart. Added immediate invasion capability. Now exlude target base from reinforcement calculation. Random patrols preferentially spawn on allied locations. Loner random patrols can spawn on any neutral location. Code optimizations
+    2021/03/08 - Vintar - Monolith can't target south unless actor's faction. Normal factions can't target Radar if Scorcher still on. Fixed lab x8, jup underground not having rare mutants / targeting exclusion
+    2021/03/27 - Vintar - Loner/ecolog random patrols tracked again, but only affected by their process functions. Fixed negative level priorities not counting. 
+    2021/04/02 - Vintar - Loners/ecolog evacuate neutral positions under attack. Code optimizations to remove unnecessary inv_dist calculations.
+    2021/11/09 - Vintar - Overhauled autocapture. Reintroduced 'hide all smarts' functionality via code refactoring. Changed text strings to use st_warfare.xml.
+    2022/02/12 - Vintar - fixed rare crash instance of autocapture "owned" base but no squads on that base.
+    2022/02/26 - Vintar - added main base attack deprioritization option, monster spawns on already-occupied lairs will be identical to the existing mutant type, UNISG actually prioritizes lab entrances now
+    2022/03/06 - Vintar - monster spawn numbers based on level lair capacity
+    2022/04/15 - Ace - Fix for crash when dead allied defenders try to send a message after invasion force is defeated
+    2022/04/22 - Vintar - Mutants from X8 and Pripyat Underpass can no longer transition out
+    2022/04/30 - Vintar - Main base attack prevention also applies to mutants
+    
+    This file handles the majority of warfare-related script tasks, such as squad behavior,
+    targeting, smart terrain updates, ownership checks, patrol behavior, etc.
 =======================================================================================
 
 --]]
@@ -626,7 +626,7 @@ function process_manual_capture(smart)
                     if defense_delay[closest_base.id] == nil then
                         defense_delay[closest_base.id] = 0
                     end
-					defense_delay[closest_base.id] = defense_delay[closest_base.id] + 1
+                    defense_delay[closest_base.id] = defense_delay[closest_base.id] + 1
                     -- get info of base NPC for message info
                     local squads = SIMBOARD.smarts[closest_base.id].squads
                     local base_squad
@@ -769,10 +769,10 @@ end
 function process_squads(smart)
     if not (smart.process_squads_time) or (warfare.get_time_ref():diffSec(smart.process_squads_time) >= smart.next_process_squads_time * 6) then
         if not smart.process_squads_time then
-		    smart.process_squads_time = warfare.get_time()
-		else
-		    smart.process_squads_time = warfare_utils.add_time(smart.process_squads_time, smart.next_process_squads_time*6)
-		end
+            smart.process_squads_time = warfare.get_time()
+        else
+            smart.process_squads_time = warfare_utils.add_time(smart.process_squads_time, smart.next_process_squads_time*6)
+        end
         smart.next_process_squads_time = math.random(5, 15)                -- default 1 to 5, made longer to ease script load
     else
         return
@@ -857,8 +857,8 @@ function process_squads(smart)
                                         sim_squad_warfare.remove_squad(squad)
                                         squad:remove_squad()
                                     else
-									    pick_target(smart, squad, new_targets, true)
-									    break  -- limit to one overflow move per cycle
+                                        pick_target(smart, squad, new_targets, true)
+                                        break  -- limit to one overflow move per cycle
                                     end
                                 end
                             end
@@ -885,10 +885,10 @@ end
 function surge_behavior(smart)
     if not (surge_checker1[smart.id]) or (warfare.get_time_ref():diffSec(surge_checker1[smart.id]) >= surge_checker2[smart.id] * 6) then
         if not surge_checker1[smart.id] then
-		    surge_checker1[smart.id] = warfare.get_time()
-		else
-		    surge_checker1[smart.id] = warfare_utils.add_time(surge_checker1[smart.id], surge_checker2[smart.id]*6)
-		end
+            surge_checker1[smart.id] = warfare.get_time()
+        else
+            surge_checker1[smart.id] = warfare_utils.add_time(surge_checker1[smart.id], surge_checker2[smart.id]*6)
+        end
         surge_checker2[smart.id] = math.random(1, 5)
     else
         return
@@ -1291,9 +1291,9 @@ function process_targets(smart)
             end
         end
 
-        --		if enable_debug then
-        --			--printf("re-checking targets/invasion of %s base %s due to loss of bases/resources: %s vs %s and %s vs %s", smart.owning_faction, smart:name(), current_base_count, base_recheck[smart.id], current_resource_count, resource_recheck[smart.id])
-        --		end
+        --        if enable_debug then
+        --            --printf("re-checking targets/invasion of %s base %s due to loss of bases/resources: %s vs %s and %s vs %s", smart.owning_faction, smart:name(), current_base_count, base_recheck[smart.id], current_resource_count, resource_recheck[smart.id])
+        --        end
     end
 
     -- set new check numbers
@@ -1417,9 +1417,9 @@ function capture_empty_location(smart, target)
     end
 
 
-    --	if enable_debug then
-    --		--printf("no %s bases within linked levels have spare squads to send to empty terrain %s", smart.owning_faction, target:name())
-    --	end
+    --    if enable_debug then
+    --        --printf("no %s bases within linked levels have spare squads to send to empty terrain %s", smart.owning_faction, target:name())
+    --    end
 
 end
 
@@ -1605,13 +1605,13 @@ function create_invasion_plan(smart, target)
     if ((invasion_force_size > 0) and (invasion_force_desired / invasion_force_size) < 2) or (immediate_invasion) then
         invasions[smart.id] = { target.id, invasion_force_size, inv_start, depart }
 
-        --		if enable_debug then
-        --			if immediate_invasion then
-        --				--printf("prepping instant invasion from %s base %s to target %s with force of %s squads", smart.owning_faction, smart:name(), target:name(), invasion_force_size)
-        --			else
-        --				--printf("planning invasion from %s base %s to target %s with force of %s squads (desired was %s)", smart.owning_faction, smart:name(), target:name(), invasion_force_size, invasion_force_desired)
-        --			end
-        --		end
+        --        if enable_debug then
+        --            if immediate_invasion then
+        --                --printf("prepping instant invasion from %s base %s to target %s with force of %s squads", smart.owning_faction, smart:name(), target:name(), invasion_force_size)
+        --            else
+        --                --printf("planning invasion from %s base %s to target %s with force of %s squads (desired was %s)", smart.owning_faction, smart:name(), target:name(), invasion_force_size, invasion_force_desired)
+        --            end
+        --        end
     end
 end
 
@@ -1996,18 +1996,18 @@ function spawn_defense(smart)
     if defense_delay[smart.id] == nil then
         defense_delay[smart.id] = 0
     end
-	local current_respawn = get_current_def_respawn_interval(smart.owning_faction)
-	if not (defense_timers[smart.id]) or reset_defense_timer[smart.id] then
-		defense_timers[smart.id] = warfare.get_time()
-		reset_defense_timer[smart.id] = nil											-- timer reset only occurs when a base changes owners
-		return
-	elseif (warfare.get_time_ref():diffSec(defense_timers[smart.id]) > (current_respawn*6) * (defense_delay[smart.id] + 1)) then
-		defense_timers[smart.id] = warfare_utils.add_time(defense_timers[smart.id], (current_respawn*6) * (defense_delay[smart.id] + 1))
-		defense_delay[smart.id] = 0
-	else
-		--printf("not ready to spawn squad at " .. smart:name() .. " more time needed: " .. warfare.get_time():diffSec(defense_timers[smart.id]) .. " out of " .. (current_respawn*6))
-		return
-	end
+    local current_respawn = get_current_def_respawn_interval(smart.owning_faction)
+    if not (defense_timers[smart.id]) or reset_defense_timer[smart.id] then
+        defense_timers[smart.id] = warfare.get_time()
+        reset_defense_timer[smart.id] = nil                                            -- timer reset only occurs when a base changes owners
+        return
+    elseif (warfare.get_time_ref():diffSec(defense_timers[smart.id]) > (current_respawn*6) * (defense_delay[smart.id] + 1)) then
+        defense_timers[smart.id] = warfare_utils.add_time(defense_timers[smart.id], (current_respawn*6) * (defense_delay[smart.id] + 1))
+        defense_delay[smart.id] = 0
+    else
+        --printf("not ready to spawn squad at " .. smart:name() .. " more time needed: " .. warfare.get_time():diffSec(defense_timers[smart.id]) .. " out of " .. (current_respawn*6))
+        return
+    end
 
     printd(0, smart:name())
 
@@ -2063,14 +2063,14 @@ function spawn_patrols(smart)
     printd(0, smart:name())
     local respawn = get_current_patrol_respawn_interval(smart.owning_faction)
 
-	if not (patrol_timers[smart.id]) then
-		patrol_timers[smart.id] = warfare.get_time()
-		return
-	elseif (warfare.get_time_ref():diffSec(patrol_timers[smart.id]) > (respawn*6)) then
-		patrol_timers[smart.id] = warfare_utils.add_time(patrol_timers[smart.id], respawn*6)
-	else
-		return
-	end
+    if not (patrol_timers[smart.id]) then
+        patrol_timers[smart.id] = warfare.get_time()
+        return
+    elseif (warfare.get_time_ref():diffSec(patrol_timers[smart.id]) > (respawn*6)) then
+        patrol_timers[smart.id] = warfare_utils.add_time(patrol_timers[smart.id], respawn*6)
+    else
+        return
+    end
 
     local squads = patrol_squads[smart.id]
     local count = 0
@@ -3422,11 +3422,11 @@ function smart_terrain.se_smart_terrain:show()
                 end
 
                 --[[
-				-- if 'hide_smarts' is used, also hide all empty smart spots within visible range
-				if (warfare_options.options.hide_smarts or hide_smarts) and (faction == "none") then
-					visible = false
-				end
-				--]]
+                -- if 'hide_smarts' is used, also hide all empty smart spots within visible range
+                if (warfare_options.options.hide_smarts or hide_smarts) and (faction == "none") then
+                    visible = false
+                end
+                --]]
 
                 if (visible) then
                     local info = nil
@@ -3895,7 +3895,7 @@ function get_warfare_info(smart)
                 local otherWarfare = translate_smart_name(other:name()) or other:name()
                 local other_level = game.translate_string(alife():level_name(game_graph():vertex(other.m_game_vertex_id):level_id()))
 
-                --				props = props .. "\\n" .. clr_gr .. otherWarfare .. " ("..other_level..")\\n"
+                --                props = props .. "\\n" .. clr_gr .. otherWarfare .. " ("..other_level..")\\n"
                 props = props .. "\\n" .. clr_gr .. otherWarfare .. "\\n"
             end
         end
@@ -4149,27 +4149,27 @@ function squad_is_commandable(squad, random_patrol_override)
 end
 
 function get_max_power_mult(smart)
-	local opts = warfare_options.options
-	if not opts.distance_based_combat_multiplier then
-		return 1
-	end
+    local opts = warfare_options.options
+    if not opts.distance_based_combat_multiplier then
+        return 1
+    end
 
-	local props = smart and smart.props
-	if not props then
-		return 1
-	end
+    local props = smart and smart.props
+    if not props then
+        return 1
+    end
 
-	if props.base and props.base > 0 then
-		return opts.distance_combat_max_multiplier_base
-	elseif props.resource and props.resource > 0 then
-		return opts.distance_combat_max_multiplier_resource
-	elseif props.territory and props.territory > 0 then
-		return opts.distance_combat_max_multiplier_territory
-	elseif props.lair and props.lair > 0 then
-		return opts.distance_combat_max_multiplier_lair
-	end
+    if props.base and props.base > 0 then
+        return opts.distance_combat_max_multiplier_base
+    elseif props.resource and props.resource > 0 then
+        return opts.distance_combat_max_multiplier_resource
+    elseif props.territory and props.territory > 0 then
+        return opts.distance_combat_max_multiplier_territory
+    elseif props.lair and props.lair > 0 then
+        return opts.distance_combat_max_multiplier_lair
+    end
 
-	return 1
+    return 1
 end
 
 
@@ -4252,7 +4252,7 @@ function check_owner(smart)
     smart.defense_power = smart.defense_power * get_max_power_mult(smart)
     if (smart.defense_count > 25) then
         local smrt_name = game.translate_string("st_" .. smart:name() .. "_name")
-        --		actor_menu.set_msg(1, strformat(str_wrfr[19], smrt_name, tostring(smart.defense_count)), 3) -- TODO: figure out how to stop this being spammed
+        --        actor_menu.set_msg(1, strformat(str_wrfr[19], smrt_name, tostring(smart.defense_count)), 3) -- TODO: figure out how to stop this being spammed
         --printf("smart " .. smart:name() .. " has over 25 squads! max pop = " .. tostring(smart.max_population))
     end
 
@@ -4920,11 +4920,11 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
                 local inv_dist = (1 / distance)
 
                 -- prevent main base attacks if option is enabled
-				if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and (other_faction ~= "none") and other_faction ~= faction then
-					inv_dist = inv_dist / 1000
-				end
+                if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and (other_faction ~= "none") and other_faction ~= faction then
+                    inv_dist = inv_dist / 1000
+                end
 
-				-- extra weight on distance
+                -- extra weight on distance
                 targets[#targets + 1] = { priority * inv_dist * inv_dist, other.id }
             end
 
@@ -5008,12 +5008,12 @@ function check_unique_npcs(smart)
     local faction = smart.owning_faction
 
     --[[
-	local tg = time_global()
+    local tg = time_global()
 
-	if smart.last_unique_check ~= nil and tg < smart.last_unique_check then
-		printd(1, sm_name)
-		return
-	end]]
+    if smart.last_unique_check ~= nil and tg < smart.last_unique_check then
+        printd(1, sm_name)
+        return
+    end]]
 
     --smart.last_unique_check = tg + 1000 + math.random(3* 6*1000,6* 6*1000) -- xQd, delay trader spawns to 3-6 real life minutes. No more instant respawning traders when they die
 
@@ -5138,7 +5138,7 @@ function notify_npc_created(squad_id, sm_name, faction, npc_type)
 end
 
 function is_main_base(smart_name)
-	return main_bases[smart_name] ~= nil
+    return main_bases[smart_name] ~= nil
 end
 
 ------------------------------------------------------------
