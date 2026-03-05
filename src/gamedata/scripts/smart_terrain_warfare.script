@@ -2505,7 +2505,8 @@ function update_resources(smart)
 end
 
 -- Advance all spawn timer timestamps forward by the given number of game seconds.
--- Called at the night-to-day transition to preserve timer progress across night.
+-- Called at the night-to-day transition to preserve timer progress across night,
+-- and on instant big time jumps to freeze timers.
 function advance_spawn_timers(seconds)
     for id, timer in pairs(defense_timers) do
         defense_timers[id] = warfare_utils.add_time(timer, seconds)
