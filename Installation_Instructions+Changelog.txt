@@ -1,5 +1,5 @@
 Warfare Alife Overhaul
-version: 1.4.9
+version: 1.4.10
 by Vintar
 
 for Anomaly 1.5.3
@@ -32,6 +32,7 @@ This addon is compatible with existing Anomaly 1.5.1/1.5.2 Warfare save files, a
 
 Version Log:
 
+1.4.10 - Squad spawns are now stopped during time travel unless gradual step is enabled.
 1.4.9 - Fixed display time values to correctly reflect in-game time. Consistent formatting and .gitattributes for CRLF enforcement.
 1.4.8 - Resurrection no longer targets smart terrains on the same level as the player. Fixed typo in offline combat NPC kill logic. Attackers now follow their target until the battle concludes, preventing premature disengagement. Squads disengage from offline combat when they are too far apart.
 1.4.7 - Level priority settings no longer affect random patrol targeting, preventing priority sliders from unintentionally biasing patrol spawns. Minimum resurgence wait time is now enforced at 1000 to prevent premature revival attempts. Resurrection can now begin from lairs as a valid starting location.
