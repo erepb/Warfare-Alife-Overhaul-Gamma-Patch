@@ -4713,9 +4713,11 @@ function check_owner(smart)
         smart.owning_faction = smart_owners[smart.id]
         smart.last_owner = smart_owners[smart.id]
     elseif (smart.last_owner ~= "none" and warfare_options.options.factions[smart.last_owner].keep_last_base) then
-        if (warfare_factions.faction_information[smart.last_owner] and warfare_factions.faction_information[smart.last_owner].base_count <= 1) then
+        if (smart.props and smart.props.base > 0) and (warfare_factions.faction_information[smart.last_owner] and warfare_factions.faction_information[smart.last_owner].base_count <= 1) then
             smart.owning_faction = smart.last_owner
             smart.last_owner = smart.last_owner
+        else
+            smart.owning_faction = owner
         end
     else
         smart.owning_faction = owner
