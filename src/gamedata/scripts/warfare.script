@@ -549,6 +549,7 @@ function actor_on_update()
     local old_wt = warfare.get_time()
 
     local effective_delta = 0
+    local instant_big_jump = false
     if warfare_options.options.enable_gradual_time_step and time_delta > MAX_TIME_STEP then
         printf("gradual: step")
         -- Big time jump detected (sleep, time skip) - advance by one step only
@@ -558,6 +559,14 @@ function actor_on_update()
         -- Disable throttle so next frame catches up another step in 1 sec
         last_update = tg + 300
     elseif time_delta > 0 then
+        -- Instant sync: if big jump (>1 game hour), advance all spawn timers
+        -- so they keep their remaining time instead of mass-firing
+        if time_delta > 3600 then
+            printd("instant big jump: advancing spawn timers by %s seconds", time_delta)
+            smart_terrain_warfare.advance_spawn_timers(time_delta)
+            warfare_factions.advance_spawn_timers(time_delta)
+            instant_big_jump = true
+        end
         warfare_time = real_time
         effective_delta = time_delta
         advance_warfare_reset()
@@ -569,18 +578,26 @@ function actor_on_update()
     -- Night time correction: analytically compute night seconds in the delta
     -- Works correctly for both gradual steps and instant time jumps
     if effective_delta > 0 then
-        local night_secs = warfare_utils.compute_night_seconds(old_wt, effective_delta)
-        night_accumulated = night_accumulated + night_secs
-
-        warfare_utils.refresh_time_cache()
-        local new_is_night = warfare_utils.is_night()
-
-        if not new_is_night and night_accumulated > 0 then
-            smart_terrain_warfare.advance_spawn_timers(night_accumulated)
-            warfare_factions.advance_spawn_timers(night_accumulated)
+        if instant_big_jump then
+            -- Timers already fully advanced by time_delta above; reset night state
+            -- to prevent double-counting via dawn correction
             night_accumulated = 0
+            warfare_utils.refresh_time_cache()
+            was_night_wt = warfare_utils.is_night()
+        else
+            local night_secs = warfare_utils.compute_night_seconds(old_wt, effective_delta)
+            night_accumulated = night_accumulated + night_secs
+
+            warfare_utils.refresh_time_cache()
+            local new_is_night = warfare_utils.is_night()
+
+            if not new_is_night and night_accumulated > 0 then
+                smart_terrain_warfare.advance_spawn_timers(night_accumulated)
+                warfare_factions.advance_spawn_timers(night_accumulated)
+                night_accumulated = 0
+            end
+            was_night_wt = new_is_night
         end
-        was_night_wt = new_is_night
     end
 
     -- Update faction to account for switching factions or azazel mode.
