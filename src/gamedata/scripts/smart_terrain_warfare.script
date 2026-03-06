@@ -1068,13 +1068,12 @@ function process_resource_squads(smart)
         local squads = SIMBOARD.smarts[smart.id].squads
         local bases = {}
         local neutral_bases = {}
-        local hostile_bases = {}
         for sid,_ in pairs(squads) do
             local squad = sid and alife_object(sid)
             local faction = squad:get_squad_community()
             if (squad) and squad_is_commandable(squad) and not (faction == "stalker" or faction == "ecolog") then
                 if not (#bases > 0) then
-                    bases, neutral_bases, hostile_bases = find_nearby_bases(smart, faction, true)
+                    bases, neutral_bases = find_nearby_bases(smart, faction, true)
                 end
                 -- Send squad to nearest base
                 if (#bases > 0) then
@@ -1086,12 +1085,6 @@ function process_resource_squads(smart)
                 elseif (#neutral_bases > 0) then
                     for i=1,#neutral_bases do
                         local base_id = neutral_bases[i][1]
-                        sim_squad_warfare.set_target(squad, base_id)
-                        break
-                    end
-                elseif (#hostile_bases > 0) then
-                    for i=1,#hostile_bases do
-                        local base_id = hostile_bases[i][1]
                         sim_squad_warfare.set_target(squad, base_id)
                         break
                     end
@@ -1134,13 +1127,12 @@ function process_territory_squads(smart)
         local squads = SIMBOARD.smarts[smart.id].squads
         local bases = {}
         local neutral_bases = {}
-        local hostile_bases = {}
         for sid,_ in pairs(squads) do
             local squad = sid and alife_object(sid)
             local faction = squad:get_squad_community()
             if (squad) and squad_is_commandable(squad) and not (faction == "stalker" or faction == "ecolog") then
                 if not (#bases > 0) then
-                    bases, neutral_bases, hostile_bases = find_nearby_bases(smart, faction, true)
+                    bases, neutral_bases = find_nearby_bases(smart, faction, true)
                 end
                 -- Send squad to nearest base
                 if (#bases > 0) then
@@ -1152,12 +1144,6 @@ function process_territory_squads(smart)
                 elseif (#neutral_bases > 0) then
                     for i=1,#neutral_bases do
                         local base_id = neutral_bases[i][1]
-                        sim_squad_warfare.set_target(squad, base_id)
-                        break
-                    end
-                elseif (#hostile_bases > 0) then
-                    for i=1,#hostile_bases do
-                        local base_id = hostile_bases[i][1]
                         sim_squad_warfare.set_target(squad, base_id)
                         break
                     end
