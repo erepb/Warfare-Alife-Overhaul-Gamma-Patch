@@ -2236,8 +2236,8 @@ function process_invasion_defense(smart)
         if (squad) and (squad.registered_with_warfare) and (not warfare.ignore[squad:section_name()]) and (not random_patrols[squad.id]) then
             local faction = squad:get_squad_community()
 
-            -- count all enemy squads in transit, find their distances to the smart, and their squad powers
-            if is_factions_enemies(faction,defending_faction) and (squad.current_action == 0) then
+            -- count all enemy human squads in transit, find their distances to the smart, and their squad powers
+            if is_factions_enemies(faction,defending_faction) and (faction ~= "monster") and (squad.current_action == 0) then
                 total_enemy_power = total_enemy_power + sim_offline_combat.calculate_squad_power(squad)                -- sum up squad powers
                 num_enemy_squads = num_enemy_squads + 1
                 enemy_distance = enemy_distance + warfare.distance_to_xz_sqr(global_position.from(smart), global_position.from(squad))
