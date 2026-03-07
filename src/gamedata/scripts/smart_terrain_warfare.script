@@ -2213,7 +2213,10 @@ function create_invasion_plan(smart, target)
 
     -- set invasion
     local inv_start = nil
-    local depart = math.random(120, 240)  -- Departure delay in game minutes after squads are gathered (2-4 hours)
+    local min_depart = warfare_options.options.min_invasion_depart_time or 1800
+    local max_depart = warfare_options.options.max_invasion_depart_time or 2400
+    if min_depart > max_depart then max_depart = min_depart end
+    local depart = math.random(min_depart, max_depart)  -- Departure delay in game minutes after squads are gathered
 
     -- hard cap on invasion force size
     if invasion_force_size and invasion_force_size > invasion_max_size then
@@ -4616,7 +4619,7 @@ function get_warfare_info(smart)
             if invasions[smart.id][3] then
                 local diff = warfare.get_time_ref():diffSec(invasions[smart.id][3])
                 local wait = invasions[smart.id][4] or 0
-                local remaining = round_idp(wait - (diff/60))
+                local remaining = round_idp((wait * 6 - diff) / 60)  -- game minutes remaining
                 if remaining > 0 then
                     props = props .. " \\n" .. clr_gr .. str_wrfr[22] .. ": " .. clr_y .. strformat(str_wrfr[14], remaining)
                 end

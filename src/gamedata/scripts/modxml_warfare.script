@@ -43,6 +43,8 @@ function init_settings_map()
     settings_map[general .. "monster_max_faction_respawn"] = "time_dhms"
     settings_map[general .. "auto_capture_max_distance"] = "meters"
     settings_map[general .. "auto_capture_wait_time"] = "time_dhm"
+    settings_map[general .. "min_invasion_depart_time"] = "time_dhm"
+    settings_map[general .. "max_invasion_depart_time"] = "time_dhm"
     settings_map[general .. "fog_of_war_distance"] = "meters"
 
     -- Per-faction settings
@@ -56,8 +58,6 @@ function init_settings_map()
     local faction_time_dh = {
     }
     local faction_time_dhm = {
-        "min_invasion_depart_time",
-        "max_invasion_depart_time",
     }
     local faction_time_dhms = {
         "min_faction_respawn",
@@ -154,9 +154,6 @@ function ui_options.init_opt_coder()
 
         { id = "min_invasion_size", type = "track", val = 2, def = 1, min = 0, max = 5, step = 0.1, hint = "alife_warfare_faction_min_invasion_size" },
         { id = "max_invasion_size", type = "track", val = 2, def = 1.5, min = 0, max = 5, step = 0.1, hint = "alife_warfare_faction_max_invasion_size" },
-        { id = "min_invasion_depart_time", type = "track", val = 2, def = 0, min = 0, max = 100, step = 10, hint = "alife_warfare_faction_min_invasion_depart_time" },
-        { id = "max_invasion_depart_time", type = "track", val = 2, def = 10, min = 0, max = 100, step = 10, hint = "alife_warfare_faction_max_invasion_depart_time" },
-
         { id = "min_patrol_time", type = "track", val = 2, def = 1000, min = 0, max = 20000, step = 50, hint = "alife_warfare_faction_min_patrol_time" },
         { id = "max_patrol_time", type = "track", val = 2, def = 70000, min = 0, max = 1000000, step = 500, hint = "alife_warfare_faction_max_patrol_time" },
         { id = "min_patrol_squads", type = "track", val = 2, def = 0, min = 0, max = 5, step = 1, hint = "alife_warfare_faction_min_patrol_squads" },
@@ -306,6 +303,9 @@ function ui_options.init_opt_coder()
             { id= "use_new_resurgence_logic"                         ,type= "check"    ,val= 1    ,def= true },
             { id= "spawn_speed_multiplier"                          ,type= "track"    ,val= 2    ,def= 1.0     ,min= 0.1     ,max= 10.0        ,step= 0.1 },
             { id= "enable_gradual_time_step"                        ,type= "check"    ,val= 1    ,def= false },
+
+            { id = "min_invasion_depart_time", type = "track", val = 2, def = 1800, min = 0, max = 20000, step = 100, hint = "alife_warfare_faction_min_invasion_depart_time" },
+            { id = "max_invasion_depart_time", type = "track", val = 2, def = 2400, min = 0, max = 20000, step = 100, hint = "alife_warfare_faction_max_invasion_depart_time" },
         },
     }
     warfare_options.gr[alife_warfare_azazel_options_index].presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko", "warfare_alifeoverhaul_balanced" }

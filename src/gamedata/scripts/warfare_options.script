@@ -106,6 +106,8 @@ function update_settings()
     local spawn_speed_ui = ui_options.get("alife/warfare/general/spawn_speed_multiplier") or 1
     options.spawn_speed_multiplier            = 1 / spawn_speed_ui
     options.enable_gradual_time_step        = ui_options.get("alife/warfare/general/enable_gradual_time_step")
+    options.min_invasion_depart_time         = ui_options.get("alife/warfare/general/min_invasion_depart_time")
+    options.max_invasion_depart_time         = ui_options.get("alife/warfare/general/max_invasion_depart_time")
 
     options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count
     options.azazel_respawn_as_companions = ui_options.get("alife/warfare/azazel/respawn_as_companions")
@@ -155,9 +157,6 @@ function update_settings()
         options.factions[faction].max_random_patrols = ui_options.get("alife/warfare/" .. faction .. "/max_random_patrols")
         options.factions[faction].min_random_patrol_time = ui_options.get("alife/warfare/" .. faction .. "/min_random_patrol_time")
         options.factions[faction].max_random_patrol_time = ui_options.get("alife/warfare/" .. faction .. "/max_random_patrol_time")
-
-        options.factions[faction].min_invasion_depart_time = ui_options.get("alife/warfare/" .. faction .. "/min_invasion_depart_time")
-        options.factions[faction].max_invasion_depart_time = ui_options.get("alife/warfare/" .. faction .. "/max_invasion_depart_time")
 
         --options.factions[faction].invasion_departure_chance        = ui_options.get("alife/warfare/"..faction.."/invasion_departure_chance")
         options.factions[faction].min_invasion_size = ui_options.get("alife/warfare/" .. faction .. "/min_invasion_size")
