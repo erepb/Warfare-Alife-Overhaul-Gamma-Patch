@@ -58,7 +58,7 @@ function get_patrol_timer(smart)
     end
 
     local patrol_timer = smart_terrain_warfare.patrol_timers[smart.id]
-    local next_patrol = smart_terrain_warfare.patrol_next_update[smart.id] or 10
+    local next_patrol = smart_terrain_warfare.get_current_patrol_respawn_interval(smart.owning_faction)
 
     local remaining = warfare_utils.get_real_seconds_until_spawn(patrol_timer, next_patrol * 6)
     return warfare_imgui_smart_info.format_time_remaining(remaining)
@@ -132,7 +132,7 @@ function get_patrol_timer_number(smart)
     end
 
     local patrol_timer = smart_terrain_warfare.patrol_timers[smart.id]
-    local next_patrol = smart_terrain_warfare.patrol_next_update[smart.id] or 10
+    local next_patrol = smart_terrain_warfare.get_current_patrol_respawn_interval(smart.owning_faction)
 
     return warfare_utils.get_real_seconds_until_spawn(patrol_timer, next_patrol * 6)
 end

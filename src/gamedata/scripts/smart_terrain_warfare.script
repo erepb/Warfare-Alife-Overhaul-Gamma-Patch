@@ -562,8 +562,10 @@ function smart_terrain_on_update(smart)
             if (smart.props.base > 0) then
                 update_resources(smart)
                 spawn_defense(smart)
+                spawn_patrols(smart)
                 process_targets(smart)
                 process_base_squads(smart)
+                process_patrols(smart)
 
             -- Pure resource point updates
             elseif (smart.props.resource > 0) then
@@ -2724,6 +2726,9 @@ function spawn_patrols(smart)
         return
     end
 
+    if not patrol_squads[smart.id] then
+        patrol_squads[smart.id] = {}
+    end
     local squads = patrol_squads[smart.id]
     local count = 0
 
@@ -2774,11 +2779,6 @@ function spawn_patrols(smart)
                 squad.patrol_table = new_table
             end
         end
-    end
-
-    local count = 0
-    for squad_id, sobj in pairs(squads) do
-        count = count + 1
     end
 end
 
@@ -2909,6 +2909,9 @@ function process_patrols(smart)
         return
     end
 
+    if not patrol_squads[smart.id] then
+        patrol_squads[smart.id] = {}
+    end
     local squads = patrol_squads[smart.id]
 
     for squad_id, sobj in pairs(squads) do
@@ -4907,12 +4910,14 @@ function check_owner(smart)
 
     if (not SIMBOARD.smarts[smart.id]) then
         smart.owning_faction = "none"
-        patrol_timers[smart.id] = nilreturn
+        patrol_timers[smart.id] = nil
+        return
     end
 
     if not (SIMBOARD.smarts[smart.id].squads) then
         smart.owning_faction = "none"
-        patrol_timers[smart.id] = nilreturn
+        patrol_timers[smart.id] = nil
+        return
     end
 
     if (owner == "monster") then
@@ -5035,7 +5040,8 @@ function check_owner(smart)
                 end
             -- or reset timer if a legit faction steals a base from another legit faction. Don't reset for loner/ecolog changes
             elseif (previous_owner[smart.id] ~= "stalker" and previous_owner[smart.id] ~= "ecolog" and smart.owning_faction ~= "stalker" and smart.owning_faction ~= "ecolog") then
-                reset_defense_timer[smart.id] = 1                                            -- a non-nil value here will cause the spawn time to reset, which will happen when a base's ownership changespatrol_timers[smart.id] = nil
+                reset_defense_timer[smart.id] = 1                                            -- a non-nil value here will cause the spawn time to reset, which will happen when a base's ownership changes
+                patrol_timers[smart.id] = nil
                 if enable_debug then
                     printf("resetting defense timer of base %s due to ownership change from %s to %s", smart:name(), previous_owner[smart.id], smart.owning_faction)
                 end
