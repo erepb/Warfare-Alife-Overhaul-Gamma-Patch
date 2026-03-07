@@ -228,6 +228,20 @@ pda_icons = {
     ["zombied"] = "circle_zombied",
     ["none"] = "circle_empty",
     ["target"] = "circle_target",
+    ["target_stalker"] = "circle_target_stalker",
+    ["target_bandit"] = "circle_target_bandit",
+    ["target_csky"] = "circle_target_csky",
+    ["target_army"] = "circle_target_army",
+    ["target_freedom"] = "circle_target_freedom",
+    ["target_dolg"] = "circle_target_dolg",
+    ["target_ecolog"] = "circle_target_ecolog",
+    ["target_killer"] = "circle_target_killer",
+    ["target_monolith"] = "circle_target_monolith",
+    ["target_renegade"] = "circle_target_renegade",
+    ["target_greh"] = "circle_target_greh",
+    ["target_isg"] = "circle_target_isg",
+    ["target_zombied"] = "circle_target_zombied",
+    ["target_none"] = "circle_target",
 }
 
 -- [1] = trader count
@@ -3841,10 +3855,15 @@ function smart_terrain.se_smart_terrain:show()
                                 if ((not other.actor_target) and other.owning_faction ~= warfare.actor_faction and (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
                                     other.actor_target = true
 
-                                    other:hide()
+                                    -- remove existing faction spot from target
+                                    if other.warfare_spot then
+                                        level.map_remove_object_spot(other.id, pda_icons[other.warfare_spot])
+                                        other.warfare_spot = nil
+                                    end
 
-                                    level.map_add_object_spot(t, "circle_target", get_target_info(other))        -- add red target spots to map
-                                    self.target_spots[t] = "target"
+                                    local target_key = "target_" .. (other.owning_faction or "none")
+                                    level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_target_info(other))        -- add faction target spots to map
+                                    self.target_spots[t] = target_key
                                 end
                             end
                         end
@@ -3995,10 +4014,15 @@ function smart_terrain.se_smart_terrain:show()
                             if ((not other.actor_target) and other.owning_faction ~= warfare.actor_faction and (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
                                 other.actor_target = true
 
-                                other:hide()
+                                -- remove existing faction spot from target
+                                if other.warfare_spot then
+                                    level.map_remove_object_spot(other.id, pda_icons[other.warfare_spot])
+                                    other.warfare_spot = nil
+                                end
 
-                                level.map_add_object_spot(t, "circle_target", get_target_info(other))
-                                self.target_spots[t] = "target"
+                                local target_key = "target_" .. (other.owning_faction or "none")
+                                level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_target_info(other))
+                                self.target_spots[t] = target_key
                             end
                         end
                     end

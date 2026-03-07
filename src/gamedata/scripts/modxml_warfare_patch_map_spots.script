@@ -1,0 +1,27 @@
+-- DXML script to inject faction-specific red-tinted circle map spots
+-- These show the faction icon tinted red to indicate the smart is under attack
+
+function on_xml_read()
+	RegisterScriptCallback("on_xml_read", function(xml_file_name, xml_obj)
+		if string.find(xml_file_name, "map_spots") then
+
+			local factions = {
+				"stalker", "bandit", "csky", "army", "freedom", "dolg",
+				"ecolog", "killer", "monolith", "renegade", "greh", "isg", "zombied",
+			}
+
+			for _, faction in ipairs(factions) do
+				local xml_string = string.format([[
+<circle_target_%s>
+	<level_map spot="circle_target_%s_spot" pointer="quest_pointer"/>
+</circle_target_%s>
+<circle_target_%s_spot x="0" y="0" width="24" height="24" alignment="c" scale="1" scale_min="1" scale_max="1" stretch="1">
+	<texture r="255" g="60" b="60">ui_mm_faction_%s</texture>
+</circle_target_%s_spot>
+				]], faction, faction, faction, faction, faction, faction)
+
+				xml_obj:insertFromXMLString(xml_string)
+			end
+		end
+	end)
+end
