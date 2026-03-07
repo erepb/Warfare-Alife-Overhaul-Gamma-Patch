@@ -242,6 +242,20 @@ pda_icons = {
     ["target_isg"] = "circle_target_isg",
     ["target_zombied"] = "circle_target_zombied",
     ["target_none"] = "circle_target",
+    ["planned_stalker"] = "circle_planned_stalker",
+    ["planned_bandit"] = "circle_planned_bandit",
+    ["planned_csky"] = "circle_planned_csky",
+    ["planned_army"] = "circle_planned_army",
+    ["planned_freedom"] = "circle_planned_freedom",
+    ["planned_dolg"] = "circle_planned_dolg",
+    ["planned_ecolog"] = "circle_planned_ecolog",
+    ["planned_killer"] = "circle_planned_killer",
+    ["planned_monolith"] = "circle_planned_monolith",
+    ["planned_renegade"] = "circle_planned_renegade",
+    ["planned_greh"] = "circle_planned_greh",
+    ["planned_isg"] = "circle_planned_isg",
+    ["planned_zombied"] = "circle_planned_zombied",
+    ["planned_none"] = "circle_target",
 }
 
 -- [1] = trader count
@@ -3834,21 +3848,29 @@ function smart_terrain.se_smart_terrain:show()
                     local other = alife_object(t)
 
                     if (other) then
-                        -- clear target spots from points owned by neutrals or when squads are no longer advancing
-                        if (other.owning_faction == warfare.actor_faction or (other.owning_faction ~= "none" and not is_factions_enemies(other.owning_faction, warfare.actor_faction))) or not under_attack[t] then
+                        -- clear target spots from points owned by neutrals or no longer targeted
+                        if (other.owning_faction == warfare.actor_faction or (other.owning_faction ~= "none" and not is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
                             level.map_remove_object_spot(t, pda_icons[spot])
                             self.target_spots[t] = nil
                             other.actor_target = nil
                         else
-                            level.map_change_spot_hint(t, pda_icons[spot], get_target_info(other))
+                            -- update color: red if under attack, cyan if planned
+                            local new_key = under_attack[t] and ("target_" .. (other.owning_faction or "none")) or ("planned_" .. (other.owning_faction or "none"))
+                            if spot ~= new_key then
+                                level.map_remove_object_spot(t, pda_icons[spot])
+                                level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_target_info(other))
+                                self.target_spots[t] = new_key
+                            else
+                                level.map_change_spot_hint(t, pda_icons[spot], get_target_info(other))
+                            end
                         end
                     end
                 end
 
-                -- smart belongs to player's faction — only show red target if squads are actually advancing
+                -- smart belongs to player's faction — show target spots (cyan=planned, red=under attack)
                 if (actor_faction) then
                     for t,_ in pairs(self.target_smarts) do
-                        if not (self.target_spots[t]) and under_attack[t] then
+                        if not (self.target_spots[t]) then
                             local other = alife_object(t)
 
                             if (other) then
@@ -3861,8 +3883,8 @@ function smart_terrain.se_smart_terrain:show()
                                         other.warfare_spot = nil
                                     end
 
-                                    local target_key = "target_" .. (other.owning_faction or "none")
-                                    level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_target_info(other))        -- add faction target spots to map
+                                    local target_key = under_attack[t] and ("target_" .. (other.owning_faction or "none")) or ("planned_" .. (other.owning_faction or "none"))
+                                    level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_target_info(other))
                                     self.target_spots[t] = target_key
                                 end
                             end
@@ -3995,25 +4017,33 @@ function smart_terrain.se_smart_terrain:show()
                 self.target_spots = {}
             end
 
-            -- handle removal of red target spots — also remove when squads are no longer advancing
+            -- handle removal/update of target spots
             for t,spot in pairs(self.target_spots) do
                 local other = alife_object(t)
 
                 if (other) then
-                    if (other.owning_faction == warfare.actor_faction or not (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) or not under_attack[t] then
+                    if (other.owning_faction == warfare.actor_faction or not (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
                         level.map_remove_object_spot(t, pda_icons[spot])
                         self.target_spots[t] = nil
                         other.actor_target = nil
                     else
-                        level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other))
+                        -- update color: red if under attack, cyan if planned
+                        local new_key = under_attack[t] and ("target_" .. (other.owning_faction or "none")) or ("planned_" .. (other.owning_faction or "none"))
+                        if spot ~= new_key then
+                            level.map_remove_object_spot(t, pda_icons[spot])
+                            level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_warfare_info(other))
+                            self.target_spots[t] = new_key
+                        else
+                            level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other))
+                        end
                     end
                 end
             end
 
-            -- handle addition of red target spots — only show when squads are actually advancing
+            -- handle addition of target spots (cyan=planned, red=under attack)
             if (actor_faction and self.target_smarts) then
                 for t,_ in pairs(self.target_smarts) do
-                    if not (self.target_spots[t]) and under_attack[t] then
+                    if not (self.target_spots[t]) then
                         local other = alife_object(t)
 
                         if (other) then
@@ -4026,8 +4056,8 @@ function smart_terrain.se_smart_terrain:show()
                                     other.warfare_spot = nil
                                 end
 
-                                local target_key = "target_" .. (other.owning_faction or "none")
-                                level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_target_info(other))
+                                local target_key = under_attack[t] and ("target_" .. (other.owning_faction or "none")) or ("planned_" .. (other.owning_faction or "none"))
+                                level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_warfare_info(other))
                                 self.target_spots[t] = target_key
                             end
                         end

@@ -1,5 +1,5 @@
--- DXML script to inject faction-specific red-tinted circle map spots
--- These show the faction icon tinted red to indicate the smart is under attack
+-- DXML script to inject faction-specific tinted circle map spots
+-- Red = under attack (squads advancing), Cyan = planned target (no squads yet)
 
 function on_xml_read()
 	RegisterScriptCallback("on_xml_read", function(xml_file_name, xml_obj)
@@ -11,7 +11,8 @@ function on_xml_read()
 			}
 
 			for _, faction in ipairs(factions) do
-				local xml_string = string.format([[
+				-- Red-tinted icons for smarts under active attack
+				local red_xml = string.format([[
 <circle_target_%s>
 	<level_map spot="circle_target_%s_spot" pointer="quest_pointer"/>
 </circle_target_%s>
@@ -20,7 +21,19 @@ function on_xml_read()
 </circle_target_%s_spot>
 				]], faction, faction, faction, faction, faction, faction)
 
-				xml_obj:insertFromXMLString(xml_string)
+				xml_obj:insertFromXMLString(red_xml)
+
+				-- Cyan-tinted icons for planned attack targets
+				local cyan_xml = string.format([[
+<circle_planned_%s>
+	<level_map spot="circle_planned_%s_spot" pointer="quest_pointer"/>
+</circle_planned_%s>
+<circle_planned_%s_spot x="0" y="0" width="24" height="24" alignment="c" scale="1" scale_min="1" scale_max="1" stretch="1">
+	<texture r="80" g="200" b="255">ui_mm_faction_%s</texture>
+</circle_planned_%s_spot>
+				]], faction, faction, faction, faction, faction, faction)
+
+				xml_obj:insertFromXMLString(cyan_xml)
 			end
 		end
 	end)
