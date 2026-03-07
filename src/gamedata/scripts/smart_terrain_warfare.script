@@ -3908,18 +3908,24 @@ function smart_terrain.se_smart_terrain:show()
                         info = get_neutral_info(self)
                     end
 
+                    -- use red-tinted icon for player's smarts under attack
+                    local display_key = faction
+                    if under_attack[self.id] and faction == warfare.actor_faction and pda_icons["target_" .. faction] then
+                        display_key = "target_" .. faction
+                    end
+
                     -- if spot already exists, remove it and re-add it to update
                     if (self.warfare_spot) then
-                        if (self.warfare_spot ~= faction) then            -- smart owner doesn't match icon of the owner
+                        if (self.warfare_spot ~= display_key) then            -- smart owner doesn't match icon of the owner
                             level.map_remove_object_spot(self.id, pda_icons[self.warfare_spot])
-                            level.map_add_object_spot(self.id, pda_icons[faction], info)        -- update smart icon
-                            self.warfare_spot = faction
+                            level.map_add_object_spot(self.id, pda_icons[display_key], info)        -- update smart icon
+                            self.warfare_spot = display_key
                         else
-                            level.map_change_spot_hint(self.id, pda_icons[faction], info)
+                            level.map_change_spot_hint(self.id, pda_icons[display_key], info)
                         end
                     else
-                        level.map_add_object_spot(self.id, pda_icons[faction], info)        -- if no spot already, add it
-                        self.warfare_spot = faction
+                        level.map_add_object_spot(self.id, pda_icons[display_key], info)        -- if no spot already, add it
+                        self.warfare_spot = display_key
                     end
 
                 else
@@ -4041,6 +4047,12 @@ function smart_terrain.se_smart_terrain:show()
                     info = get_neutral_info(self)
                 end
 
+                -- use red-tinted icon for player's smarts under attack
+                local display_key = faction
+                if under_attack[self.id] and faction == warfare.actor_faction and pda_icons["target_" .. faction] then
+                    display_key = "target_" .. faction
+                end
+
                 -- map spot already exists: hide it or replace it depending on options
                 if (self.warfare_spot) then
                     -- if hiding all nonvisible smarts, remove spots
@@ -4054,12 +4066,12 @@ function smart_terrain.se_smart_terrain:show()
                     -- neither option is being used
                     else
                         -- update icon with correct visual and info
-                        if (self.warfare_spot ~= faction) then
+                        if (self.warfare_spot ~= display_key) then
                             level.map_remove_object_spot(self.id, pda_icons[self.warfare_spot])
-                            level.map_add_object_spot(self.id, pda_icons[faction], info)
-                            self.warfare_spot = faction
+                            level.map_add_object_spot(self.id, pda_icons[display_key], info)
+                            self.warfare_spot = display_key
                         else
-                            level.map_change_spot_hint(self.id, pda_icons[faction], info)
+                            level.map_change_spot_hint(self.id, pda_icons[display_key], info)
                         end
                     end
 
@@ -4071,13 +4083,13 @@ function smart_terrain.se_smart_terrain:show()
                         if (warfare_options.options.hide_lair_smarts) then
                             -- smart is a valuable nonvisible but occupied terrain: add faction spot
                             if (self.props.base + self.props.resource + self.props.territory > 0) or (faction ~= "none") then
-                                level.map_add_object_spot(self.id, pda_icons[faction], info)
-                                self.warfare_spot = faction
+                                level.map_add_object_spot(self.id, pda_icons[display_key], info)
+                                self.warfare_spot = display_key
                             end
                         -- not using either option, so need to add faction spots to all smarts
                         else
-                            level.map_add_object_spot(self.id, pda_icons[faction], info)
-                            self.warfare_spot = faction
+                            level.map_add_object_spot(self.id, pda_icons[display_key], info)
+                            self.warfare_spot = display_key
                         end
                     end
                 end
