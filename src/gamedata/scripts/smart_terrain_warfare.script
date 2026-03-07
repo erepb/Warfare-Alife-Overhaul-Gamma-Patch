@@ -3834,8 +3834,8 @@ function smart_terrain.se_smart_terrain:show()
                     local other = alife_object(t)
 
                     if (other) then
-                        -- clear target spots from points owned by neutrals
-                        if (other.owning_faction == warfare.actor_faction or (other.owning_faction ~= "none" and not is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
+                        -- clear target spots from points owned by neutrals or when squads are no longer advancing
+                        if (other.owning_faction == warfare.actor_faction or (other.owning_faction ~= "none" and not is_factions_enemies(other.owning_faction, warfare.actor_faction))) or not under_attack[t] then
                             level.map_remove_object_spot(t, pda_icons[spot])
                             self.target_spots[t] = nil
                             other.actor_target = nil
@@ -3845,10 +3845,10 @@ function smart_terrain.se_smart_terrain:show()
                     end
                 end
 
-                -- smart belongs to player's faction
+                -- smart belongs to player's faction — only show red target if squads are actually advancing
                 if (actor_faction) then
                     for t,_ in pairs(self.target_smarts) do
-                        if not (self.target_spots[t]) then
+                        if not (self.target_spots[t]) and under_attack[t] then
                             local other = alife_object(t)
 
                             if (other) then
@@ -3995,12 +3995,12 @@ function smart_terrain.se_smart_terrain:show()
                 self.target_spots = {}
             end
 
-            -- handle removal of red target spots
+            -- handle removal of red target spots — also remove when squads are no longer advancing
             for t,spot in pairs(self.target_spots) do
                 local other = alife_object(t)
 
                 if (other) then
-                    if (other.owning_faction == warfare.actor_faction or not (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
+                    if (other.owning_faction == warfare.actor_faction or not (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) or not under_attack[t] then
                         level.map_remove_object_spot(t, pda_icons[spot])
                         self.target_spots[t] = nil
                         other.actor_target = nil
@@ -4010,10 +4010,10 @@ function smart_terrain.se_smart_terrain:show()
                 end
             end
 
-            -- handle addition of red target spots
+            -- handle addition of red target spots — only show when squads are actually advancing
             if (actor_faction and self.target_smarts) then
                 for t,_ in pairs(self.target_smarts) do
-                    if not (self.target_spots[t]) then
+                    if not (self.target_spots[t]) and under_attack[t] then
                         local other = alife_object(t)
 
                         if (other) then
