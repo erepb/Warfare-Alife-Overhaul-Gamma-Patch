@@ -1,5 +1,5 @@
 -- DXML script to inject faction-specific tinted circle map spots
--- Red = under attack (squads advancing), Cyan = planned target (no squads yet)
+-- Cyan = planned target, Orange = invasion prepping, Red = under attack (squads advancing)
 
 function on_xml_read()
 	RegisterScriptCallback("on_xml_read", function(xml_file_name, xml_obj)
@@ -34,6 +34,18 @@ function on_xml_read()
 				]], faction, faction, faction, faction, faction, faction)
 
 				xml_obj:insertFromXMLString(cyan_xml)
+
+				-- Orange-tinted icons for imminent invasion targets
+				local orange_xml = string.format([[
+<circle_invasion_%s>
+	<level_map spot="circle_invasion_%s_spot" pointer="quest_pointer"/>
+</circle_invasion_%s>
+<circle_invasion_%s_spot x="0" y="0" width="24" height="24" alignment="c" scale="1" scale_min="1" scale_max="1" stretch="1">
+	<texture r="255" g="140" b="40">ui_mm_faction_%s</texture>
+</circle_invasion_%s_spot>
+				]], faction, faction, faction, faction, faction, faction)
+
+				xml_obj:insertFromXMLString(orange_xml)
 			end
 		end
 	end)

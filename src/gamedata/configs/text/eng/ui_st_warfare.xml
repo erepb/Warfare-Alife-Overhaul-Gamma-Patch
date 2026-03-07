@@ -236,6 +236,15 @@
 	<string id="st_wrfr_smart_count_warning">
 		<text>Smart (%s) has %s squads!</text>
 	</string>
+	<string id="st_wrfr_prop_supporting_invasion">
+		<text>--Supporting Invasion--</text>
+	</string>
+	<string id="st_wrfr_prop_launch_base">
+		<text>Launch Base</text>
+	</string>
+	<string id="st_wrfr_prop_departure">
+		<text>Departure</text>
+	</string>
 	
 	<string id="st_wrfr_heli">
 		<text>Helicopter</text>

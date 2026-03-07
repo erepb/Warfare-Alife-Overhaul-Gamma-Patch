@@ -236,6 +236,15 @@
 	<string id="st_wrfr_smart_count_warning">
 		<text>На смарте (%s) находится %s отрядов!</text>
 	</string>
+	<string id="st_wrfr_prop_supporting_invasion">
+		<text>--Поддерживает вторжение--</text>
+	</string>
+	<string id="st_wrfr_prop_launch_base">
+		<text>Атакующая база</text>
+	</string>
+	<string id="st_wrfr_prop_departure">
+		<text>Атака</text>
+	</string>
 
 	<string id="st_wrfr_heli">
 		<text>Вертолет</text>

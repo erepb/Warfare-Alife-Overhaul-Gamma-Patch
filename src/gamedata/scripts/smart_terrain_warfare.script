@@ -160,6 +160,10 @@ under_attack = {}                            -- when a smart is under attack, ha
 patrol_squads = {}
 random_patrols = {}
 invasions = {}
+supporting_invasion = {}                     -- tracks which base a smart is contributing squads to for invasion: supporting_invasion[smart.id] = invasion_base_id
+local invasion_cooldown = {}                 -- cooldown timer for bases that failed to start an invasion: invasion_cooldown[smart.id] = CTime
+local invasion_max_size = 5                  -- hard cap on invasion force size
+local invasion_cooldown_hours = 6            -- cooldown in game hours after a failed invasion attempt
 
 -- Resource count takes the maximum amount of resources owned on a given day, with the count reset at midday every day
 max_resource_count = {
@@ -256,6 +260,20 @@ pda_icons = {
     ["planned_isg"] = "circle_planned_isg",
     ["planned_zombied"] = "circle_planned_zombied",
     ["planned_none"] = "circle_target",
+    ["invasion_stalker"] = "circle_invasion_stalker",
+    ["invasion_bandit"] = "circle_invasion_bandit",
+    ["invasion_csky"] = "circle_invasion_csky",
+    ["invasion_army"] = "circle_invasion_army",
+    ["invasion_freedom"] = "circle_invasion_freedom",
+    ["invasion_dolg"] = "circle_invasion_dolg",
+    ["invasion_ecolog"] = "circle_invasion_ecolog",
+    ["invasion_killer"] = "circle_invasion_killer",
+    ["invasion_monolith"] = "circle_invasion_monolith",
+    ["invasion_renegade"] = "circle_invasion_renegade",
+    ["invasion_greh"] = "circle_invasion_greh",
+    ["invasion_isg"] = "circle_invasion_isg",
+    ["invasion_zombied"] = "circle_invasion_zombied",
+    ["invasion_none"] = "circle_target",
 }
 
 -- [1] = trader count
@@ -435,6 +453,9 @@ function refresh_strings()
     str_wrfr[17] = game.translate_string("st_wrfr_prop_targets")
     str_wrfr[18] = game.translate_string("st_wrfr_prop_invasion")
     str_wrfr[19] = game.translate_string("st_wrfr_smart_count_warning")
+    str_wrfr[20] = game.translate_string("st_wrfr_prop_supporting_invasion")
+    str_wrfr[21] = game.translate_string("st_wrfr_prop_launch_base")
+    str_wrfr[22] = game.translate_string("st_wrfr_prop_departure")
 end
 
 function translate_smart_name(name)
@@ -934,9 +955,42 @@ function process_base_squads(smart)
         return
     end
 
-    -- don't process squads while under attack
+    -- don't process squads while under attack or while holding squads for invasion departure
     if under_attack[smart.id] then
         return
+    end
+
+    if invasions[smart.id] then
+        local regular_squads,sq_pow,stationary_sq_num = squad_count_detailed(smart, smart.owning_faction)
+        local guards = math.max(guard_size, stationary_sq_num)
+        if (regular_squads + stationary_sq_num <= invasions[smart.id][2] + guards) then
+            return  -- not enough excess squads, hold for invasion
+        end
+    end
+
+    -- supporting another base's invasion: send available squads there, don't assign to resources
+    if supporting_invasion[smart.id] then
+        local inv_base_id = supporting_invasion[smart.id]
+        if invasions[inv_base_id] then
+            local regular_squads,sq_pow,stationary_sq_num = squad_count_detailed(smart, smart.owning_faction)
+            local guards = math.max(guard_size, stationary_sq_num)
+            if (regular_squads + stationary_sq_num > guards) then
+                local squads = SIMBOARD.smarts[smart.id].squads
+                for sid,_ in pairs(squads) do
+                    local squad = sid and alife_object(sid)
+                    if (squad) and squad_is_commandable(squad, true) and (squad.current_action == 1) and (squad:get_squad_community() == smart.owning_faction) and not random_patrols[squad.id] then
+                        sim_squad_warfare.set_target(squad, inv_base_id)
+                        regular_squads = regular_squads - 1
+                        if (regular_squads + stationary_sq_num <= guards) then
+                            break  -- keep guard minimum
+                        end
+                    end
+                end
+            end
+            return  -- don't assign squads to resources while supporting invasion
+        else
+            supporting_invasion[smart.id] = nil  -- invasion ended
+        end
     end
 
     local faction = smart.owning_faction
@@ -981,68 +1035,89 @@ function process_base_squads(smart)
                     if (regular_squads + stationary_sq_num == guard_size) then
                         break
                     end
-                    -- If the faction doesn't care about resources, don't send them out to resources
-                    if warfare_options.options.factions[faction] and warfare_options.options.factions[faction].use_bases_not_resources then
-                        return
-                    end
+                    -- Send squads to resources unless faction doesn't care about resources
+                    local squad_sent = false
+                    if not (warfare_options.options.factions[faction] and warfare_options.options.factions[faction].use_bases_not_resources) then
+                        -- Find nearby resources to send base squads to in the morning - this is only done once per function call
+                        if not (#resources > 0) then
+                            local level_info = warfare_levels.level_information[smart.level_id]
+                            for i,sm in pairs(level_info.smarts) do
+                                local other = sm and alife_object(sm)
+                                if not (other.owning_faction) then
+                                    check_owner(other)
+                                end
 
-                    -- Find nearby resources to send base squads to in the morning - this is only done once per function call
-                    if not (#resources > 0) then
-                        local level_info = warfare_levels.level_information[smart.level_id]
-                        for i,sm in pairs(level_info.smarts) do
-                            local other = sm and alife_object(sm)
-                            if not (other.owning_faction) then
-                                check_owner(other)
-                            end
-
-                            if other.props and (other.props.base > 0) and (other.owning_faction ~= "none") and is_factions_enemies(smart.owning_faction, other.owning_faction) then
-                                local dist = fetch_smart_distance(smart, other)
-                                enemy_bases[#enemy_bases + 1] = { other.id, dist }    -- enemy bases
-                            end
-
-                            if other.props and ( (other.props.resource > 0) or (other.props.territory > 0 and other.props.lair < 1 and send_to_territory[faction]) ) then  -- Some factions also target pure territories
-                                local numTargeting = squad_count(other, smart.owning_faction)  -- See if already sending a squad to the resource
-                                if (numTargeting < 1) and (other.owning_faction == "none" or ((other.owning_faction == "stalker" or other.owning_faction == "ecolog") and (other.props.base < 1) and not is_factions_enemies(smart.owning_faction, other.owning_faction))) then
+                                if other.props and (other.props.base > 0) and (other.owning_faction ~= "none") and is_factions_enemies(smart.owning_faction, other.owning_faction) then
                                     local dist = fetch_smart_distance(smart, other)
-                                    resources[#resources + 1] = { other.id, dist }    -- claimable resources
+                                    enemy_bases[#enemy_bases + 1] = { other.id, dist }    -- enemy bases
                                 end
-                            end
-                        end
 
-                        table.sort(enemy_bases, function(a, b)
-                            return a[2] < b[2]
-                        end)
-
-                        table.sort(resources, function(a, b)
-                            return a[2] < b[2]
-                        end)
-                    end
-                    -- Send squad to nearest unclaimed resources
-                    if (#resources > 0) then
-                        local closest_enemy_base_distance = enemy_bases and enemy_bases[1] and enemy_bases[1][2] or nil
-                        local squad_sent = false
-                        for i=1,#resources do
-                            local resource_id = resources[i][1]
-                            local resource_distance = resources[i][2]
-                            local other = resource_id and alife_object(resource_id)
-                            local numTargeting = squad_count(other, smart.owning_faction)
-                            -- Only resources within the same distance as the nearest hostile base are considered
-                            if (closest_enemy_base_distance and (resource_distance < closest_enemy_base_distance)) or not closest_enemy_base_distance then
-                                if (numTargeting < 1) and (math.random(100) < aggression) then
-                                    sim_squad_warfare.set_target(squad, resource_id)
-                                    squad_sent = true
-                                    regular_squads = regular_squads - 1  -- Keep count of squads remaining at base
-                                    if enable_debug then
-                                        printf("%s is sending a base squad to %s", faction, other:name())
+                                if other.props and ( (other.props.resource > 0) or (other.props.territory > 0 and other.props.lair < 1 and send_to_territory[faction]) ) then  -- Some factions also target pure territories
+                                    local numTargeting = squad_count(other, smart.owning_faction)  -- See if already sending a squad to the resource
+                                    if (numTargeting < 1) and (other.owning_faction == "none" or ((other.owning_faction == "stalker" or other.owning_faction == "ecolog") and (other.props.base < 1) and not is_factions_enemies(smart.owning_faction, other.owning_faction))) then
+                                        local dist = fetch_smart_distance(smart, other)
+                                        resources[#resources + 1] = { other.id, dist }    -- claimable resources
                                     end
-                                    break
                                 end
                             end
+
+                            table.sort(enemy_bases, function(a, b)
+                                return a[2] < b[2]
+                            end)
+
+                            table.sort(resources, function(a, b)
+                                return a[2] < b[2]
+                            end)
                         end
-                        -- Only send one squad per update of this function, to allow other bases to also send squads
-                        if squad_sent then
-                            break
+                        -- Send squad to nearest unclaimed resources
+                        if (#resources > 0) then
+                            local closest_enemy_base_distance = enemy_bases and enemy_bases[1] and enemy_bases[1][2] or nil
+                            for i=1,#resources do
+                                local resource_id = resources[i][1]
+                                local resource_distance = resources[i][2]
+                                local other = resource_id and alife_object(resource_id)
+                                local numTargeting = squad_count(other, smart.owning_faction)
+                                -- Only resources within the same distance as the nearest hostile base are considered
+                                if (closest_enemy_base_distance and (resource_distance < closest_enemy_base_distance)) or not closest_enemy_base_distance then
+                                    if (numTargeting < 1) and (math.random(100) < aggression) then
+                                        sim_squad_warfare.set_target(squad, resource_id)
+                                        squad_sent = true
+                                        regular_squads = regular_squads - 1  -- Keep count of squads remaining at base
+                                        if enable_debug then
+                                            printf("%s is sending a base squad to %s", faction, other:name())
+                                        end
+                                        break
+                                    end
+                                end
+                            end
+                            -- Only send one squad per update of this function, to allow other bases to also send squads
+                            if squad_sent then
+                                break
+                            end
                         end
+                    end
+
+                    -- No resource/territory to send to and base has overflow: try invasion or contribute to one
+                    if not squad_sent and not base_has_vacancy(smart, faction) then
+                        -- if committed to supporting another base's invasion, send overflow squad there
+                        if supporting_invasion[smart.id] then
+                            local inv_base_id = supporting_invasion[smart.id]
+                            if invasions[inv_base_id] then
+                                sim_squad_warfare.set_target(squad, inv_base_id)
+                            else
+                                supporting_invasion[smart.id] = nil  -- invasion ended
+                            end
+                        elseif not invasions[smart.id] and (math.random(100) <= aggression) then
+                            -- try planning own invasion or send one squad to help another (aggression gated)
+                            local inv_target = get_invasion_target(smart)
+                            if inv_target then
+                                create_invasion_plan(smart, inv_target)
+                            end
+                            if not invasions[smart.id] and not supporting_invasion[smart.id] then
+                                contribute_to_other_invasion(smart)
+                            end
+                        end
+                        break  -- limit to one action per cycle
                     end
 
                 -- Third criterion: overflow squads are moved during sunset
@@ -1610,7 +1685,7 @@ function process_targets(smart)
                 target_smart_count = target_smart_count + 1
                 local numTargeting = squad_count(other, smart.owning_faction)
                 -- send spare squad to empty targets if havent done so already, as long as manual control is off
-                if (numTargeting < 1) and (math.random(100) < aggression) then
+                if not supporting_invasion[smart.id] and (numTargeting < 1) and (math.random(100) < aggression) then
                     capture_empty_location_simple(smart, other)
                 end
             else
@@ -1637,7 +1712,7 @@ function process_targets(smart)
                 auto_target_count = auto_target_count + 1
                 local numTargeting = squad_count(other, smart.owning_faction)
                 -- send spare squad to empty targets if havent done so already
-                if (numTargeting < 1) and (math.random(100) < aggression) then
+                if not supporting_invasion[smart.id] and (numTargeting < 1) and (math.random(100) < aggression) then
                     capture_empty_location_simple(smart, other)
                 end
             else
@@ -1663,9 +1738,6 @@ function process_targets(smart)
                 create_invasion_plan(smart, target)
             end
 
-            if not (invasions[smart.id]) then
-                contribute_to_other_invasion(smart)
-            end
         end
 
         -- check if time to send invasion out, then do so if ready
@@ -1764,15 +1836,39 @@ function process_targets(smart)
     end
 
     -- If the random number is less than or equal to the aggression for the faction, create a new invasion plan
-    if (math.random(100) <= aggression) then
-        -- Choose a new invasion target if needed from the list of chosen targets.
-        if not (invasions[smart.id]) then
-            local target = get_invasion_target(smart)
-            create_invasion_plan(smart, target)
+    -- Check cooldown: skip invasion planning if base recently failed
+    local on_cooldown = false
+    if invasion_cooldown[smart.id] then
+        local cd_diff = warfare.get_time_ref():diffSec(invasion_cooldown[smart.id])
+        if cd_diff < (invasion_cooldown_hours * 3600) then
+            on_cooldown = true
+        else
+            invasion_cooldown[smart.id] = nil
         end
-        -- if the invasion plan is not certified, very aggressive factions will instead look at nearby bases and see if they can contribute to their invasion
-        if not (invasions[smart.id]) then
-            contribute_to_other_invasion(smart)
+    end
+
+    -- if already supporting another base's invasion, check if that invasion is still active
+    if supporting_invasion[smart.id] then
+        local inv_base_id = supporting_invasion[smart.id]
+        if not invasions[inv_base_id] then
+            supporting_invasion[smart.id] = nil  -- invasion ended, clear support
+        end
+    end
+
+    if not on_cooldown and not supporting_invasion[smart.id] then
+        local roll = math.random(100)
+        if (roll <= aggression) then
+            -- Choose a new invasion target if needed from the list of chosen targets.
+            -- If the target is already being invaded by another base, create_invasion_plan will set supporting_invasion
+            if not (invasions[smart.id]) then
+                local target = get_invasion_target(smart)
+                if target then
+                    create_invasion_plan(smart, target)
+                end
+            end
+        else
+            -- failed aggression check: set cooldown so base doesn't retry every tick
+            invasion_cooldown[smart.id] = warfare.get_time()
         end
     end
 
@@ -1803,10 +1899,6 @@ function process_targets(smart)
             invasions[smart.id] = nil        -- discard current invasion plan
             local target = get_invasion_target(smart)
             create_invasion_plan(smart,target)            -- create new plan using new targets
-            -- if the invasion plan is not certified, instead look at nearby bases and see if they can contribute to their invasion
-            if not (invasions[smart.id]) then
-                contribute_to_other_invasion(smart)
-            end
         end
 --        if enable_debug then
 --            printf("re-checking targets/invasion of %s base %s due to loss of bases: %s vs %s", smart.owning_faction, smart:name(), current_base_count, base_recheck[smart.id])
@@ -1979,6 +2071,31 @@ function create_invasion_plan(smart, target)
         check_owner(target)
     end
 
+    -- if another same-faction base already has an invasion planned for this target, compare distances — closer base becomes main
+    local level_info = warfare_levels.level_information[smart.level_id]
+    if level_info then
+        for _,sm in pairs(level_info.smarts) do
+            local other = sm and alife_object(sm)
+            if other and (other.id ~= smart.id) and (other.owning_faction == smart.owning_faction) and invasions[other.id] and (invasions[other.id][1] == target.id) then
+                local other_dist = fetch_smart_distance(other, target)
+                local smart_dist = fetch_smart_distance(smart, target)
+                if smart_dist < other_dist then
+                    -- This base is closer to the target: take over as main invasion base, old base will contribute naturally
+                    invasions[other.id] = nil
+                    supporting_invasion[other.id] = smart.id  -- old base now supports the new main base
+                    if enable_debug then
+                        printf("transferring %s invasion to %s from farther base %s to closer base %s", smart.owning_faction, target:name(), other:name(), smart:name())
+                    end
+                    break  -- continue to create a fresh invasion plan from this closer base
+                else
+                    -- Other base is closer or equal: signal to contribute instead
+                    supporting_invasion[smart.id] = other.id  -- this base supports the existing invasion base
+                    return true
+                end
+            end
+        end
+    end
+
     local invading_faction_props = warfare_options.options.factions[smart.owning_faction]
     local defending_faction = target.owning_faction
     local invasion_force_size
@@ -2071,7 +2188,6 @@ function create_invasion_plan(smart, target)
         local power_ratio = avg_enemy_squad_power / avg_allied_squad_power        -- how many times more powerful are enemy squads than allied squads
 
         local sq_num,sq_pow,sq_stat = squad_count_detailed(smart, smart.owning_faction)
-        local origin_base_max_force = 2 * smart.max_population - sq_stat                    -- set a hard limit on max size of invasion force, only 2x the max pop of the origin base (minus any stationary squads present)
         local x = math.random()
         local invasion_size_factor = warfare.lerp( invading_faction_props.min_invasion_size, invading_faction_props.max_invasion_size, x )            -- linear interpolation of random between min and max factors
 
@@ -2085,7 +2201,7 @@ function create_invasion_plan(smart, target)
             immediate_invasion = true
             invasion_force_size = invasion_force_immediate
         else
-            invasion_force_size = math.min(origin_base_max_force, invasion_force_desired)
+            invasion_force_size = invasion_force_desired
         end
 
     else
@@ -2097,7 +2213,15 @@ function create_invasion_plan(smart, target)
 
     -- set invasion
     local inv_start = nil
-    local depart = 0  -- Invasions will always depart immediately
+    local depart = math.random(120, 240)  -- Departure delay in game minutes after squads are gathered (2-4 hours)
+
+    -- hard cap on invasion force size
+    if invasion_force_size and invasion_force_size > invasion_max_size then
+        invasion_force_size = invasion_max_size
+    end
+    if invasion_force_desired and invasion_force_desired > invasion_max_size then
+        invasion_force_desired = invasion_max_size
+    end
 
     -- invasion will be planned if the possible force is within reason
     if ( (invasion_force_size > 0) and (invasion_force_desired / invasion_force_size) < 2 ) or (immediate_invasion) then
@@ -2116,7 +2240,8 @@ end
 
 
 -- if an invasion plan is not certified, factions will instead look at nearby bases on-level and see if they can contribute to their invasion
-function contribute_to_other_invasion(smart)
+-- skip_aggression: if true, bypass aggression checks (base wanted to invade the same target as another closer base)
+function contribute_to_other_invasion(smart, skip_aggression)
 
     -- disable this feature if manual control is turned on
     if (smart.owning_faction == warfare.actor_faction) and (pda_actor.manual_control) then
@@ -2130,33 +2255,27 @@ function contribute_to_other_invasion(smart)
     if (squads_available > 0) and not under_attack[smart.id] then
         local level_info = warfare_levels.level_information[smart.level_id]
         local ally_locations = {}
-        local closest_enemy_base_distance
-        for i,sm in pairs(level_info.smarts) do                                                -- loop over all on-level smart terrains
+
+        for i,sm in pairs(level_info.smarts) do
             local other = sm and alife_object(sm)
 
             -- only consider points with active invasion plans
             if (other.owning_faction == smart.owning_faction) and (invasions[other.id]) then
                 local invasion_target = invasions[other.id][1] and alife_object(invasions[other.id][1])
-                local enemy_target_dist = fetch_smart_distance(other, invasion_target)
-                local reinforce_dist = fetch_smart_distance(smart,other)
+                local invasion_base_to_target = fetch_smart_distance(other, invasion_target)
+                local support_base_to_target = fetch_smart_distance(smart, invasion_target)
+                local reinforce_dist = fetch_smart_distance(smart, other)
                 local other_sq_reg,pow,sq_stat = squad_count_detailed(other, other.owning_faction)
                 local squads_needed = invasions[other.id][2] + math.max(guard_size, sq_stat) - other_sq_reg - sq_stat
 
-                -- only consider points that are very close compared to the invasion target distance, that still need squads. Invasions which are closest to reaching their target size get priority
-                if ( reinforce_dist < (0.3*enemy_target_dist) ) and (squads_needed > 0) then
+                -- only contribute if invasion base is closer to enemy target than support base, and squads are still needed
+                if (invasion_base_to_target < support_base_to_target) and (squads_needed > 0) then
                     ally_locations[#ally_locations+1] = { squads_needed * reinforce_dist * reinforce_dist, other.id, reinforce_dist }
-                end
-            end
-
-            -- Also record distance of closest enemy base - if base is closer than other invasion base, don't send squad unless very very aggressive
-            if is_factions_enemies(other.owning_faction, smart.owning_faction) and (other.props.base > 1) then
-                local dist = fetch_smart_distance(smart,other)
-                if not closest_enemy_base_distance or (dist < closest_enemy_base_distance) then
-                    closest_enemy_base_distance = dist
                 end
             end
         end
 
+        -- Sort by priority: invasions closest to reaching target size and nearest distance first
         table.sort(ally_locations, function(a, b)
             return math.abs(a[1]) < math.abs(b[1])
         end)
@@ -2164,15 +2283,22 @@ function contribute_to_other_invasion(smart)
         if (#ally_locations > 0) then
             for i=1,#ally_locations do
                 local other = ally_locations[i][2] and alife_object(ally_locations[i][2])
-                if (other and other.owning_faction) and ((closest_enemy_base_distance and (ally_locations[i][3] < closest_enemy_base_distance)) or (math.random(150) < aggression)) then
-                    local squads = SIMBOARD.smarts[smart.id].squads
-                    for sid,_ in pairs(squads) do
-                        local squad = sid and alife_object(sid)
-                        if (squads_available > 0) and squad_is_commandable(squad) and (squad:get_squad_community() == smart.owning_faction) and (squad.current_action == 1) then
-                            sim_squad_warfare.set_target(squad, other.id)
-                            squads_available = squads_available - 1
-                            if enable_debug then
-                                printf("giving one %s squad at %s to invasion force prepping at %s", smart.owning_faction, smart:name(), other:name())
+                -- skip_aggression: base wanted to invade the same target, contribute unconditionally
+                -- otherwise: aggression roll determines willingness to contribute
+                if (other and other.owning_faction) and (skip_aggression or (math.random(150) < aggression)) then
+                    -- re-check how many squads the invasion base still needs
+                    local other_sq_reg,pow,sq_stat = squad_count_detailed(other, other.owning_faction)
+                    local squads_needed = invasions[other.id][2] + math.max(guard_size, sq_stat) - other_sq_reg - sq_stat
+                    if squads_needed > 0 then
+                        local squads = SIMBOARD.smarts[smart.id].squads
+                        for sid,_ in pairs(squads) do
+                            local squad = sid and alife_object(sid)
+                            if (squads_available > 0) and squad_is_commandable(squad) and (squad:get_squad_community() == smart.owning_faction) and (squad.current_action == 1) then
+                                sim_squad_warfare.set_target(squad, other.id)
+                                if enable_debug then
+                                    printf("giving one %s squad at %s to invasion force prepping at %s", smart.owning_faction, smart:name(), other:name())
+                                end
+                                return  -- limit to one squad per tick
                             end
                         end
                     end
@@ -3854,22 +3980,46 @@ function smart_terrain.se_smart_terrain:show()
                             self.target_spots[t] = nil
                             other.actor_target = nil
                         else
-                            -- update color: red if under attack, cyan if planned
-                            local new_key = under_attack[t] and ("target_" .. (other.owning_faction or "none")) or ("planned_" .. (other.owning_faction or "none"))
-                            if spot ~= new_key then
-                                level.map_remove_object_spot(t, pda_icons[spot])
-                                level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_target_info(other))
-                                self.target_spots[t] = new_key
+                            -- update color: red=under attack, orange=squads ready, cyan=gathering squads
+                            local inv = invasions[self.id]
+                            local inv_target = inv and inv[1]
+                            local inv_ready = inv and inv[3]  -- departure timer started = squads gathered
+                            local faction_key = other.owning_faction or "none"
+                            local new_key
+                            if under_attack[t] then
+                                new_key = "target_" .. faction_key
+                            elseif inv_target == t and inv_ready then
+                                new_key = "invasion_" .. faction_key
+                            elseif inv_target == t then
+                                new_key = "planned_" .. faction_key
                             else
-                                level.map_change_spot_hint(t, pda_icons[spot], get_target_info(other))
+                                -- no invasion plan for this target, remove spot
+                                level.map_remove_object_spot(t, pda_icons[spot])
+                                self.target_spots[t] = nil
+                                other.actor_target = nil
+                                new_key = nil
+                            end
+                            if new_key then
+                                if spot ~= new_key then
+                                    level.map_remove_object_spot(t, pda_icons[spot])
+                                    level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_target_info(other))
+                                    self.target_spots[t] = new_key
+                                else
+                                    level.map_change_spot_hint(t, pda_icons[spot], get_target_info(other))
+                                end
                             end
                         end
                     end
                 end
 
-                -- smart belongs to player's faction — show target spots (cyan=planned, red=under attack)
+                -- smart belongs to player's faction — show target spots only for invasion targets
+                -- cyan=gathering squads, orange=squads ready, red=under attack
                 if (actor_faction) then
-                    for t,_ in pairs(self.target_smarts) do
+                    local inv = invasions[self.id]
+                    local inv_target = inv and inv[1]
+                    local inv_ready = inv and inv[3]
+                    if inv_target then
+                        local t = inv_target
                         if not (self.target_spots[t]) then
                             local other = alife_object(t)
 
@@ -3883,7 +4033,15 @@ function smart_terrain.se_smart_terrain:show()
                                         other.warfare_spot = nil
                                     end
 
-                                    local target_key = under_attack[t] and ("target_" .. (other.owning_faction or "none")) or ("planned_" .. (other.owning_faction or "none"))
+                                    local faction_key = other.owning_faction or "none"
+                                    local target_key
+                                    if under_attack[t] then
+                                        target_key = "target_" .. faction_key
+                                    elseif inv_ready then
+                                        target_key = "invasion_" .. faction_key
+                                    else
+                                        target_key = "planned_" .. faction_key
+                                    end
                                     level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_target_info(other))
                                     self.target_spots[t] = target_key
                                 end
@@ -4027,22 +4185,45 @@ function smart_terrain.se_smart_terrain:show()
                         self.target_spots[t] = nil
                         other.actor_target = nil
                     else
-                        -- update color: red if under attack, cyan if planned
-                        local new_key = under_attack[t] and ("target_" .. (other.owning_faction or "none")) or ("planned_" .. (other.owning_faction or "none"))
-                        if spot ~= new_key then
-                            level.map_remove_object_spot(t, pda_icons[spot])
-                            level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_warfare_info(other))
-                            self.target_spots[t] = new_key
+                        -- update color: red=under attack, orange=squads ready, cyan=gathering squads
+                        local inv = invasions[self.id]
+                        local inv_target = inv and inv[1]
+                        local inv_ready = inv and inv[3]
+                        local faction_key = other.owning_faction or "none"
+                        local new_key
+                        if under_attack[t] then
+                            new_key = "target_" .. faction_key
+                        elseif inv_target == t and inv_ready then
+                            new_key = "invasion_" .. faction_key
+                        elseif inv_target == t then
+                            new_key = "planned_" .. faction_key
                         else
-                            level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other))
+                            level.map_remove_object_spot(t, pda_icons[spot])
+                            self.target_spots[t] = nil
+                            other.actor_target = nil
+                            new_key = nil
+                        end
+                        if new_key then
+                            if spot ~= new_key then
+                                level.map_remove_object_spot(t, pda_icons[spot])
+                                level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_warfare_info(other))
+                                self.target_spots[t] = new_key
+                            else
+                                level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other))
+                            end
                         end
                     end
                 end
             end
 
-            -- handle addition of target spots (cyan=planned, red=under attack)
-            if (actor_faction and self.target_smarts) then
-                for t,_ in pairs(self.target_smarts) do
+            -- handle addition of target spots — only for invasion targets
+            -- cyan=gathering squads, orange=squads ready, red=under attack
+            if (actor_faction) then
+                local inv = invasions[self.id]
+                local inv_target = inv and inv[1]
+                local inv_ready = inv and inv[3]
+                if inv_target then
+                    local t = inv_target
                     if not (self.target_spots[t]) then
                         local other = alife_object(t)
 
@@ -4056,7 +4237,15 @@ function smart_terrain.se_smart_terrain:show()
                                     other.warfare_spot = nil
                                 end
 
-                                local target_key = under_attack[t] and ("target_" .. (other.owning_faction or "none")) or ("planned_" .. (other.owning_faction or "none"))
+                                local faction_key = other.owning_faction or "none"
+                                local target_key
+                                if under_attack[t] then
+                                    target_key = "target_" .. faction_key
+                                elseif inv_ready then
+                                    target_key = "invasion_" .. faction_key
+                                else
+                                    target_key = "planned_" .. faction_key
+                                end
                                 level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_warfare_info(other))
                                 self.target_spots[t] = target_key
                             end
@@ -4412,25 +4601,59 @@ function get_warfare_info(smart)
         end
     end
 
-    if (invasions[smart.id]) then
-        local other = invasions[smart.id][1] and alife_object(invasions[smart.id][1])
-        local otherName = translate_smart_name(other:name())
-        local other_level = game.translate_string(alife():level_name(other.level_id))
-        otherName = otherName or smart:name()
+    if (smart.owning_faction == warfare.actor_faction) then
+        if (invasions[smart.id]) then
+            local other = invasions[smart.id][1] and alife_object(invasions[smart.id][1])
+            local otherName = translate_smart_name(other:name())
+            local other_level = game.translate_string(alife():level_name(other.level_id))
+            otherName = otherName or smart:name()
 
-        --props = props .. clr_b .. " \\n \\n------------------------"
-        props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[18]
-        props = props .. " \\n" .. clr_gr .. str_wrfr[15] .. ": " .. clr_w .. otherName .."\\n"
-        props = props .. " \\n" .. clr_gr .. str_wrfr[16] .. ": " .. clr_w .. invasions[smart.id][2] .. "\\n"
+            --props = props .. clr_b .. " \\n \\n------------------------"
+            props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[18]
+            props = props .. " \\n" .. clr_gr .. str_wrfr[15] .. ": " .. clr_w .. otherName .."\\n"
+            props = props .. " \\n" .. clr_gr .. str_wrfr[16] .. ": " .. clr_w .. invasions[smart.id][2] .. "\\n"
 
-        local diff = warfare.get_time_ref():diffSec(invasions[smart.id][3] or warfare.get_time())
-        local wait = invasions[smart.id][4] or 0
+            if invasions[smart.id][3] then
+                local diff = warfare.get_time_ref():diffSec(invasions[smart.id][3])
+                local wait = invasions[smart.id][4] or 0
+                local remaining = round_idp(wait - (diff/60))
+                if remaining > 0 then
+                    props = props .. " \\n" .. clr_gr .. str_wrfr[22] .. ": " .. clr_y .. strformat(str_wrfr[14], remaining)
+                end
+            end
+        end
 
-        local remaining = wait - (diff/60)
-        remaining = strformat(str_wrfr[14] , remaining)
-        --props = props .. clr_gr .. "\\nInvasion departure: ".. clr_y .. remaining
+        -- Show if this base is supporting another base's invasion
+        if supporting_invasion[smart.id] and not invasions[smart.id] then
+            local inv_base_id = supporting_invasion[smart.id]
+            if invasions[inv_base_id] then
+                local inv_base = inv_base_id and alife_object(inv_base_id)
+                local inv_target = invasions[inv_base_id][1] and alife_object(invasions[inv_base_id][1])
+                if inv_base and inv_target then
+                    local inv_base_name = translate_smart_name(inv_base:name()) or inv_base:name()
+                    local inv_target_name = translate_smart_name(inv_target:name()) or inv_target:name()
+                    props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[20]
+                    props = props .. " \\n" .. clr_gr .. str_wrfr[21] .. ": " .. clr_w .. inv_base_name .. "\\n"
+                    props = props .. " \\n" .. clr_gr .. str_wrfr[15] .. ": " .. clr_w .. inv_target_name .. "\\n"
+                end
+            else
+                supporting_invasion[smart.id] = nil  -- invasion ended, clear
+            end
+        end
+    elseif smart.owning_faction and (smart.owning_faction ~= warfare.actor_faction) then
+        -- On non-player bases, show which player faction base is launching an invasion against it
+        for base_id, inv in pairs(invasions) do
+            if inv[1] == smart.id then
+                local other = base_id and alife_object(base_id)
+                if other and (other.owning_faction == warfare.actor_faction) then
+                    local attacker_name = translate_smart_name(other:name()) or other:name()
+                    props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[18]
+                    props = props .. " \\n" .. clr_gr .. str_wrfr[21] .. ": " .. clr_w .. attacker_name .. "\\n"
+                    break
+                end
+            end
+        end
     end
-
 
     if under_attack[smart.id] then
 
