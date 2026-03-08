@@ -4008,10 +4008,10 @@ function smart_terrain.se_smart_terrain:show()
                             if new_key then
                                 if spot ~= new_key then
                                     level.map_remove_object_spot(t, pda_icons[spot])
-                                    level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_target_info(other))
+                                    level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_warfare_info(other, false))
                                     self.target_spots[t] = new_key
                                 else
-                                    level.map_change_spot_hint(t, pda_icons[spot], get_target_info(other))
+                                    level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other, false))
                                 end
                             end
                         end
@@ -4048,7 +4048,7 @@ function smart_terrain.se_smart_terrain:show()
                                     else
                                         target_key = "planned_" .. faction_key
                                     end
-                                    level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_target_info(other))
+                                    level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_warfare_info(other, false))
                                     self.target_spots[t] = target_key
                                 end
                             end
@@ -4089,7 +4089,7 @@ function smart_terrain.se_smart_terrain:show()
                     if (faction == warfare.actor_faction or is_factions_friends(faction, warfare.actor_faction)) then
                         info = get_warfare_info(self)
                     elseif (is_factions_enemies(warfare.actor_faction, faction)) then
-                        info = get_target_info(self, true)
+                        info = get_warfare_info(self)
                     else
                         info = get_neutral_info(self)
                     end
@@ -4267,7 +4267,7 @@ function smart_terrain.se_smart_terrain:show()
                 if (faction == warfare.actor_faction or is_factions_friends(faction, warfare.actor_faction)) then
                     info = get_warfare_info(self)
                 elseif (is_factions_enemies(warfare.actor_faction, faction)) then
-                    info = get_target_info(self)
+                    info = get_warfare_info(self)
                 else
                     info = get_neutral_info(self)
                 end
@@ -4365,160 +4365,23 @@ function smart_terrain.se_smart_terrain:hide()
     printd(1, self:name())
 end
 
-function get_unknown_info(smart)
-    printd(0, smart:name())
-
-    local owning_faction = warfare_names.faction_names[smart.owning_faction]
-    local warfareName = translate_smart_name(smart:name())    or smart:name()
-    local props = clr_o .. warfareName .. " \\n"
-    props = props .. clr_o .. "................................\\n "    .. clr_gr
-
-    if (smart.props) then
-        if (smart.props.base > 0) then
-            props = props .. " \\n" .. str_wrfr[2] .. " \\n"
-        end
-
-        if (smart.props.resource > 0) then
-            props = props .. " \\n" .. str_wrfr[3] .. " \\n"
-        end
-
-        if (smart.props.territory > 0) then
-            props = props .. " \\n" .. str_wrfr[4] .. " \\n"
-        end
-    end
-
-    printd(1, smart:name())
-    return props
-end
-
-function get_neutral_info(smart)
-    printd(0, smart:name())
-
-    local owning_faction = warfare_names.faction_names[smart.owning_faction]
-    local warfareName = translate_smart_name(smart:name())    or smart:name()
-    local props = clr_o .. warfareName .. " \\n"
-    props = props .. clr_o .. "................................ \\n".. clr_gr
-
-    if (smart.owning_faction) then
-        props = props .. " \\n" .. clr_gr .. str_wrfr[6] .. ": " .. clr_w .. game.translate_string(smart.owning_faction) .. "\\n"
-    end
-
-    if (smart.props) then
-        if (smart.props.base > 0) then
-            props = props .. " \\n" .. clr_gr .. str_wrfr[2] .. " \\n"
-        end
-
-        if (smart.props.resource > 0) then
-            props = props .. " \\n" .. clr_gr .. str_wrfr[3] .. " \\n"
-        end
-
-        if (smart.props.territory > 0) then
-            props = props .. " \\n" .. clr_gr .. str_wrfr[4] .. " \\n"
-        end
-    end
-
-    -- Fix
-    if (smart.defense_count) then
-        props = props .. " \\n" .. clr_gr .. str_wrfr[7] .. ": " .. clr_w .. tostring(smart.defense_count) --.. "\\n"
-    end
-    if (smart.max_population) then
-        props = props .. " \\n" .. clr_gr .. str_wrfr[8] .. ": " .. clr_w .. tostring(smart.max_population) .. "\\n"
-    end
-
-    local f = false
-    if (smart.target_smarts) then
-        for target,_ in pairs(smart.target_smarts) do
-            if not (f) then
-                f = true
-                --props = props .. clr_b .. " \\n \\n------------------------"
-                props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[17] .. " \\n" .. clr_gr
-            end
-
-            local other = alife_object(target)
-
-            if (other) then
-                local otherWarfare = translate_smart_name(other:name()) or other:name()
-                local other_level = game.translate_string(alife():level_name(other.level_id))
-
-                props = props .. "\\n" .. clr_gr .. otherWarfare .. "\\n"
-            end
-        end
-    end
-
-    printd(1, smart:name())
-    return props
-end
-
-function get_target_info(smart, visible)
-    printd(0, smart:name())
-
-    local owning_faction = warfare_names.faction_names[smart.owning_faction]
-    local warfareName = translate_smart_name(smart:name())    or smart:name()
-    local props = clr_o .. warfareName .. " \\n"
-    props = props .. clr_o .. "................................\\n "    .. clr_gr
-
-    if (smart.owning_faction and visible) then
-        props = props .. " \\n" .. clr_gr .. str_wrfr[6] .. ": " .. clr_w .. game.translate_string(smart.owning_faction) .. " \\n"
-    end
-
-    if (smart.props) then
-        if (smart.props.base > 0) then
-            props = props .. " \\n" .. clr_gr .. str_wrfr[2] .. " \\n"
-        end
-
-        if (smart.props.resource > 0) then
-            props = props .. " \\n" .. clr_gr .. str_wrfr[3] .. " \\n"
-        end
-
-        if (smart.props.territory > 0) then
-            props = props .. " \\n" .. clr_gr .. str_wrfr[4] .. " \\n"
-        end
-    end
-
-    props = props .. " \\n" .. clr_gr .. str_wrfr[8] .. ": " .. clr_w .. tostring(smart.max_population) .. " \\n"
-    props = props .. " \\n \\n"
-
-    if (manual_point and manual_point[1] and smart.id == manual_point[1]) then
-        local diff = round_idp(warfare.get_time_ref():diffSec(manual_point[2])/60)
-        local remaining = (warfare_options.options.auto_capture_wait_time) - diff
-
-        if (remaining >= 0) then
-            props = props.." \\n" .. clr_gr .. str_wrfr[10] .. ": " .. clr_y .. strformat(str_wrfr[14] , remaining) .. " \\n"
-        end
-    end
-
-    printd(1, smart:name())
-    return props
-end
-
--- gets information for the smart terrain hint
-function get_warfare_info(smart)
-    printd(0, smart:name())
-
-
-    local owning_faction_ru = warfare_names.faction_names[smart.owning_faction]
+-- Common header + props + counts for all smart terrain hints
+-- show_owner: show owning faction line
+-- show_counts: show defense_count and max_population
+local function get_smart_base_info(smart, show_owner, show_counts)
     local warfareName = translate_smart_name(smart:name())
 
     local props = ""
 
     if (warfareName) then
         props = clr_o .. warfareName .. " \\n"
-        props = props .. clr_o .. "................................\\n "    .. clr_gr
+        props = props .. clr_o .. "................................\\n " .. clr_gr
 
         if (warfare_options.options.debug_logging) then
             props = props .. "\\n" .. smart:name() .. " | id="..smart.id .. "\\n"
         end
     else
         props = "\\n" .. smart:name() .. "\\n"
-    end
-
-    if (manual_point and manual_point[1] and smart.id == manual_point[1]) then
-        local diff = round_idp(warfare.get_time_ref():diffSec(manual_point[2])/60)
-        local remaining = (warfare_options.options.auto_capture_wait_time) - diff
-
-        if (remaining >= 0) then
-            props = props.." \\n" .. clr_gr .. str_wrfr[10] .. ": " .. clr_y .. strformat(str_wrfr[14] , remaining) .. " \\n"
-        end
     end
 
     if (smart.props) then
@@ -4534,12 +4397,70 @@ function get_warfare_info(smart)
             props = props .. " \\n" .. clr_gr .. str_wrfr[5] .. " \\n"
         end
     end
-    if (smart.owning_faction) then
+
+    if (show_owner and smart.owning_faction) then
         props = props .. " \\n" .. clr_gr .. str_wrfr[6] .. ": " .. clr_w .. game.translate_string(smart.owning_faction) .. "\\n"
     end
 
-    props = props .. " \\n" .. clr_gr .. str_wrfr[7] .. ": " .. clr_w .. tostring(smart.defense_count) --.. "\\n"
-    props = props .. " \\n" .. clr_gr .. str_wrfr[8] .. ": " .. clr_w .. tostring(smart.max_population) .. "\\n"
+    if (show_counts) then
+        props = props .. " \\n" .. clr_gr .. str_wrfr[7] .. ": " .. clr_w .. tostring(smart.defense_count)
+        props = props .. " \\n" .. clr_gr .. str_wrfr[8] .. ": " .. clr_w .. tostring(smart.max_population) .. "\\n"
+    end
+
+    return props
+end
+
+function get_unknown_info(smart)
+    printd(0, smart:name())
+    local props = get_smart_base_info(smart, false, false)
+    printd(1, smart:name())
+    return props
+end
+
+function get_neutral_info(smart)
+    printd(0, smart:name())
+    local props = get_smart_base_info(smart, true, true)
+
+    local f = false
+    if (smart.target_smarts) then
+        for target,_ in pairs(smart.target_smarts) do
+            if not (f) then
+                f = true
+                props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[17] .. " \\n" .. clr_gr
+            end
+
+            local other = alife_object(target)
+
+            if (other) then
+                local otherWarfare = translate_smart_name(other:name()) or other:name()
+                props = props .. "\\n" .. clr_gr .. otherWarfare .. "\\n"
+            end
+        end
+    end
+
+    printd(1, smart:name())
+    return props
+end
+
+-- gets information for the smart terrain hint
+-- visible: optional, defaults to true. When false, hides owning faction (fog-of-war invasion overlays)
+function get_warfare_info(smart, visible)
+    if visible == nil then visible = true end
+    printd(0, smart:name())
+
+    local props = get_smart_base_info(smart, visible, true)
+
+    if (manual_point and manual_point[1] and smart.id == manual_point[1]) then
+        local diff = round_idp(warfare.get_time_ref():diffSec(manual_point[2])/60)
+        local remaining = (warfare_options.options.auto_capture_wait_time) - diff
+
+        if (remaining >= 0) then
+            props = props.." \\n" .. clr_gr .. str_wrfr[10] .. ": " .. clr_y .. strformat(str_wrfr[14] , remaining) .. " \\n"
+        end
+    end
+
+    -- Only show detailed info (timers, targets, invasion) for the player's faction bases
+    if (smart.owning_faction == warfare.actor_faction) then
 
     if defense_timers[smart.id] and smart.owning_faction and smart.owning_faction ~= "none" and warfare_factions.faction_information[smart.owning_faction] then
         --props = props .. "\\n----------\\n"
@@ -4606,8 +4527,6 @@ function get_warfare_info(smart)
             end
         end
     end
-
-    if (smart.owning_faction == warfare.actor_faction) then
         if (invasions[smart.id]) then
             local other = invasions[smart.id][1] and alife_object(invasions[smart.id][1])
             local otherName = translate_smart_name(other:name())
