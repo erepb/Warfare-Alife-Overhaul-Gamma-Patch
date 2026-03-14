@@ -2425,9 +2425,27 @@ function process_invasion_defense(smart)
         return
     end
 
-    -- if the function has gotten to this point, the smart is under attack
-    under_attack[smart.id] = true
+    -- only flag as under attack if this smart is the target of an organized invasion
+    -- check if any faction has gathered forces for an invasion targeting this smart (inv[3] = gathered, waiting to depart)
+    local is_invasion_target = false
+    for base_id, inv in pairs(invasions) do
+        if inv[1] == smart.id and inv[3] then
+            is_invasion_target = true
+            break
+        end
+    end
+    -- also treat large groups of incoming enemies (3+) as a dispatched invasion (plan is cleared after departure)
+    if is_invasion_target or (num_enemy_squads >= 3) then
+        under_attack[smart.id] = true
+    else
+        under_attack[smart.id] = false
+    end
     local avg_enemy_dist = enemy_distance / num_enemy_squads            -- find average distance to enemy
+
+    -- only evacuate and request reinforcements for real invasions
+    if not under_attack[smart.id] then
+        return
+    end
 
     -- Loners/ecologs evacuate the point
     loners_next_update[smart.id] = math.random(1, 10)        -- loners may stick around longer
