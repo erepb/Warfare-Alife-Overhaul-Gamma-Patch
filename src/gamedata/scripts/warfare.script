@@ -187,7 +187,7 @@ function save_state(m_data)
         if (squad) then
             -- empty squads and loner/ecolog squads are unmarked
             if (not squad.npc_count or squad:npc_count() == 0) then
-                smart_terrain_warfare.random_patrols[sid] = nil
+                smart_terrain_warfare.remove_random_patrol(sid)
             end
         end
     end
@@ -246,6 +246,10 @@ function load_state(m_data)
     smart_terrain_warfare.patrol_timers = m_data.warfare and m_data.warfare.patrol_timers  or {}
     smart_terrain_warfare.patrol_squads = m_data.warfare and m_data.warfare.patrol_squads or {}
     smart_terrain_warfare.random_patrols = m_data.warfare and m_data.warfare.random_patrols or {}
+    smart_terrain_warfare.random_patrol_counts = {}
+    for _, f in pairs(smart_terrain_warfare.random_patrols) do
+        smart_terrain_warfare.random_patrol_counts[f] = (smart_terrain_warfare.random_patrol_counts[f] or 0) + 1
+    end
 
     smart_terrain_warfare.spawn_mutant_timers = m_data.warfare and m_data.warfare.spawn_mutant_timers or {}
     smart_terrain_warfare.spawn_mutant_next_update = m_data.warfare and m_data.warfare.spawn_mutant_next_update or {}
@@ -1177,7 +1181,7 @@ function squad_on_unregister(squad, type_name)
 
             if (smart_terrain_warfare.random_patrols[squad.id]) then
                 --printf("unregistering random patrol: " .. faction .. " with number of members: " .. squad:npc_count())
-                smart_terrain_warfare.random_patrols[squad.id] = nil
+                smart_terrain_warfare.remove_random_patrol(squad.id)
             end
 
             if (squad.patrol_owner) then

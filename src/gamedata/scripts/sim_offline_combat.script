@@ -867,6 +867,25 @@ function get_num_squads_on_level(lvl, faction, mode)
     return 0
 end
 
+-- Combined version: returns active and inactive counts in a single pass
+function get_num_squads_on_level_both(lvl, faction)
+    if not squads_by_level[lvl] then
+        return 0, 0
+    end
+    local active, inactive = 0, 0
+    for s, _ in pairs(squads_by_level[lvl]) do
+        local squad = alife_object(s)
+        if squad and squad.get_squad_community and squad:get_squad_community() == faction then
+            if squad.current_action == 0 then
+                active = active + 1
+            elseif squad.current_action == 1 then
+                inactive = inactive + 1
+            end
+        end
+    end
+    return active, inactive
+end
+
 
 -------------------------------
 -- Prepare

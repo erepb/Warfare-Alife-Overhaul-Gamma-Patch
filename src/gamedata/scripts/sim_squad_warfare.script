@@ -324,7 +324,7 @@ function remove_squad(squad)
         local f = squad:get_squad_community()
 
         if (warfare.registered_squads[f]) then
-            smart_terrain_warfare.random_patrols[squad.id] = nil
+            smart_terrain_warfare.remove_random_patrol(squad.id)
             warfare.registered_squads[f][squad.id] = nil
             sim_offline_combat.ocs_power[squad.id] = nil
             squad.registered_with_warfare = false

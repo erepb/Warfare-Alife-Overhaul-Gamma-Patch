@@ -122,17 +122,22 @@ function update_faction(faction)
         return
     end
 
+    local ff = warfare_options.options.factions[faction]
+    if not ff then
+        return
+    end
+
+    local min_resurgence_wait_time = ff.min_resurgence_wait_time
+    local max_resurgence_wait_time = ff.max_resurgence_wait_time
+    local faction_resurgence_chance = ff.resurgence_chance
+    local max_random_patrols = ff.max_random_patrols
+    local min_random_patrol_time = ff.min_random_patrol_time
+    local max_random_patrol_time = ff.max_random_patrol_time
+    local spawn_mult = warfare_options.options.spawn_speed_multiplier or 1
+
     if not (faction_information[faction]) then
-        local min_resurgence_wait_time = warfare_options.options.factions[faction].min_resurgence_wait_time
-        local max_resurgence_wait_time = warfare_options.options.factions[faction].max_resurgence_wait_time
-        local faction_resurgence_chance = warfare_options.options.factions[faction].resurgence_chance
-
-        local max_random_patrols = warfare_options.options.factions[faction].max_random_patrols
-        local min_random_patrol_time = warfare_options.options.factions[faction].min_random_patrol_time
-        local max_random_patrol_time = warfare_options.options.factions[faction].max_random_patrol_time
-
         local next_resurgence_attempt = math.random(min_resurgence_wait_time, max_resurgence_wait_time)
-        local next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time) * (warfare_options.options.spawn_speed_multiplier or 1)
+        local next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time) * spawn_mult
 
         faction_information[faction] = {}
         faction_information[faction].base_count = 0
@@ -142,7 +147,6 @@ function update_faction(faction)
         faction_information[faction].active_squads = 0
         faction_information[faction].faction_respawn = 0
         faction_information[faction].patrol_respawn = 0
-        faction_information[faction].patrol_squads = 0
         faction_information[faction].invasion_size = 0
         faction_information[faction].patrol_pop_factor = 0
         faction_information[faction].last_resurgence_attempt = warfare.get_time()
@@ -151,116 +155,109 @@ function update_faction(faction)
         faction_information[faction].last_random_patrol = warfare.get_time()
     end
 
-    if (not faction_information[faction].timer or warfare.get_time_ref():diffSec(faction_information[faction].timer) >= (faction_information[faction].next_update * 6)) then
+    local fi = faction_information[faction]
+
+    if (not fi.timer or warfare.get_time_ref():diffSec(fi.timer) >= (fi.next_update * 6)) then
         printd(0, faction or "nil faction")
 
-        local min_resurgence_wait_time = warfare_options.options.factions[faction].min_resurgence_wait_time
-        local max_resurgence_wait_time = warfare_options.options.factions[faction].max_resurgence_wait_time
-        local faction_resurgence_chance = warfare_options.options.factions[faction].resurgence_chance
+        local last_resurgence_attempt = fi.last_resurgence_attempt or warfare.get_time()
+        local next_resurgence_attempt = fi.next_resurgence_attempt or math.random(min_resurgence_wait_time, max_resurgence_wait_time)
+        local last_random_patrol = fi.last_random_patrol or warfare.get_time()
+        local next_random_patrol = fi.next_random_patrol or math.random(min_random_patrol_time, max_random_patrol_time) * spawn_mult
 
-        local max_random_patrols = warfare_options.options.factions[faction].max_random_patrols
-        local min_random_patrol_time = warfare_options.options.factions[faction].min_random_patrol_time
-        local max_random_patrol_time = warfare_options.options.factions[faction].max_random_patrol_time
-
-        local last_resurgence_attempt = faction_information[faction].last_resurgence_attempt or warfare.get_time()
-        local next_resurgence_attempt = faction_information[faction].next_resurgence_attempt or math.random(min_resurgence_wait_time, max_resurgence_wait_time)
-        local last_random_patrol = faction_information[faction].last_random_patrol or warfare.get_time()
-        local next_random_patrol = faction_information[faction].next_random_patrol or math.random(min_random_patrol_time, max_random_patrol_time) * (warfare_options.options.spawn_speed_multiplier or 1)
+        -- Fix #3: save timer state before wipe
+        local old_timer = fi.timer
+        local old_next_update = fi.next_update or 1
 
         faction_information[faction] = {}
-        if not faction_information[faction].timer then
-            faction_information[faction].timer = warfare.get_time()
+        fi = faction_information[faction]
+
+        if old_timer then
+            fi.timer = warfare_utils.add_time(old_timer, old_next_update * 6)
         else
-            faction_information[faction].timer = warfare_utils.add_time(faction_information[faction].timer, faction_information[faction].next_update*6)
+            fi.timer = warfare.get_time()
         end
 
-        faction_information[faction].next_update = math.random(1, 5)
-        faction_information[faction].base_count = 0
-        faction_information[faction].resource_count = 0
-        faction_information[faction].total_power = 0
-        faction_information[faction].inactive_squads = 0
-        faction_information[faction].active_squads = 0
-        faction_information[faction].faction_respawn = 0
-        faction_information[faction].patrol_respawn = 0
-        faction_information[faction].patrol_squads = 0
-        faction_information[faction].invasion_size = 0
-        faction_information[faction].patrol_pop_factor = 0
-        faction_information[faction].last_resurgence_attempt = last_resurgence_attempt
-        faction_information[faction].next_resurgence_attempt = next_resurgence_attempt
-        faction_information[faction].last_random_patrol = last_random_patrol
-        faction_information[faction].next_random_patrol = next_random_patrol
+        fi.next_update = math.random(1, 5)
+        fi.base_count = 0
+        fi.resource_count = 0
+        fi.total_power = 0
+        fi.inactive_squads = 0
+        fi.active_squads = 0
+        fi.faction_respawn = 0
+        fi.patrol_respawn = 0
+        fi.invasion_size = 0
+        fi.patrol_pop_factor = 0
+        fi.last_resurgence_attempt = last_resurgence_attempt
+        fi.next_resurgence_attempt = next_resurgence_attempt
+        fi.last_random_patrol = last_random_patrol
+        fi.next_random_patrol = next_random_patrol
 
+        -- Fix #2: single pass for active + inactive squad counts per level
         for i, lvl in pairs(level_targets.active_levels) do
             local info = warfare_levels.level_information[lvl]
 
             if (info.faction_stats and info.faction_stats[faction]) then
-                local num_active = sim_offline_combat.get_num_squads_on_level(lvl, faction, true)
-                local num_inactive = sim_offline_combat.get_num_squads_on_level(lvl, faction, false)
+                local num_active, num_inactive = sim_offline_combat.get_num_squads_on_level_both(lvl, faction)
 
-                faction_information[faction].base_count = faction_information[faction].base_count + info.faction_stats[faction].base_count
-                faction_information[faction].resource_count = faction_information[faction].resource_count + info.faction_stats[faction].resource_count
-                faction_information[faction].total_power = faction_information[faction].total_power + info.faction_stats[faction].total_power
-                faction_information[faction].active_squads = faction_information[faction].active_squads + num_active
-                faction_information[faction].inactive_squads = faction_information[faction].inactive_squads + num_inactive
+                fi.base_count = fi.base_count + info.faction_stats[faction].base_count
+                fi.resource_count = fi.resource_count + info.faction_stats[faction].resource_count
+                fi.total_power = fi.total_power + info.faction_stats[faction].total_power
+                fi.active_squads = fi.active_squads + num_active
+                fi.inactive_squads = fi.inactive_squads + num_inactive
             end
         end
 
-        local ff = warfare_options.options.factions[faction]
-
-        if not (ff) then
-            return
-        end
-
-        local base_count = faction_information[faction].base_count or 0
-        local resource_count = faction_information[faction].resource_count or 0
+        local base_count = fi.base_count or 0
+        local resource_count = fi.resource_count or 0
 
         if (game_relations.is_factions_enemies(faction, warfare.actor_faction)) then
             base_count = base_count + warfare_options.options.enemy_base_boost
             resource_count = resource_count + warfare_options.options.enemy_resource_boost
         end
 
-        base_count = base_count + (ff and ff.base_count_modifier or 0)
-        resource_count = resource_count + (ff and ff.resource_count_modifier or 0)
+        base_count = base_count + (ff.base_count_modifier or 0)
+        resource_count = resource_count + (ff.resource_count_modifier or 0)
 
-        faction_information[faction].base_count = base_count
-        faction_information[faction].resource_count = resource_count
+        fi.base_count = base_count
+        fi.resource_count = resource_count
 
-        local spawn_mult = warfare_options.options.spawn_speed_multiplier or 1
         local respawn = warfare.lerp(ff.max_faction_respawn, ff.min_faction_respawn, clamp(resource_count / warfare.resource_count, 0, 1)) * spawn_mult
         local patrol_respawn = warfare.lerp(ff.max_patrol_time, ff.min_patrol_time, clamp(resource_count / warfare.resource_count, 0, 1)) * spawn_mult
         local invasion_size = warfare.lerp(ff.min_invasion_size, ff.max_invasion_size, clamp(base_count / warfare.base_count, 0, 1))
         local patrol_pop_factor = warfare.lerp(ff.min_patrol_squads, ff.max_patrol_squads, clamp(base_count / warfare.base_count, 0, 1))
 
-        for faction, tbl in pairs(warfare.registered_squads) do
+        -- Fix #1: only clean up current faction's registered squads (was iterating ALL factions)
+        local tbl = warfare.registered_squads[faction]
+        if tbl then
             for ID, target in pairs(tbl) do
                 local obj = alife_object(ID)
 
                 if (obj) then
                     if not (obj.clsid and obj:clsid() == clsid.online_offline_group_s and obj:get_squad_community() == faction) then
-                        warfare.registered_squads[faction][ID] = nil
+                        tbl[ID] = nil
                     end
                 else
-                    warfare.registered_squads[faction][ID] = nil
+                    tbl[ID] = nil
                 end
             end
         end
 
-        faction_information[faction].faction_respawn = respawn
-        faction_information[faction].patrol_respawn = patrol_respawn
-        faction_information[faction].patrol_squads = patrol_squads
-        faction_information[faction].invasion_size = invasion_size
-        faction_information[faction].patrol_pop_factor = patrol_pop_factor
+        fi.faction_respawn = respawn
+        fi.patrol_respawn = patrol_respawn
+        fi.invasion_size = invasion_size
+        fi.patrol_pop_factor = patrol_pop_factor
 
-        local mod = (ff and ff.base_count_modifier or 0)
+        local mod = (ff.base_count_modifier or 0)
 
         if (game_relations.is_factions_enemies(faction, warfare.actor_faction)) then
             mod = mod + warfare_options.options.enemy_base_boost
         end
 
-        if (warfare_options.options.factions[faction].random_patrols) and not warfare.is_spawn_blocked() then
-            if (warfare.get_time_ref():diffSec(faction_information[faction].last_random_patrol) > faction_information[faction].next_random_patrol * 6) then
-                faction_information[faction].last_random_patrol = warfare_utils.add_time(faction_information[faction].last_random_patrol, faction_information[faction].next_random_patrol*6)
-                faction_information[faction].next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time) * (warfare_options.options.spawn_speed_multiplier or 1)
+        if (ff.random_patrols) and not warfare.is_spawn_blocked() then
+            if (warfare.get_time_ref():diffSec(fi.last_random_patrol) > fi.next_random_patrol * 6) then
+                fi.last_random_patrol = warfare_utils.add_time(fi.last_random_patrol, fi.next_random_patrol*6)
+                fi.next_random_patrol = math.random(min_random_patrol_time, max_random_patrol_time) * spawn_mult
 
                 local start_id = smart_terrain_warfare.find_random_patrol_target(nil, faction)
                 local start = start_id and alife_object(start_id)
@@ -273,12 +270,8 @@ function update_faction(faction)
                     target_id = smart_terrain_warfare.find_random_patrol_target(start, faction)
                 end
 
-                local count = 0
-                for squad_id, squad_faction in pairs(smart_terrain_warfare.random_patrols) do
-                    if (squad_faction and squad_faction == faction) then
-                        count = count + 1
-                    end
-                end
+                -- Fix #4: O(1) patrol count instead of iterating all patrols
+                local count = smart_terrain_warfare.get_random_patrol_count(faction)
 
                 if (start and target_id and (count < max_random_patrols)) then
                     local spawn_random_patrol = true
@@ -288,17 +281,17 @@ function update_faction(faction)
                         local actor_dist = start.position:distance_to(db.actor:position())
                         if (actor_dist < 50) then
                             spawn_random_patrol = false
-                            faction_information[faction].next_random_patrol = math.random(30, 120)        -- if random patrol fails to spawn, check back sooner to try elsewhere
+                            fi.next_random_patrol = math.random(30, 120)        -- if random patrol fails to spawn, check back sooner to try elsewhere
                         end
                     end
 
                     if spawn_random_patrol then
                         local current_level = start.level_id
-                        local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count, current_level)
+                        local section = faction_expansions.get_spawn_section(faction, fi.resource_count, current_level)
                         local squad = utils_obj.create_squad(section, start:name())
-                        printdbg("WARFARE DEBUG: spawning random patrol squad faction: %s, resources: %s", faction, faction_information[faction].resource_count)
+                        printdbg("WARFARE DEBUG: spawning random patrol squad faction: %s, resources: %s", faction, fi.resource_count)
 
-                        smart_terrain_warfare.random_patrols[squad.id] = faction
+                        smart_terrain_warfare.set_random_patrol(squad.id, faction)
                         sim_squad_warfare.set_target(squad, target_id)
                     end
                 end
@@ -306,10 +299,10 @@ function update_faction(faction)
         end
 
         -- Emergency resurrection when faction has 0 bases
-        if not warfare.is_spawn_blocked() and (warfare_options.options.factions[faction].participate_in_warfare and (faction_information[faction].base_count + mod) < 1) then
-            if (warfare.get_time_ref():diffSec(faction_information[faction].last_resurgence_attempt) > faction_information[faction].next_resurgence_attempt * 6) then
-                faction_information[faction].last_resurgence_attempt = warfare.get_time()
-                faction_information[faction].next_resurgence_attempt = math.random(min_resurgence_wait_time, max_resurgence_wait_time)
+        if not warfare.is_spawn_blocked() and (ff.participate_in_warfare and (fi.base_count + mod) < 1) then
+            if (warfare.get_time_ref():diffSec(fi.last_resurgence_attempt) > fi.next_resurgence_attempt * 6) then
+                fi.last_resurgence_attempt = warfare.get_time()
+                fi.next_resurgence_attempt = math.random(min_resurgence_wait_time, max_resurgence_wait_time)
 
                 -- Choose between new and old resurgence logic
                 if warfare_options.options.use_new_resurgence_logic then
@@ -376,7 +369,7 @@ function update_faction(faction)
 
                                     for j = 0, target_pop do
                                         local current_level = nearest_smart.level_id
-                                    local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count, current_level)
+                                    local section = faction_expansions.get_spawn_section(faction, fi.resource_count, current_level)
                                         local squad = utils_obj.create_squad(section, nearest_smart:name())
                                         sim_squad_warfare.set_target(squad, target.id)
                                     end

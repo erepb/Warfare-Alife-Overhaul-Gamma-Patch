@@ -159,6 +159,7 @@ under_attack = {}                            -- when a smart is under attack, ha
 
 patrol_squads = {}
 random_patrols = {}
+random_patrol_counts = {}
 invasions = {}
 supporting_invasion = {}                     -- tracks which base a smart is contributing squads to for invasion: supporting_invasion[smart.id] = invasion_base_id
 local invasion_cooldown = {}                 -- cooldown timer for bases that failed to start an invasion: invasion_cooldown[smart.id] = CTime
@@ -1656,7 +1657,7 @@ function process_targets(smart)
 
     -- if not cleared for night activity, don't proceed
     -- -1 for failed check, 0 for unchecked, 1 for cleared for night activity
-    local isNight = (warfare_utils.get_warfare_hour() < 6 or warfare_utils.get_warfare_hour() > 19)
+    local isNight = warfare_utils.is_night()
     if isNight and (night_activity_allowed[smart.id] ~= 1) then
         return
     end
@@ -1685,10 +1686,12 @@ function process_targets(smart)
             -- Instantly send a squad to capture empty bases
             elseif other.owning_faction == "none" then
                 target_smart_count = target_smart_count + 1
-                local numTargeting = squad_count(other, smart.owning_faction)
                 -- send spare squad to empty targets if havent done so already, as long as manual control is off
-                if not supporting_invasion[smart.id] and (numTargeting < 1) and (math.random(100) < aggression) then
-                    capture_empty_location_simple(smart, other)
+                -- check cheap conditions first to avoid expensive squad_count iteration
+                if not supporting_invasion[smart.id] and (math.random(100) < aggression) then
+                    if squad_count(other, smart.owning_faction) < 1 then
+                        capture_empty_location_simple(smart, other)
+                    end
                 end
             else
                 target_smart_count = target_smart_count + 1
@@ -1712,10 +1715,12 @@ function process_targets(smart)
             elseif other.owning_faction == "none" then
                 target_smart_count = target_smart_count + 1
                 auto_target_count = auto_target_count + 1
-                local numTargeting = squad_count(other, smart.owning_faction)
                 -- send spare squad to empty targets if havent done so already
-                if not supporting_invasion[smart.id] and (numTargeting < 1) and (math.random(100) < aggression) then
-                    capture_empty_location_simple(smart, other)
+                -- check cheap conditions first to avoid expensive squad_count iteration
+                if not supporting_invasion[smart.id] and (math.random(100) < aggression) then
+                    if squad_count(other, smart.owning_faction) < 1 then
+                        capture_empty_location_simple(smart, other)
+                    end
                 end
             else
                 target_smart_count = target_smart_count + 1
@@ -5225,6 +5230,26 @@ function find_random_patrol_target(smart, faction, sid)
     return smart.id
 end
 
+-- Random patrol counter helpers (O(1) count lookups)
+function set_random_patrol(squad_id, faction)
+    remove_random_patrol(squad_id)
+    random_patrols[squad_id] = faction
+    random_patrol_counts[faction] = (random_patrol_counts[faction] or 0) + 1
+end
+
+function remove_random_patrol(squad_id)
+    local faction = random_patrols[squad_id]
+    if faction then
+        random_patrols[squad_id] = nil
+        if random_patrol_counts[faction] and random_patrol_counts[faction] > 0 then
+            random_patrol_counts[faction] = random_patrol_counts[faction] - 1
+        end
+    end
+end
+
+function get_random_patrol_count(faction)
+    return random_patrol_counts[faction] or 0
+end
 
 function find_targets(smart, faction_override, overflow_squad)
     printd(0, smart:name())
