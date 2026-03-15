@@ -1196,7 +1196,7 @@ function process_resource_squads(smart)
                     end
                 else
                     -- No same-level bases found; try linked levels so squads do not get permanently stuck
-                    local targets = find_offlevel_targets_for_overflow(smart, faction)
+                    local targets = find_targets_for_overflow(smart, faction)
                     if targets and (#targets > 0) then
                         pick_target(smart, squad, targets, true)
                     end
@@ -1255,7 +1255,7 @@ function process_territory_squads(smart)
                     end
                 else
                     -- No same-level bases found; try linked levels so squads do not get permanently stuck
-                    local targets = find_offlevel_targets_for_overflow(smart, faction)
+                    local targets = find_targets_for_overflow(smart, faction)
                     if targets and (#targets > 0) then
                         pick_target(smart, squad, targets, true)
                     end
@@ -1352,7 +1352,7 @@ function process_overflow_squad(smart, squad, bases)
     end
     -- If no bases on-level, try to move them to linked levels
     if (movedSquad == false) then
-        local targets = find_offlevel_targets_for_overflow(smart, faction)
+        local targets = find_targets_for_overflow(smart, faction)
         if targets and (#targets > 0) then
             pick_target(smart, squad, targets)  -- Has its own debug message
             movedSquad = true
@@ -5467,10 +5467,10 @@ end
 
 
 
-function find_offlevel_targets_for_overflow(smart, faction, search_all_levels)
+function find_targets_for_overflow(smart, faction, search_all_levels)
 --[[
-    Used to handle overflow squads on bases that could not find anything vacant on-level.
-    Does NOT collect on-level smart terrains!
+    Used to handle overflow squads on bases that need to be redistributed.
+    Searches current level + linked levels by default, or all levels if search_all_levels is true.
 
     Inputs:
         smart: smart terrain with overflow squad(s) to be moved
