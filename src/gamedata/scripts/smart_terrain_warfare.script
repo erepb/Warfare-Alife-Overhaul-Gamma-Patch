@@ -579,10 +579,12 @@ function smart_terrain_on_update(smart)
             process_ecolog(smart)
             process_invasion_defense(smart)
         end
-    elseif (smart.owning_faction == "none") then    -- location has no humans, consider spawning mutants or changing location of existing mutants
+    elseif (smart.owning_faction == "none") then    -- location has no humans, consider spawning mutants
         spawn_mutants(smart)
-        process_mutants(smart)
     end
+
+    -- Retarget idle mutants on any smart (owned or not)
+    process_mutants(smart)
 
 
 end

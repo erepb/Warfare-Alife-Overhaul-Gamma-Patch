@@ -214,7 +214,9 @@ function squad_warfare_update(squad)
                 if (se_target:clsid() == clsid.smart_terrain) then
                     local smartOwner = se_target.owning_faction or "none"
 
-                    if not (game_relations.is_factions_enemies(smartOwner, squad:get_squad_community())) then
+                    -- Monsters ignore ownership — they arrive anywhere, process_mutants retargets them
+                    if not (game_relations.is_factions_enemies(smartOwner, squad:get_squad_community())) or squad:get_squad_community() == "monster"
+                    then
                         if (se_target:am_i_reached(squad)) then
                             se_target:on_after_reach(squad)
                             squad.current_action = 1
@@ -222,6 +224,7 @@ function squad_warfare_update(squad)
                             squad.wait_time = math.random(10, 60)
                         end
                     end
+                    -- Human factions at enemy terrain: offline combat handles it
                 else
                     if (se_target:am_i_reached(squad)) then
                         se_target:on_after_reach(squad)
