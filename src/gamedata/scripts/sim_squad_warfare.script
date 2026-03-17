@@ -437,7 +437,7 @@ function sim_squad_scripted.sim_squad_scripted.show(self)
 
             local info = nil
 
-            if (self:get_squad_community() == warfare.actor_faction or game_relations.is_factions_friends(self:get_squad_community(), warfare.actor_faction)) then
+            if (warfare.dbg_all_faction_tooltips or self:get_squad_community() == warfare.actor_faction or game_relations.is_factions_friends(self:get_squad_community(), warfare.actor_faction)) then
                 info = get_warfare_info(self)
             else
                 info = get_enemy_info(self)
@@ -463,7 +463,7 @@ function sim_squad_scripted.sim_squad_scripted.show(self)
         else
             local info = nil
 
-            if (self:get_squad_community() == warfare.actor_faction or game_relations.is_factions_friends(self:get_squad_community(), warfare.actor_faction)) then
+            if (warfare.dbg_all_faction_tooltips or self:get_squad_community() == warfare.actor_faction or game_relations.is_factions_friends(self:get_squad_community(), warfare.actor_faction)) then
                 info = get_warfare_info(self)
             else
                 info = get_enemy_info(self)
@@ -601,27 +601,17 @@ function get_squad_relation(squad_id)
 end
 -- xr_Sanya
 
-function get_enemy_info(squad)
+-- Builds squad tooltip info. full_detail adds power, patrol, and target details.
+function get_squad_info(squad, full_detail)
     printd(0, squad:name())
 
-    if squad == nil then
-        --printf("nil squad")
-    end
-
-    local squadName = squad:name()
     local section = squad:section_name()
-    local name = ui_warfare_options_hints.get_name(squad:section_name()) or warfare_names.faction_names[squad.player_id]
-    -- xr_Sanya    local faction = game.translate_string(squad:get_squad_community())
-    -- xr_Sanya    local relation = game_relations.get_squad_relation_to_actor_by_id(squad.id)
+    local name = ui_warfare_options_hints.get_name(section) or warfare_names.faction_names[squad.player_id]
     local npc_count = squad:npc_count()
     local atarget = squad.current_target_id
     local ase_target = atarget and alife_object(atarget)
-
-    -- xr_Sanya
     local relation = get_squad_relation(squad.id)
     local faction = warfare_names.faction_names[squad:get_squad_community()]
-    -- xr_Sanya
-
 
     local commanderID = squad:commander_id()
     local commander = commanderID and alife_object(commanderID)
@@ -645,12 +635,89 @@ function get_enemy_info(squad)
         props = props .. " \\n" .. str_wrfr[4] .. ": " .. squad.id .. " \\n"
     end
 
-    if sim_offline_combat.opponents[squad.id] then
-        props = props .. " \\n" .. str_wrfr[5] .. " \\n"
-    elseif (squad.current_action == 0) then
-        props = props .. " \\n" .. str_wrfr[6] .. " \\n"
-    elseif (squad.current_action == 1) then
-        props = props .. " \\n" .. str_wrfr[7] .. " \\n"
+    if (full_detail) then
+        local power = sim_offline_combat.calculate_squad_power(squad)
+        props = props .. " \\n" .. power .. " " .. str_wrfr[8]
+
+        if (squad.patrol_owner) then
+            local owner = alife_object(squad.patrol_owner)
+            local wn = translate_smart_name(owner:name()) or owner:name()
+            props = props .. " \\n" .. str_wrfr[10] .. ": " .. wn .. " \\n"
+        end
+
+        -- loner squads fly under the radar
+        if (smart_terrain_warfare.random_patrols[squad.id]) and (squad:get_squad_community() ~= "stalker") then
+            props = props .. " \\n" .. "Random Patrol Squad" .. "\\n"
+        end
+
+        if (ase_target) then
+            local levelID = ase_target.m_game_vertex_id and game_graph():vertex(ase_target.m_game_vertex_id):level_id()
+            local levelName = levelID and alife():level_name(levelID)
+            local finalName = levelName and game.translate_string(levelName)
+            local lvl = game.translate_string(alife():level_name(game_graph():vertex(ase_target.m_game_vertex_id):level_id()))
+
+            if (squad.patrol_table) then
+                if (squad.patrol_table.arrive_time and squad.patrol_table.stay_time) then
+                    local diff = warfare.get_time():diffSec(squad.patrol_table.arrive_time)
+                    local remaining = (squad.patrol_table.stay_time * 6) - diff
+
+                    -- xQd, show the timer in hours and minutes
+                    if remaining <= 3600 then
+                        remaining = strformat(str_wrfr[14], round_idp(remaining / 60))
+                    else
+                        local remaining_hrs_round = math.floor((remaining / 60) / 60)
+                        local remaining_hrs_float = (remaining / 60) / 60
+                        local remaining_mins_diff = round_idp((remaining_hrs_float - remaining_hrs_round) * 60)
+                        remaining = strformat(str_wrfr[13], remaining_hrs_round, remaining_mins_diff)
+                    end
+
+                    props = props .. " \\n" .. str_wrfr[11] .. ": " .. remaining .. " \\n";
+                end
+            end
+
+            props = props .. "\\n----------\\n"
+
+            if sim_offline_combat.opponents[squad.id] then
+                props = props .. " \\n" .. str_wrfr[5] .. " \\n"
+            elseif (squad.current_action == 0) then
+                props = props .. " \\n" .. str_wrfr[6] .. " \\n"
+
+                local warfareName = translate_smart_name(ase_target:name()) or ase_target:name()
+                if ase_target.player_id then
+                    local ase_name = ui_warfare_options_hints.get_name(ase_target:section_name())
+                    warfareName = ase_name and (ase_name .. " \\n" .. str_wrfr[4] .. ": " .. ase_target.id) or ase_target:name()
+                end
+                if ase_target.id == AC_ID then
+                    warfareName = str_wrfr[16]
+                end
+
+                props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
+
+                if (finalName) then
+                    props = props .. " \\n" .. str_wrfr[12] .. ": " .. lvl .. " \\n"
+                end
+            elseif (squad.current_action == 1) then
+                props = props .. " \\n" .. str_wrfr[7] .. " \\n"
+                local warfareName = translate_smart_name(ase_target:name()) or ase_target:name()
+                if ase_target.player_id then
+                    local ase_name = ui_warfare_options_hints.get_name(ase_target:section_name())
+                    warfareName = ase_name and (ase_name .. " \\n" .. str_wrfr[4] .. ": " .. ase_target.id) or ase_target:name()
+                end
+                props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
+
+                if (finalName) then
+                    props = props .. " \\n" .. str_wrfr[12] .. ": " .. lvl .. " \\n"
+                end
+            end
+        end
+    else
+        if sim_offline_combat.opponents[squad.id] then
+            props = props .. " \\n" .. str_wrfr[5] .. " \\n"
+        elseif (squad.current_action == 0) then
+            props = props .. " \\n" .. str_wrfr[6] .. " \\n"
+        elseif (squad.current_action == 1) then
+            props = props .. " \\n" .. str_wrfr[7] .. " \\n"
+        end
     end
 
     printd(1, squad:name())
@@ -658,136 +725,12 @@ function get_enemy_info(squad)
     return props
 end
 
+function get_enemy_info(squad)
+    return get_squad_info(squad, warfare.dbg_all_faction_tooltips)
+end
+
 function get_warfare_info(squad)
-    printd(0, squad:name())
-
-    if squad == nil then
-        --printf("nil squad")
-    end
-
-    local squadName = squad:name()
-    local section = squad:section_name()
-    local name = ui_warfare_options_hints.get_name(squad:section_name()) or warfare_names.faction_names[squad.player_id]
-    -- xr_Sanya    local faction = game.translate_string(squad:get_squad_community())
-    -- xr_Sanya    local relation = game_relations.get_squad_relation_to_actor_by_id(squad.id)
-    local npc_count = squad:npc_count()
-    local power = sim_offline_combat.calculate_squad_power(squad)
-    local atarget = squad.current_target_id
-    local ase_target = atarget and alife_object(atarget)
-
-    -- xr_Sanya
-    local relation = get_squad_relation(squad.id)
-    local faction = warfare_names.faction_names[squad:get_squad_community()]
-    -- xr_Sanya
-
-
-    local commanderID = squad:commander_id()
-    local commander = commanderID and alife_object(commanderID)
-    local commanderName = commander and commander.character_name and commander:character_name()
-
-    local props = ""
-
-    if (commanderName and IsStalker(commander)) then
-        props = props .. " \\n" .. strformat(str_wrfr[1], commanderName) .. " \\n"
-
-        if (warfare_options.options.debug_logging) then
-            props = props .. " \\n" .. name .. " \\n"
-        end
-    end
-
-    props = props .. " \\n" .. faction .. " (" .. relation .. ")"
-    props = props .. " \\n" .. npc_count .. " " .. str_wrfr[2] .. " \\n"
-
-    if (warfare_options.options.debug_logging) then
-        props = props .. " \\n" .. str_wrfr[3] .. ": " .. section .. " \\n"
-        props = props .. " \\n" .. str_wrfr[4] .. ": " .. squad.id .. " \\n"
-    end
-
-    props = props .. " \\n" .. power .. " " .. str_wrfr[8]
-
-    if (squad.patrol_owner) then
-        local owner = alife_object(squad.patrol_owner)
-        local wn = translate_smart_name(owner:name()) or owner:name()
-        props = props .. " \\n" .. str_wrfr[10] .. ": " .. wn .. " \\n"
-    end
-
-    -- loner squads fly under the radar
-    if (smart_terrain_warfare.random_patrols[squad.id]) and (squad:get_squad_community() ~= "stalker") then
-        props = props .. " \\n" .. "Random Patrol Squad" .. "\\n"
-    end
-
-    if (ase_target) then
-        local levelID = ase_target.m_game_vertex_id and game_graph():vertex(ase_target.m_game_vertex_id):level_id()
-        local levelName = levelID and alife():level_name(levelID)
-        local finalName = levelName and game.translate_string(levelName)
-        local lvl = game.translate_string(alife():level_name(game_graph():vertex(ase_target.m_game_vertex_id):level_id()))
-
-        if (squad.patrol_table) then
-            if (squad.patrol_table.arrive_time and squad.patrol_table.stay_time) then
-                local diff = warfare.get_time():diffSec(squad.patrol_table.arrive_time)
-                local remaining = (squad.patrol_table.stay_time * 6) - diff
-
-                -- xQd, show the timer in hours and minutes
-                --remaining = round_idp(remaining / 60)
-                if remaining <= 3600 then
-                    -- show in minutes if less than an hour left
-                    remaining = strformat(str_wrfr[14], round_idp(remaining / 60))
-                else
-                    -- otherwise show in hours and minutes
-                    local remaining_hrs_round = math.floor((remaining / 60) / 60)
-                    local remaining_hrs_float = (remaining / 60) / 60
-                    local remaining_mins_diff = round_idp((remaining_hrs_float - remaining_hrs_round) * 60)
-                    remaining = strformat(str_wrfr[13], remaining_hrs_round, remaining_mins_diff)
-                end
-                -- xQd
-
-                props = props .. " \\n" .. str_wrfr[11] .. ": " .. remaining .. " \\n";
-            end
-        end
-
-        props = props .. "\\n----------\\n"
-
-        if sim_offline_combat.opponents[squad.id] then
-            props = props .. " \\n" .. str_wrfr[5] .. " \\n"
-        elseif (squad.current_action == 0) then
-            props = props .. " \\n" .. str_wrfr[6] .. " \\n"
-
-            local warfareName = translate_smart_name(ase_target:name()) or ase_target:name()
-            --av661194
-            if ase_target.player_id then
-                local ase_name = ui_warfare_options_hints.get_name(ase_target:section_name())
-                warfareName = ase_name and (ase_name .. " \\n" .. str_wrfr[4] .. ": " .. ase_target.id) or ase_target:name()
-            end
-            --av661194
-            if ase_target.id == AC_ID then
-                warfareName = str_wrfr[16]
-            end
-
-            props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
-
-            if (finalName) then
-                props = props .. " \\n" .. str_wrfr[12] .. ": " .. lvl .. " \\n"
-            end
-        elseif (squad.current_action == 1) then
-            props = props .. " \\n" .. str_wrfr[7] .. " \\n"
-            local warfareName = translate_smart_name(ase_target:name()) or ase_target:name()
-            --av661194
-            if ase_target.player_id then
-                local ase_name = ui_warfare_options_hints.get_name(ase_target:section_name())
-                warfareName = ase_name and (ase_name .. " \\n" .. str_wrfr[4] .. ": " .. ase_target.id) or ase_target:name()
-            end
-            --av661194
-            props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
-
-            if (finalName) then
-                props = props .. " \\n" .. str_wrfr[12] .. ": " .. lvl .. " \\n"
-            end
-        end
-    end
-
-    printd(1, squad:name())
-
-    return props
+    return get_squad_info(squad, true)
 end
 
 local BASE_WEIGHT = 3

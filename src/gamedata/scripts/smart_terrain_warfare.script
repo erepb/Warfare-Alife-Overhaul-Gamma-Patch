@@ -4111,7 +4111,7 @@ function smart_terrain.se_smart_terrain:show()
                     local info = nil
 
                     -- determine info to show on visible smarts
-                    if (faction == warfare.actor_faction or is_factions_friends(faction, warfare.actor_faction)) then
+                    if (warfare.dbg_all_faction_tooltips or faction == warfare.actor_faction or is_factions_friends(faction, warfare.actor_faction)) then
                         info = get_warfare_info(self)
                     elseif (is_factions_enemies(warfare.actor_faction, faction)) then
                         info = get_warfare_info(self)
@@ -4289,7 +4289,7 @@ function smart_terrain.se_smart_terrain:show()
                 local info = nil
 
                 -- update info for each spot
-                if (faction == warfare.actor_faction or is_factions_friends(faction, warfare.actor_faction)) then
+                if (warfare.dbg_all_faction_tooltips or faction == warfare.actor_faction or is_factions_friends(faction, warfare.actor_faction)) then
                     info = get_warfare_info(self)
                 elseif (is_factions_enemies(warfare.actor_faction, faction)) then
                     info = get_warfare_info(self)
@@ -4485,7 +4485,7 @@ function get_warfare_info(smart, visible)
     end
 
     -- Only show detailed info (timers, targets, invasion) for the player's faction bases
-    if (smart.owning_faction == warfare.actor_faction) then
+    if (warfare.dbg_all_faction_tooltips or smart.owning_faction == warfare.actor_faction) then
 
     if defense_timers[smart.id] and smart.owning_faction and smart.owning_faction ~= "none" and warfare_factions.faction_information[smart.owning_faction] then
         --props = props .. "\\n----------\\n"

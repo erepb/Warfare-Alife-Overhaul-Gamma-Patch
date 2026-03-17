@@ -49,6 +49,7 @@ end]]
 squad_community_by_behaviour["trader"] = "trader"
 
 warfare_debug = true
+dbg_all_faction_tooltips = false  -- debug: show full own-faction tooltip info for all squads and smarts
 
 actor_faction = nil
 actor_influence_points = 0
