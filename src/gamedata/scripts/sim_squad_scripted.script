@@ -1355,6 +1355,12 @@ function sim_squad_scripted:get_current_task() -- called from engine
 		end
 		return se_target:get_alife_task()
 	end
+	-- Fallback: target not in simulation registry (e.g. patrol hunt squad target)
+	-- Use alife_object() which always finds any server entity by ID
+	local se_obj = self.assigned_target_id and alife_object(self.assigned_target_id)
+	if (se_obj) then
+		return CALifeSmartTerrainTask(se_obj.m_game_vertex_id, se_obj.m_level_vertex_id)
+	end
 	return self:get_alife_task()
 end
 

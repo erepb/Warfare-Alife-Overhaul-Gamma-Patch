@@ -906,11 +906,13 @@ function set_target(squad, target)
         squad.registered_with_warfare = true
         warfare.registered_squads[squad:get_squad_community()][squad.id] = target
 
-        --if (obj:clsid() == clsid.smart_terrain) then
         if (obj:clsid() == clsid.smart_terrain) then
             obj:on_reach_target(squad)
+        else
+            -- Non-smart target (e.g. patrol hunt): ensure terrain masks are set
+            -- so the engine pathfinder can build a route
+            squad:set_location_types()
         end
-        --end
 
         if not (squad.registered_with_warfare) then
             squad.registered_with_warfare = true
