@@ -134,6 +134,7 @@ point_cap_timers = {}
 smart_owners = {}
 manual_point = nil
 dbg_hud = false
+dbg_show_invasion_source = false                -- debug: show red circle on bases that are planning an invasion
 
 local guard_size = 1                            -- number of squads to keep at a base when an invasion is sent out
 local currently_surge = false
@@ -275,6 +276,7 @@ pda_icons = {
     ["invasion_isg"] = "circle_invasion_isg",
     ["invasion_zombied"] = "circle_invasion_zombied",
     ["invasion_none"] = "circle_target",
+    ["invasion_source"] = "circle_target",
 }
 
 -- [1] = trader count
@@ -4123,6 +4125,8 @@ function smart_terrain.se_smart_terrain:show()
                     local display_key = faction
                     if under_attack[self.id] and faction == warfare.actor_faction and pda_icons["target_" .. faction] then
                         display_key = "target_" .. faction
+                    elseif dbg_show_invasion_source and (invasions[self.id] or supporting_invasion[self.id]) then
+                        display_key = "invasion_source"
                     end
 
                     -- if spot already exists, remove it and re-add it to update
@@ -4301,6 +4305,8 @@ function smart_terrain.se_smart_terrain:show()
                 local display_key = faction
                 if under_attack[self.id] and faction == warfare.actor_faction and pda_icons["target_" .. faction] then
                     display_key = "target_" .. faction
+                elseif dbg_show_invasion_source and invasions[self.id] then
+                    display_key = "invasion_source"
                 end
 
                 -- map spot already exists: hide it or replace it depending on options
