@@ -572,9 +572,13 @@ function smart_terrain_on_update(smart)
 
             -- Pure resource point updates
             elseif (smart.props.resource > 0) then
-                process_resource_squads(smart)
+                process_nonbase_squads(smart)
             elseif (smart.props.territory > 0 and smart.props.lair < 1) then
-                process_territory_squads(smart)  -- Pure territories also send squads back at night
+                process_nonbase_squads(smart)
+
+            -- Lair updates: always recall faction squads (they have no business idling here)
+            elseif (smart.props.lair and smart.props.lair > 0) then
+                process_nonbase_squads(smart, true)
             end
 
             process_loners(smart)
@@ -1151,15 +1155,17 @@ function process_base_squads(smart)
 end
 
 
-function process_resource_squads(smart)
+function process_nonbase_squads(smart, always_recall)
 --[[
-    Normal unified factions will recall squads on pure resources to their nearest bases.
+    Recall non-patrol faction squads from non-base terrains to their nearest bases.
+    Resources and territories recall at night only. Lairs recall always (faction squads should not idle there).
     If there are no empty or allied bases on level, they will be sent to the closest neutral base.
     If there are no neutral bases on level, they will attack the weakest hostile base on level.
     This does not account for vacancy of the base. Base vacancy/overflow is handled by `process_base_squads()`.
 
     Inputs:
-        smart: resource smart terrain
+        smart: non-base smart terrain (resource, territory, or lair)
+        always_recall: if true, recall regardless of time of day (used for lairs)
 ]]
     if not (smart.process_squads_time) or (warfare.get_time_ref():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*6) then
         smart.process_squads_time = warfare.get_time()
@@ -1172,91 +1178,35 @@ function process_resource_squads(smart)
         return    -- surge_behavior() overrides behavior here
     end
 
-    local isNight = (warfare_utils.get_warfare_hour() < 6 or warfare_utils.get_warfare_hour() > 16)
-    -- Send squads back to nearest base(s) at night
-    if isNight and (night_activity_allowed[smart.id] ~= 1) then
-        local squads = SIMBOARD.smarts[smart.id].squads
-        local bases = {}
-        local neutral_bases = {}
-        for sid,_ in pairs(squads) do
-            local squad = sid and alife_object(sid)
-            local faction = squad:get_squad_community()
-            if (squad) and squad_is_commandable(squad) and not (faction == "stalker" or faction == "ecolog") then
-                if not (#bases > 0) then
-                    bases, neutral_bases = find_nearby_bases(smart, faction, true)
-                end
-                -- Send squad to nearest base
-                if (#bases > 0) then
-                    for i=1,#bases do
-                        local base_id = bases[i][1]
-                        sim_squad_warfare.set_target(squad, base_id)
-                        break
-                    end
-                elseif (#neutral_bases > 0) then
-                    for i=1,#neutral_bases do
-                        local base_id = neutral_bases[i][1]
-                        sim_squad_warfare.set_target(squad, base_id)
-                        break
-                    end
-                else
-                    -- No same-level bases found; try linked levels so squads do not get permanently stuck
-                    local targets = find_targets_for_overflow(smart, faction)
-                    if targets and (#targets > 0) then
-                        pick_target(smart, squad, targets, true)
-                    end
-                end
-            end
+    if not always_recall then
+        local hour = warfare_utils.get_warfare_hour()
+        local isNight = (hour < 6 or hour > 16)
+        if not isNight or (night_activity_allowed[smart.id] == 1) then
+            return
         end
     end
-end
 
-
-function process_territory_squads(smart)
---[[
-    This function is/should be exactly identical to `process_resource_squads()`.
-    Normal unified factions will recall squads on pure territories to their nearest bases.
-    This does not account for vacancy of the base. Base vacancy/overflow is handled by `process_base_squads()`.
-
-    Inputs:
-        smart: territory smart terrain
-]]
-    if not (smart.process_squads_time) or (warfare.get_time_ref():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*6) then
-        smart.process_squads_time = warfare.get_time()
-        smart.next_process_squads_time = math.random(5, 30)        -- default 1 to 5, made longer to ease script load
-    else
-        return
-    end
-
-    if currently_surge then
-        return    -- surge_behavior() overrides behavior here
-    end
-
-    local isNight = (warfare_utils.get_warfare_hour() < 6 or warfare_utils.get_warfare_hour() > 16)
-    -- Send squads back to nearest base(s) at night
-    if isNight and (night_activity_allowed[smart.id] ~= 1) then
-        local squads = SIMBOARD.smarts[smart.id].squads
-        local bases = {}
-        local neutral_bases = {}
-        for sid,_ in pairs(squads) do
-            local squad = sid and alife_object(sid)
-            local faction = squad:get_squad_community()
-            if (squad) and squad_is_commandable(squad) and not (faction == "stalker" or faction == "ecolog") then
+    local squads = SIMBOARD.smarts[smart.id].squads
+    local bases = {}
+    local neutral_bases = {}
+    for sid,_ in pairs(squads) do
+        local squad = sid and alife_object(sid)
+        if squad and squad.current_target_id and not alife_object(squad.current_target_id) then
+            printf("[PNBS_DBG] %s at %s: orphan! action=%s target=%s", squad:name(), smart:name(), tostring(squad.current_action), tostring(squad.current_target_id))
+        end
+        local faction = squad:get_squad_community()
+        if (squad) and squad_is_commandable(squad) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
+            if squad.current_action ~= 1 then
+                -- already moving, skip
+            else
                 if not (#bases > 0) then
                     bases, neutral_bases = find_nearby_bases(smart, faction, true)
                 end
                 -- Send squad to nearest base
                 if (#bases > 0) then
-                    for i=1,#bases do
-                        local base_id = bases[i][1]
-                        sim_squad_warfare.set_target(squad, base_id)
-                        break
-                    end
+                    sim_squad_warfare.set_target(squad, bases[1][1])
                 elseif (#neutral_bases > 0) then
-                    for i=1,#neutral_bases do
-                        local base_id = neutral_bases[i][1]
-                        sim_squad_warfare.set_target(squad, base_id)
-                        break
-                    end
+                    sim_squad_warfare.set_target(squad, neutral_bases[1][1])
                 else
                     -- No same-level bases found; try linked levels so squads do not get permanently stuck
                     local targets = find_targets_for_overflow(smart, faction)
