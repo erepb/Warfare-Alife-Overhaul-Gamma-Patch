@@ -570,9 +570,9 @@ function smart_terrain_on_update(smart)
                 process_base_squads(smart)
                 process_patrols(smart)
 
-            -- Pure resource point updates
+            -- Pure resource point updates: keep at least one squad
             elseif (smart.props.resource > 0) then
-                process_nonbase_squads(smart)
+                process_nonbase_squads(smart, false, true)
             elseif (smart.props.territory > 0 and smart.props.lair < 1) then
                 process_nonbase_squads(smart)
 
@@ -1155,7 +1155,7 @@ function process_base_squads(smart)
 end
 
 
-function process_nonbase_squads(smart, always_recall)
+function process_nonbase_squads(smart, always_recall, keep_one)
 --[[
     Recall non-patrol faction squads from non-base terrains to their nearest bases.
     Resources and territories recall at night only. Lairs recall always (faction squads should not idle there).
@@ -1166,6 +1166,7 @@ function process_nonbase_squads(smart, always_recall)
     Inputs:
         smart: non-base smart terrain (resource, territory, or lair)
         always_recall: if true, recall regardless of time of day (used for lairs)
+        keep_one: if true, leave at least one faction squad at the terrain (used for resources)
 ]]
     if not (smart.process_squads_time) or (warfare.get_time_ref():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*6) then
         smart.process_squads_time = warfare.get_time()
@@ -1189,6 +1190,23 @@ function process_nonbase_squads(smart, always_recall)
     local squads = SIMBOARD.smarts[smart.id].squads
     local bases = {}
     local neutral_bases = {}
+
+    -- Count eligible squads first when we need to keep one behind
+    local eligible_count = 0
+    if keep_one then
+        for sid,_ in pairs(squads) do
+            local squad = sid and alife_object(sid)
+            local faction = squad and squad:get_squad_community()
+            if (squad) and squad_is_commandable(squad) and (squad.current_action == 1) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
+                eligible_count = eligible_count + 1
+            end
+        end
+        if eligible_count <= 1 then
+            return
+        end
+    end
+
+    local recalled = 0
     for sid,_ in pairs(squads) do
         local squad = sid and alife_object(sid)
         if squad and squad.current_target_id and not alife_object(squad.current_target_id) then
@@ -1199,19 +1217,27 @@ function process_nonbase_squads(smart, always_recall)
             if squad.current_action ~= 1 then
                 -- already moving, skip
             else
+                -- Keep one squad behind at resources
+                if keep_one and (recalled >= eligible_count - 1) then
+                    break
+                end
+
                 if not (#bases > 0) then
                     bases, neutral_bases = find_nearby_bases(smart, faction, true)
                 end
                 -- Send squad to nearest base
                 if (#bases > 0) then
                     sim_squad_warfare.set_target(squad, bases[1][1])
+                    recalled = recalled + 1
                 elseif (#neutral_bases > 0) then
                     sim_squad_warfare.set_target(squad, neutral_bases[1][1])
+                    recalled = recalled + 1
                 else
                     -- No same-level bases found; try linked levels so squads do not get permanently stuck
                     local targets = find_targets_for_overflow(smart, faction)
                     if targets and (#targets > 0) then
                         pick_target(smart, squad, targets, true)
+                        recalled = recalled + 1
                     end
                 end
             end
