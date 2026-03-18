@@ -682,13 +682,11 @@ function get_squad_info(squad, full_detail)
             elseif (squad.current_action == 0) then
                 props = props .. " \\n" .. str_wrfr[6] .. " \\n"
 
-                local warfareName = translate_smart_name(ase_target:name()) or ase_target:name()
-                if ase_target.player_id then
-                    local ase_name = ui_warfare_options_hints.get_name(ase_target:section_name())
-                    warfareName = ase_name and (ase_name .. " \\n" .. str_wrfr[4] .. ": " .. ase_target.id) or ase_target:name()
-                end
+                local warfareName = warfare_names.get_name(ase_target)
                 if ase_target.id == AC_ID then
                     warfareName = str_wrfr[16]
+                elseif ase_target.player_id and is_squad_monster[ase_target.player_id] then
+                    warfareName = game.translate_string("actor_monster")
                 end
 
                 props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
@@ -698,10 +696,9 @@ function get_squad_info(squad, full_detail)
                 end
             elseif (squad.current_action == 1) then
                 props = props .. " \\n" .. str_wrfr[7] .. " \\n"
-                local warfareName = translate_smart_name(ase_target:name()) or ase_target:name()
-                if ase_target.player_id then
-                    local ase_name = ui_warfare_options_hints.get_name(ase_target:section_name())
-                    warfareName = ase_name and (ase_name .. " \\n" .. str_wrfr[4] .. ": " .. ase_target.id) or ase_target:name()
+                local warfareName = warfare_names.get_name(ase_target)
+                if ase_target.player_id and is_squad_monster[ase_target.player_id] then
+                    warfareName = game.translate_string("actor_monster")
                 end
                 props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
 

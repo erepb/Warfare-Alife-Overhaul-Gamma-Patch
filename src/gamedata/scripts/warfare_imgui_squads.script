@@ -22,8 +22,10 @@ function get_target_info(squad)
         if ase_target.id == AC_ID then
             return "Actor"
         end
-        local warfareName = sim_squad_warfare.translate_smart_name(ase_target:name()) or ase_target:name()
-        return warfareName
+        if ase_target.player_id and is_squad_monster[ase_target.player_id] then
+            return game.translate_string("actor_monster")
+        end
+        return warfare_names.get_name(ase_target)
     end
     return ""
 end
