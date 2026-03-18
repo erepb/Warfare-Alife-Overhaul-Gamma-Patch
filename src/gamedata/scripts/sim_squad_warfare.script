@@ -640,6 +640,8 @@ function get_squad_info(squad, full_detail)
         -- loner squads fly under the radar
         if (smart_terrain_warfare.random_patrols[squad.id]) and (squad:get_squad_community() ~= "stalker") then
             props = props .. " \\n" .. "Random Patrol Squad" .. "\\n"
+        elseif (squad.patrol_table) then
+            props = props .. " \\n" .. "Patrol Squad" .. "\\n"
         end
 
         if (ase_target) then
@@ -831,6 +833,29 @@ function set_target(squad, target)
     local obj = target and alife_object(target)
 
     if (obj) then
+        -- LAIR DIAGNOSTIC: log when a non-monster non-patrol faction squad is sent to a pure lair
+        if (obj:clsid() == clsid.smart_terrain) and obj.props and (obj.props.lair and obj.props.lair > 0) and (obj.props.base == nil or obj.props.base < 1) and (obj.props.resource == nil or obj.props.resource < 1) then
+            local sq_faction = squad:get_squad_community()
+            local is_rp = smart_terrain_warfare.random_patrols[squad.id]
+            local is_patrol = squad.patrol_table
+            if (sq_faction ~= "monster") and (sq_faction ~= "stalker") and (sq_faction ~= "ecolog") and not is_rp and not is_patrol then
+                local trace = debug.traceback("", 2)
+                local caller = ""
+                if trace then
+                    -- extract first meaningful caller line from traceback
+                    for line in trace:gmatch("[^\n]+") do
+                        if line:find("%.script") and not line:find("sim_squad_warfare") then
+                            caller = line:match("^%s*(.-)%s*$") or line
+                            break
+                        end
+                    end
+                end
+                printf("[LAIR_DIAG] set_target: %s (%s) -> lair %s | section=%s action_was=%s territory=%s caller=%s",
+                    squad:name(), sq_faction, obj:name(), squad:section_name(), tostring(squad.current_action),
+                    tostring(obj.props.territory), caller)
+            end
+        end
+
         squad.current_action = 0
         squad.scripted_target = ""
         squad.current_target_id = target
