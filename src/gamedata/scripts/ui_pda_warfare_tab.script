@@ -31,6 +31,10 @@ function pda_warfare_tab:__init() super()
     
     self.faction_squads = {}
     self.faction_squads_lvl = {}
+    self.faction_patrols = {}
+    self.faction_patrols_lvl = {}
+    self.faction_random_patrols = {}
+    self.faction_random_patrols_lvl = {}
     self.faction_smarts = {}
     self.faction_smarts_lvl = {}
     self.faction_smarts_lvls = {}
@@ -104,6 +108,10 @@ function pda_warfare_tab:Reset()
     -- Gather faction squads count
     empty_table(self.faction_squads)
     empty_table(self.faction_squads_lvl)
+    empty_table(self.faction_patrols)
+    empty_table(self.faction_patrols_lvl)
+    empty_table(self.faction_random_patrols)
+    empty_table(self.faction_random_patrols_lvl)
     for f,sq in pairs(warfare.registered_squads) do
         factions[f] = true
         for sq_id,_ in pairs(sq) do
@@ -113,6 +121,17 @@ function pda_warfare_tab:Reset()
                 local lvl = gg:vertex(squad.m_game_vertex_id):level_id()
                 if (lvl == curr_lvl) then
                     self.faction_squads_lvl[f] = (self.faction_squads_lvl[f] or 0) + 1
+                end
+                if smart_terrain_warfare.random_patrols[sq_id] then
+                    self.faction_random_patrols[f] = (self.faction_random_patrols[f] or 0) + 1
+                    if (lvl == curr_lvl) then
+                        self.faction_random_patrols_lvl[f] = (self.faction_random_patrols_lvl[f] or 0) + 1
+                    end
+                elseif squad.patrol_table then
+                    self.faction_patrols[f] = (self.faction_patrols[f] or 0) + 1
+                    if (lvl == curr_lvl) then
+                        self.faction_patrols_lvl[f] = (self.faction_patrols_lvl[f] or 0) + 1
+                    end
                 end
             end
         end
@@ -215,8 +234,11 @@ function pda_warfare_tab:Reset()
         self.txt_order[f]:SetText(n)
         
         local str_squads = self.curr_map and self.faction_squads_lvl[f] or self.faction_squads[f] or 0
+        local str_patrols = self.curr_map and (self.faction_patrols_lvl[f] or 0) or (self.faction_patrols[f] or 0)
+        local str_rpatrols = self.curr_map and (self.faction_random_patrols_lvl[f] or 0) or (self.faction_random_patrols[f] or 0)
+        local str_regular = str_squads - str_patrols - str_rpatrols
         self.txt_squads[f] = xml:InitTextWnd("faction:info_squads", _st)
-        self.txt_squads[f]:SetText(game.translate_string("ui_st_pda_warfare_squads") .. ": " .. clr_gr .. str_squads)
+        self.txt_squads[f]:SetText(game.translate_string("ui_st_pda_warfare_squads") .. ": " .. clr_gr .. str_squads .. "(" .. str_regular .. "/" .. str_patrols .. "/" .. str_rpatrols .. ")")
         
         local str_smarts = self.curr_map and self.faction_smarts_lvl[f] or self.faction_smarts[f] or 0
         local faction_global_resources = warfare_factions.faction_information[f].resource_count or 0
