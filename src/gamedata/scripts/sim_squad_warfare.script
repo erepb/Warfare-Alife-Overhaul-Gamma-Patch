@@ -233,20 +233,12 @@ function squad_warfare_update(squad)
                         squad.wait_time = math.random(10, 60)
                     end
                 end
-            end--[[
-        else
-            local levelID = game_graph():vertex(squad.m_game_vertex_id):level_id()
-
-            if (warfare_levels.level_information[levelID] and warfare_levels.level_information[levelID].smarts) then
-                for i,sm in pairs(warfare_levels.level_information[levelID].smarts) do
-                    local smart = sm and alife_object(sm)
-
-                    if (smart) then
-                        --printf(smart:name())
-                        sim_squad_warfare.set_target(squad, smart.id)
-                    end
-                end
-            end]]
+            end
+        elseif squad.current_action == 0 and squad.current_target_id and not alife_object(squad.current_target_id) then
+            -- Target no longer exists (e.g. destroyed enemy squad, dismissed follow target)
+            -- Return squad to its owning smart terrain
+            squad.current_target_id = squad.smart_id
+            squad.assigned_target_id = squad.smart_id
         end
     end
 
