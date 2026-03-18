@@ -3027,6 +3027,10 @@ function process_patrols(smart)
                                 patrol_squads[smart.id][squad.id] = new_table
                                 squad.patrol_table = new_table
                             end
+                        elseif isNight then
+                            -- Night roll failed: reset idle timer until next check
+                            patrol_squads[smart.id][squad_id].arrive_time = warfare.get_time()
+                            patrol_squads[smart.id][squad_id].stay_time = math.random(30, 90)
                         end
                     end
                 end
