@@ -4957,13 +4957,17 @@ function check_owner(smart)
 
                 if (squad and squad:clsid() == clsid.online_offline_group_s) and (not warfare.ignore[squad:section_name()]) and (not sim_offline_combat.stationary_squads[squad:section_name()]) then
                     if (squad:get_squad_community() ~= smart.owning_faction) then
-                        sim_squad_warfare.set_target(squad, smart.id)
-
-                        patrol_squads[smart.id][squad.id] = {
-                            target = smart.id,
-                            stay_time = nil,
-                            arrive_time = nil
-                        }
+                        -- Convert orphaned patrol to random patrol
+                        local faction = squad:get_squad_community()
+                        squad.patrol_table = nil
+                        squad.patrol_owner = nil
+                        patrol_squads[smart.id][squad_id] = nil
+                        set_random_patrol(squad.id, faction)
+                        local target = find_random_patrol_target(smart, faction, squad.id)
+                        if target then
+                            sim_squad_warfare.set_target(squad, target)
+                        end
+                        printdbg("WARFARE DEBUG: converted patrol %s (%s) to random patrol after losing base %s", squad:name(), faction, smart:name())
                     end
                 else
                     patrol_squads[smart.id][squad_id] = nil
