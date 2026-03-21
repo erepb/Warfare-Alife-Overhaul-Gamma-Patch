@@ -714,6 +714,9 @@ function disengage_combat(id_1, squad_1, id_t, sq_t)
     -- Clear fight lock so both squads resume normal movement toward their targets
     opponents[id_1] = nil
     opponents[id_t] = nil
+    -- Reset cached power so squads recalculate from actual NPC ranks next combat
+    ocs_power[id_1] = nil
+    ocs_power[id_t] = nil
 end
 
 function remove_squad_info(squad_2, id_2, id_1, lid)
