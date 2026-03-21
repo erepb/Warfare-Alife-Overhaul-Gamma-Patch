@@ -4646,7 +4646,7 @@ function squad_count_defending(smart, faction)
     local squadPower = 0
 
     if not (smart.owning_faction) then
-        check_owner(smart)
+        return squadCount, squadPower
     end
 
     local squads = SIMBOARD.smarts[smart.id].squads
@@ -4722,7 +4722,7 @@ function squad_count_defending_all(smart)
     local squadPower = {}
 
     if not (smart.owning_faction) then
-        check_owner(smart)
+        return squadCount, squadPower
     end
 
     local squads = SIMBOARD.smarts[smart.id].squads
