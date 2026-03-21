@@ -149,9 +149,12 @@ local function smart_terrain_on_update(smart)
                         end
                         local sq_t = sim:object(id_t)
                         local _dist_sqr = sq_t and distance_to_xz_sqr(squad_1.position, sq_t.position)
-                        if sq_t and _dist_sqr and _dist_sqr > 2500 then
+                        if sq_t and _dist_sqr and _dist_sqr > opt_dist then
                             disengage_combat(id_1, squad_1, id_t, sq_t)
                         end
+                    elseif id_t then
+                        local sq_t = sim:object(id_t)
+                        disengage_combat(id_1, squad_1, id_t, sq_t)
                     end
 
                     -- Otherwise, scan for squads in the same map
@@ -222,7 +225,7 @@ local function squad_on_update(squad_1)
                 end
                 local sq_t = sim:object(id_t)
                 local _dist_sqr = sq_t and distance_to_xz_sqr(squad_1.position, sq_t.position)
-                if sq_t and _dist_sqr and _dist_sqr > 4 * opt_dist then
+                if sq_t and _dist_sqr and _dist_sqr > opt_dist then
                     disengage_combat(id_1, squad_1, id_t, sq_t)
                 end
             elseif id_t then
