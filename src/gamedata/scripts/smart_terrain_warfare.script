@@ -3983,35 +3983,22 @@ function smart_terrain.se_smart_terrain:show()
                     self.target_smarts = {}    -- initialize
                 end
 
+                -- loner fog: if this attacking base is not visible, suppress all its target spots
+                local base_invisible = warfare.actor_faction == "stalker" and warfare_options.options.loner_fog and not visible
+
                 for t,spot in pairs(self.target_spots) do
                     local other = alife_object(t)
 
                     if (other) then
-                        -- clear target spots from points owned by neutrals or no longer targeted
-                        if (other.owning_faction == warfare.actor_faction or (other.owning_faction ~= "none" and not is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
+                        -- clear target spots recaptured by the player faction, or if this base turned invisible
+                        if base_invisible or (actor_faction and other.owning_faction == warfare.actor_faction) then
                             level.map_remove_object_spot(t, pda_icons[spot])
                             self.target_spots[t] = nil
                             other.actor_target = nil
                         else
                             -- update color: red=under attack, orange=squads ready, cyan=gathering squads
-                            local inv = invasions[self.id]
-                            local inv_target = inv and inv[1]
-                            local inv_ready = inv and inv[3]  -- departure timer started = squads gathered
                             local faction_key = other.owning_faction or "none"
-                            local new_key
-                            if under_attack[t] then
-                                new_key = "target_" .. faction_key
-                            elseif inv_target == t and inv_ready then
-                                new_key = "invasion_" .. faction_key
-                            elseif inv_target == t then
-                                new_key = "planned_" .. faction_key
-                            else
-                                -- no invasion plan for this target, remove spot
-                                level.map_remove_object_spot(t, pda_icons[spot])
-                                self.target_spots[t] = nil
-                                other.actor_target = nil
-                                new_key = nil
-                            end
+                            local new_key = get_target_circle_key(t, self.id, actor_faction, faction_key)
                             if new_key then
                                 if spot ~= new_key then
                                     level.map_remove_object_spot(t, pda_icons[spot])
@@ -4020,6 +4007,11 @@ function smart_terrain.se_smart_terrain:show()
                                 else
                                     level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other, false))
                                 end
+                            else
+                                -- no invasion plan for this target, remove spot
+                                level.map_remove_object_spot(t, pda_icons[spot])
+                                self.target_spots[t] = nil
+                                other.actor_target = nil
                             end
                         end
                     end
@@ -4027,37 +4019,37 @@ function smart_terrain.se_smart_terrain:show()
 
                 -- smart belongs to player's faction — show target spots only for invasion targets
                 -- cyan=gathering squads, orange=squads ready, red=under attack
-                if (actor_faction) then
+                if (actor_faction) and not base_invisible then
                     local inv = invasions[self.id]
                     local inv_target = inv and inv[1]
-                    local inv_ready = inv and inv[3]
                     if inv_target then
                         local t = inv_target
                         if not (self.target_spots[t]) then
                             local other = alife_object(t)
-
                             if (other) then
-                                if ((not other.actor_target) and other.owning_faction ~= warfare.actor_faction and (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
-                                    other.actor_target = true
-
-                                    -- remove existing faction spot from target
-                                    if other.warfare_spot then
-                                        level.map_remove_object_spot(other.id, pda_icons[other.warfare_spot])
-                                        other.warfare_spot = nil
-                                    end
-
+                                if ((not other.actor_target) and other.owning_faction ~= warfare.actor_faction) then
                                     local faction_key = other.owning_faction or "none"
-                                    local target_key
-                                    if under_attack[t] then
-                                        target_key = "target_" .. faction_key
-                                    elseif inv_ready then
-                                        target_key = "invasion_" .. faction_key
-                                    else
-                                        target_key = "planned_" .. faction_key
-                                    end
-                                    level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_warfare_info(other, false))
-                                    self.target_spots[t] = target_key
+                                    local target_key = get_target_circle_key(t, self.id, true, faction_key)
+                                    place_target_circle(self, other, target_key, false)
                                 end
+                            end
+                        end
+                    end
+                end
+
+                -- non-player neutral factions: show orange/red when invasion forces are gathered and base is visible
+                if not actor_faction and not enemies and visible then
+                    local inv = invasions[self.id]
+                    local inv_target = inv and inv[1]
+                    local inv_ready = inv and inv[3]
+                    if inv_target and inv_ready then
+                        local t = inv_target
+                        if not (self.target_spots[t]) then
+                            local other = alife_object(t)
+                            if (other) and (not other.actor_target) then
+                                local faction_key = other.owning_faction or "none"
+                                local target_key = get_target_circle_key(t, self.id, false, faction_key)
+                                place_target_circle(self, other, target_key, false)
                             end
                         end
                     end
@@ -4090,20 +4082,11 @@ function smart_terrain.se_smart_terrain:show()
                 --]]
 
                 if (visible) then
-                    local info = nil
-
-                    -- determine info to show on visible smarts
-                    if (warfare.dbg_all_faction_tooltips or faction == warfare.actor_faction or is_factions_friends(faction, warfare.actor_faction)) then
-                        info = get_warfare_info(self)
-                    elseif (is_factions_enemies(warfare.actor_faction, faction)) then
-                        info = get_warfare_info(self)
-                    else
-                        info = get_neutral_info(self)
-                    end
+                    local info = get_warfare_info(self)
 
                     -- use red-tinted icon for player's smarts under attack
                     local display_key = faction
-                    if under_attack[self.id] and faction == warfare.actor_faction and pda_icons["target_" .. faction] then
+                    if under_attack[self.id] and pda_icons["target_" .. faction] and (faction == warfare.actor_faction or not is_factions_enemies(warfare.actor_faction, faction)) then
                         display_key = "target_" .. faction
                     end
 
@@ -4204,29 +4187,14 @@ function smart_terrain.se_smart_terrain:show()
                 local other = alife_object(t)
 
                 if (other) then
-                    if (other.owning_faction == warfare.actor_faction or not (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
+                    if (actor_faction and other.owning_faction == warfare.actor_faction) then
                         level.map_remove_object_spot(t, pda_icons[spot])
                         self.target_spots[t] = nil
                         other.actor_target = nil
                     else
                         -- update color: red=under attack, orange=squads ready, cyan=gathering squads
-                        local inv = invasions[self.id]
-                        local inv_target = inv and inv[1]
-                        local inv_ready = inv and inv[3]
                         local faction_key = other.owning_faction or "none"
-                        local new_key
-                        if under_attack[t] then
-                            new_key = "target_" .. faction_key
-                        elseif inv_target == t and inv_ready then
-                            new_key = "invasion_" .. faction_key
-                        elseif inv_target == t then
-                            new_key = "planned_" .. faction_key
-                        else
-                            level.map_remove_object_spot(t, pda_icons[spot])
-                            self.target_spots[t] = nil
-                            other.actor_target = nil
-                            new_key = nil
-                        end
+                        local new_key = get_target_circle_key(t, self.id, actor_faction, faction_key)
                         if new_key then
                             if spot ~= new_key then
                                 level.map_remove_object_spot(t, pda_icons[spot])
@@ -4235,6 +4203,10 @@ function smart_terrain.se_smart_terrain:show()
                             else
                                 level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other))
                             end
+                        else
+                            level.map_remove_object_spot(t, pda_icons[spot])
+                            self.target_spots[t] = nil
+                            other.actor_target = nil
                         end
                     end
                 end
@@ -4245,54 +4217,45 @@ function smart_terrain.se_smart_terrain:show()
             if (actor_faction) then
                 local inv = invasions[self.id]
                 local inv_target = inv and inv[1]
-                local inv_ready = inv and inv[3]
                 if inv_target then
                     local t = inv_target
                     if not (self.target_spots[t]) then
                         local other = alife_object(t)
-
                         if (other) then
-                            if ((not other.actor_target) and other.owning_faction ~= warfare.actor_faction and (other.owning_faction == "none" or is_factions_enemies(other.owning_faction, warfare.actor_faction))) then
-                                other.actor_target = true
-
-                                -- remove existing faction spot from target
-                                if other.warfare_spot then
-                                    level.map_remove_object_spot(other.id, pda_icons[other.warfare_spot])
-                                    other.warfare_spot = nil
-                                end
-
+                            if ((not other.actor_target) and other.owning_faction ~= warfare.actor_faction) then
                                 local faction_key = other.owning_faction or "none"
-                                local target_key
-                                if under_attack[t] then
-                                    target_key = "target_" .. faction_key
-                                elseif inv_ready then
-                                    target_key = "invasion_" .. faction_key
-                                else
-                                    target_key = "planned_" .. faction_key
-                                end
-                                level.map_add_object_spot(t, pda_icons[target_key] or "circle_target", get_warfare_info(other))
-                                self.target_spots[t] = target_key
+                                local target_key = get_target_circle_key(t, self.id, true, faction_key)
+                                place_target_circle(self, other, target_key, true)
                             end
                         end
                     end
                 end
             end
 
-            if not (self.actor_target) then
-                local info = nil
-
-                -- update info for each spot
-                if (warfare.dbg_all_faction_tooltips or faction == warfare.actor_faction or is_factions_friends(faction, warfare.actor_faction)) then
-                    info = get_warfare_info(self)
-                elseif (is_factions_enemies(warfare.actor_faction, faction)) then
-                    info = get_warfare_info(self)
-                else
-                    info = get_neutral_info(self)
+            -- non-player neutral factions: show orange/red when invasion forces are gathered
+            if not actor_faction and not enemies then
+                local inv = invasions[self.id]
+                local inv_target = inv and inv[1]
+                local inv_ready = inv and inv[3]
+                if inv_target and inv_ready then
+                    local t = inv_target
+                    if not (self.target_spots[t]) then
+                        local other = alife_object(t)
+                        if (other) and (not other.actor_target) then
+                            local faction_key = other.owning_faction or "none"
+                            local target_key = get_target_circle_key(t, self.id, false, faction_key)
+                            place_target_circle(self, other, target_key, true)
+                        end
+                    end
                 end
+            end
+
+            if not (self.actor_target) then
+                local info = get_warfare_info(self)
 
                 -- use red-tinted icon for player's smarts under attack
                 local display_key = faction
-                if under_attack[self.id] and faction == warfare.actor_faction and pda_icons["target_" .. faction] then
+                if under_attack[self.id] and pda_icons["target_" .. faction] and (faction == warfare.actor_faction or not is_factions_enemies(warfare.actor_faction, faction)) then
                     display_key = "target_" .. faction
                 end
 
@@ -4444,6 +4407,68 @@ local function get_smart_base_info(smart, show_owner, show_counts)
     return props
 end
 
+-- format a real-seconds value as "X hrs Y mins" (>1hr) or "Y mins"
+function format_real_seconds(seconds)
+    if seconds <= 3600 then
+        return strformat(str_wrfr[14], round_idp(seconds / 60))
+    else
+        local hrs = math.floor((seconds / 60) / 60)
+        local mins = round_idp(((seconds / 60) / 60 - hrs) * 60)
+        return strformat(str_wrfr[13], hrs, mins)
+    end
+end
+
+-- format a game-minutes value as "X hrs Y mins" (>=60min) or "Y mins"
+function format_game_minutes(minutes)
+    if minutes >= 60 then
+        return strformat(str_wrfr[13], math.floor(minutes / 60), minutes % 60)
+    else
+        return strformat(str_wrfr[14], minutes)
+    end
+end
+
+-- true if faction is neutral to player (not enemy, not player's faction, not "none")
+function is_neutral_to_player(faction)
+    return faction and faction ~= "none"
+        and faction ~= warfare.actor_faction
+        and not is_factions_enemies(warfare.actor_faction, faction)
+end
+
+-- true if attacker should show invasion info on the target smart's tooltip
+-- player attacker = always; neutral attacker = requires inv_ready; enemy = never
+function is_invasion_attacker_eligible(att_faction, inv_ready)
+    if att_faction == warfare.actor_faction then return true end
+    return is_neutral_to_player(att_faction) and inv_ready
+end
+
+-- returns the circle icon key for a target spot, or nil if the spot should be removed
+-- faction_key: other.owning_faction or "none"
+function get_target_circle_key(t, self_id, actor_faction_flag, faction_key)
+    local inv = invasions[self_id]
+    local inv_target = inv and inv[1]
+    local inv_ready = inv and inv[3]
+    if under_attack[t] then
+        return "target_" .. faction_key
+    elseif inv_target == t and inv_ready then
+        return "invasion_" .. faction_key
+    elseif inv_target == t and actor_faction_flag then
+        return "planned_" .. faction_key
+    end
+    return nil
+end
+
+-- place a new target circle on other, removing its faction spot first if present
+-- visible: passed to get_warfare_info (false = fog mode, hides owner)
+function place_target_circle(self, other, key, visible)
+    other.actor_target = true
+    if other.warfare_spot then
+        level.map_remove_object_spot(other.id, pda_icons[other.warfare_spot])
+        other.warfare_spot = nil
+    end
+    level.map_add_object_spot(other.id, pda_icons[key] or "circle_target", get_warfare_info(other, visible))
+    self.target_spots[other.id] = key
+end
+
 function get_unknown_info(smart)
     printd(0, smart:name())
     local props = get_smart_base_info(smart, false, false)
@@ -4507,16 +4532,7 @@ function get_warfare_info(smart, visible)
         end
         local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer, (next_defense * 6) * (defense_delay[smart.id] + 1))
 
-        -- xQd, show the timer in hours and minutes
-        --remaining = round_idp(remaining / 60)
-        if remaining <= 3600 then -- show in minutes if less than an hour left
-            remaining = strformat(str_wrfr[14] , round_idp(remaining / 60))
-        else                       -- otherwise show in hours and minutes
-            local remaining_hrs_round = math.floor((remaining / 60)/60)
-            local remaining_hrs_float = (remaining / 60)/60
-            local remaining_mins_diff = round_idp((remaining_hrs_float - remaining_hrs_round) * 60)
-            remaining = strformat(str_wrfr[13] , remaining_hrs_round, remaining_mins_diff)
-        end
+        remaining = format_real_seconds(remaining)
         props = props .. " \\n" .. clr_gr .. str_wrfr[11] .. ": " .. clr_y .. remaining
         -- xQd end
     end
@@ -4527,17 +4543,7 @@ function get_warfare_info(smart, visible)
         local patrol_timer = patrol_timers[smart.id]
         local next_patrol = get_current_patrol_respawn_interval(smart.owning_faction)
 
-        local remaining = warfare_utils.get_real_seconds_until_spawn(patrol_timer, next_patrol*6)
-        -- xQd, show the timer in hours and minutes
-        --remaining = round_idp(remaining / 60)
-        if remaining <= 3600 then -- show in minutes if less than an hour left
-            remaining = strformat(str_wrfr[14] , round_idp(remaining / 60))
-        else                       -- otherwise show in hours and minutes
-            local remaining_hrs_round = math.floor((remaining / 60)/60)
-            local remaining_hrs_float = (remaining / 60)/60
-            local remaining_mins_diff = round_idp((remaining_hrs_float - remaining_hrs_round) * 60)
-            remaining = strformat(str_wrfr[13] , remaining_hrs_round, remaining_mins_diff)
-        end
+        local remaining = format_real_seconds(warfare_utils.get_real_seconds_until_spawn(patrol_timer, next_patrol*6))
         props = props .. " \\n" .. clr_gr .. str_wrfr[12] .. ": ".. clr_y .. remaining
     end
 
@@ -4575,15 +4581,9 @@ function get_warfare_info(smart, visible)
             if invasions[smart.id][3] then
                 local diff = warfare.get_time_ref():diffSec(invasions[smart.id][3])
                 local wait = invasions[smart.id][4] or 0
-                local remaining = round_idp((wait * 6 - diff) / 60)  -- game minutes remaining
+                local remaining = round_idp((wait * 6 - diff) / 60)
                 if remaining > 0 then
-                    local time_str
-                    if remaining >= 60 then
-                        time_str = strformat(str_wrfr[13], math.floor(remaining / 60), remaining % 60)
-                    else
-                        time_str = strformat(str_wrfr[14], remaining)
-                    end
-                    props = props .. " \\n" .. clr_gr .. str_wrfr[22] .. ": " .. clr_y .. time_str
+                    props = props .. " \\n" .. clr_gr .. str_wrfr[22] .. ": " .. clr_y .. format_game_minutes(remaining)
                 end
             end
         end
@@ -4606,15 +4606,53 @@ function get_warfare_info(smart, visible)
             end
         end
     elseif smart.owning_faction and (smart.owning_faction ~= warfare.actor_faction) then
-        -- On non-player bases, show which player faction base is launching an invasion against it
+        local smart_is_neutral = is_neutral_to_player(smart.owning_faction)
+
+        -- Show outgoing invasion info for neutral smarts (inv_ready stage only)
+        if smart_is_neutral and invasions[smart.id] and invasions[smart.id][3] then
+            local inv = invasions[smart.id]
+            local other = inv[1] and alife_object(inv[1])
+            if other then
+                local otherName = translate_smart_name(other:name()) or other:name()
+                props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[18]
+                props = props .. " \\n" .. clr_gr .. str_wrfr[15] .. ": " .. clr_w .. otherName .. "\\n"
+                props = props .. " \\n" .. clr_gr .. str_wrfr[16] .. ": " .. clr_w .. inv[2] .. "\\n"
+                local diff = warfare.get_time_ref():diffSec(inv[3])
+                local wait = inv[4] or 0
+                local remaining = round_idp((wait * 6 - diff) / 60)
+                if remaining > 0 then
+                    props = props .. " \\n" .. clr_gr .. str_wrfr[22] .. ": " .. clr_y .. format_game_minutes(remaining)
+                end
+            end
+        end
+
+    end
+
+    -- Show incoming invasion info for any smart that is a target.
+    -- Runs independently of the if/elseif above so a base that is both attacker and target shows both.
+    -- player attacker = all stages; neutral attacker = inv_ready+ only; enemy attacker = never (stage 3 via under_attack)
+    if smart.owning_faction then
         for base_id, inv in pairs(invasions) do
             if inv[1] == smart.id then
                 local other = base_id and alife_object(base_id)
-                if other and (other.owning_faction == warfare.actor_faction) then
-                    local attacker_name = translate_smart_name(other:name()) or other:name()
-                    props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[18]
-                    props = props .. " \\n" .. clr_gr .. str_wrfr[21] .. ": " .. clr_w .. attacker_name .. "\\n"
-                    break
+                if other then
+                    local att_faction = other.owning_faction
+                    local att_eligible = is_invasion_attacker_eligible(att_faction, inv[3])
+                    if att_eligible then
+                        if not warfare_options.options.fog_of_war or (other.warfare_spot and other.warfare_spot ~= "none") then
+                            local attacker_name = translate_smart_name(other:name()) or other:name()
+                            props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[18]
+                            props = props .. " \\n" .. clr_gr .. str_wrfr[21] .. ": " .. clr_w .. attacker_name .. "\\n"
+                            if inv[3] then
+                                local diff = warfare.get_time_ref():diffSec(inv[3])
+                                local wait = inv[4] or 0
+                                local remaining = round_idp((wait * 6 - diff) / 60)
+                                if remaining > 0 then
+                                    props = props .. " \\n" .. clr_gr .. str_wrfr[22] .. ": " .. clr_y .. format_game_minutes(remaining)
+                                end
+                            end
+                        end
+                    end
                 end
             end
         end
