@@ -4599,7 +4599,24 @@ function get_warfare_info(smart, visible)
 
     if under_attack[smart.id] then
 
-        props = props .. " \\n" .. clr_r .. " \\n" .. "Enemy is advancing on this location!"
+        local player_is_attacker = false
+        if smart.owning_faction ~= warfare.actor_faction and SIMBOARD and SIMBOARD.smarts[smart.id] then
+            for sid,_ in pairs(SIMBOARD.smarts[smart.id].squads) do
+                local squad = sid and alife_object(sid)
+                if squad and squad.registered_with_warfare and not random_patrols[squad.id]
+                and squad:get_squad_community() == warfare.actor_faction
+                and squad.current_action == 0 then
+                    player_is_attacker = true
+                    break
+                end
+            end
+        end
+
+        if player_is_attacker then
+            props = props .. " \\n" .. clr_r .. " \\n" .. "Your forces are advancing on this location!"
+        else
+            props = props .. " \\n" .. clr_r .. " \\n" .. "Enemy is advancing on this location!"
+        end
 
     end
 
