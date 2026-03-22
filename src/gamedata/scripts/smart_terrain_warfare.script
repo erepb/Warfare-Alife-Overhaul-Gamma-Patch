@@ -4554,7 +4554,13 @@ function get_warfare_info(smart, visible)
                 local wait = invasions[smart.id][4] or 0
                 local remaining = round_idp((wait * 6 - diff) / 60)  -- game minutes remaining
                 if remaining > 0 then
-                    props = props .. " \\n" .. clr_gr .. str_wrfr[22] .. ": " .. clr_y .. strformat(str_wrfr[14], remaining)
+                    local time_str
+                    if remaining >= 60 then
+                        time_str = strformat(str_wrfr[13], math.floor(remaining / 60), remaining % 60)
+                    else
+                        time_str = strformat(str_wrfr[14], remaining)
+                    end
+                    props = props .. " \\n" .. clr_gr .. str_wrfr[22] .. ": " .. clr_y .. time_str
                 end
             end
         end
