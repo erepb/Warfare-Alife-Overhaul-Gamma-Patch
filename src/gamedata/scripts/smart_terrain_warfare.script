@@ -641,12 +641,6 @@ function process_manual_capture(smart)
         return
     end
 
-    -- loners and ecolog can't capture points
-    if (warfare.actor_faction == "stalker" or warfare.actor_faction == "ecolog") then
-        manual_point = nil
-        return
-    end
-
     -- use old method if your faction has zero bases
     if (warfare_factions.faction_information[warfare.actor_faction].base_count == 0) then
         process_manual_capture_old(smart)

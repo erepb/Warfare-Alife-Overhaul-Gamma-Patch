@@ -8,7 +8,7 @@ function get_auto_capture_status()
     -- Check actor faction eligibility
     local actor_faction = warfare.actor_faction
     status.actor_faction = actor_faction or "Unknown"
-    status.can_capture = not (actor_faction == "stalker" or actor_faction == "ecolog")
+    status.can_capture = true
     
     -- Check if faction has bases
     local base_count = 0
@@ -129,7 +129,7 @@ function render()
     
     if not status.can_capture then
         eligible = false
-        table.insert(reasons, "Faction cannot capture (Loner/Ecologist)")
+        table.insert(reasons, "Faction cannot capture")
     end
     
     if not status.has_bases and not status.use_old_method then
