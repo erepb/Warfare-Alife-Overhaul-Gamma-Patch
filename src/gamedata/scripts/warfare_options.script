@@ -78,6 +78,7 @@ function update_settings()
     options.monster_rare_chance_south = ui_options.get("alife/warfare/general/monster_rare_chance_south")
     options.monster_rare_chance_north = ui_options.get("alife/warfare/general/monster_rare_chance_north")
     options.monster_rare_chance_lab = ui_options.get("alife/warfare/general/monster_rare_chance_lab")
+    options.monster_night_power_multiplier = ui_options.get("alife/warfare/general/monster_night_power_multiplier")
 
     options.overflow_override = ui_options.get("alife/warfare/general/overflow_overrides_manual_control")
     options.loner_fog = ui_options.get("alife/warfare/general/extra_loner_fog_of_war")

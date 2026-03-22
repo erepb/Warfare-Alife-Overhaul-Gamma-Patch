@@ -71,6 +71,12 @@
 	<string id="ui_mm_alife_warfare_general_monster_rare_chance_lab_desc">
 		<text>The percent chance that a mutant spawn in a laboratory will be a rare mutant (controller, chimera, etc). Default: 50</text>
 	</string>
+	<string id="ui_mm_alife_warfare_general_monster_night_power_multiplier">
+		<text>Mutant Night Power Multiplier</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_monster_night_power_multiplier_desc">
+		<text>Multiplier applied to mutant squad power during offline combat at night (22:00 - 06:00). Makes mutants harder to defeat in offline simulation during nighttime. Default: 2.0</text>
+	</string>
 	<string id="ui_mm_alife_warfare_general_prevent_mainbase_attacks">
 		<text>Disincentivise Attacks on Main Bases</text>
 	</string>

@@ -786,6 +786,9 @@ function calculate_squad_power(squad, community, raw, no_distance)
     if not no_distance then
         power = power * calculate_squad_distance_combat_multiplier(squad)
     end
+    if community == "monster" and warfare_utils.is_night() then
+        power = power * (warfare_options.options.monster_night_power_multiplier or 2)
+    end
     power = math_ceil(power)
 
     --printf("-pwr [%s] = %s", squad:name(), power)

@@ -71,6 +71,12 @@
     <string id="ui_mm_alife_warfare_general_monster_rare_chance_lab_desc">
         <text>Шанс на появление редкого мутанта (контролер, химера и т.д.) в лабораториях. По умолчанию: 50</text>
     </string>
+    <string id="ui_mm_alife_warfare_general_monster_night_power_multiplier">
+        <text>Множитель силы мутантов ночью</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_monster_night_power_multiplier_desc">
+        <text>Множитель, применяемый к силе отряда мутантов в офлайн-бою ночью (22:00–06:00). Делает мутантов сложнее для победы в офлайн-симуляции в ночное время. Значение по умолчанию: 2.0</text>
+    </string>
     <string id="ui_mm_alife_warfare_general_prevent_mainbase_attacks">
         <text>Снижение атак на главные базы</text>
     </string>

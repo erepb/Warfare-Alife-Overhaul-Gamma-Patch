@@ -3816,6 +3816,7 @@ function process_mutants(smart)
                     -- force a mutant squad to move off if they exceed the terrain capacity
                     if (warfare.get_time_ref():diffSec(squad.arrive_time) >= squad.wait_time*6) or (mutant_squad_count > smart.max_population) then
                         local max_active = warfare_options.options.monster_max_squads_per_level
+                        local isNight = warfare_utils.is_night()
 
                         local targets = {}
 
@@ -3838,10 +3839,13 @@ function process_mutants(smart)
                                             check_owner(other)
                                         end
 
-                                        if (other.owning_faction == "none") or ((other.owning_faction ~= "none") and (math.random(1, 20) > 19)) then                    -- 1 in 20 chance of attacking a STALKER-occupied location
-                                            if not (warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()]) then
-                                                targets[#targets+1] = other                                                                                                    -- add possible locations to list of targets
-                                            end
+                                        -- mutants never target bases; day: lairs only; night: lairs + territories + resources
+                                        local is_valid_type = other.props and (other.props.base < 1) and (
+                                            isNight and ((other.props.lair > 0) or (other.props.territory > 0) or (other.props.resource > 0))
+                                            or (other.props.lair > 0)
+                                        )
+                                        if is_valid_type and ((other.owning_faction == "none") or ((other.owning_faction ~= "none") and (math.random(1, 20) > 19))) then    -- 1 in 20 chance of attacking a STALKER-occupied location
+                                            targets[#targets+1] = other                                                                                                    -- add possible locations to list of targets
                                         end
                                     end
 
@@ -3866,10 +3870,13 @@ function process_mutants(smart)
                                     check_owner(other)
                                 end
 
-                                if (other.owning_faction == "none") or ((other.owning_faction ~= "none") and (math.random(1, 20) > 19)) then                    -- 1 in 20 chance of attacking a STALKER-occupied location
-                                    if not (warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()]) then
-                                        targets[#targets+1] = other                                                                                                    -- add possible locations to list of targets
-                                    end
+                                -- mutants never target bases; day: lairs only; night: lairs + territories + resources
+                                local is_valid_type = other.props and (other.props.base < 1) and (
+                                    isNight and ((other.props.lair > 0) or (other.props.territory > 0) or (other.props.resource > 0))
+                                    or (other.props.lair > 0)
+                                )
+                                if is_valid_type and ((other.owning_faction == "none") or ((other.owning_faction ~= "none") and (math.random(1, 20) > 19))) then    -- 1 in 20 chance of attacking a STALKER-occupied location
+                                    targets[#targets+1] = other                                                                                                    -- add possible locations to list of targets
                                 end
                             end
 
