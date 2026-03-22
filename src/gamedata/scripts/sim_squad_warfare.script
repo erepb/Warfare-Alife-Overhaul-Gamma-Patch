@@ -628,8 +628,15 @@ function get_squad_info(squad, full_detail)
     end
 
     if (full_detail) then
-        local power = sim_offline_combat.calculate_squad_power(squad)
-        props = props .. " \\n" .. power .. " " .. str_wrfr[8]
+        local dist_enabled = warfare_options.options.distance_based_combat_multiplier
+        if dist_enabled then
+            local base_power = sim_offline_combat.calculate_squad_power(squad, nil, true, true)
+            local adj_power = sim_offline_combat.calculate_squad_power(squad)
+            props = props .. " \\n" .. base_power .. "(" .. adj_power .. ") " .. str_wrfr[8]
+        else
+            local power = sim_offline_combat.calculate_squad_power(squad)
+            props = props .. " \\n" .. power .. " " .. str_wrfr[8]
+        end
 
         if (squad.patrol_owner) then
             local owner = alife_object(squad.patrol_owner)
