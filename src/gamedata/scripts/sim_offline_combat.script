@@ -762,8 +762,11 @@ function calculate_npc_power(se_obj, community, squad)
     return (power * (faction_power[community] or 1))* mult
 end
 
-function calculate_squad_power(squad, community, raw)
+function calculate_squad_power(squad, community, raw, no_distance)
     -- printf("-offline_simulation | calculate_squad_power")
+    -- During active combat, ocs_power tracks live damage/rank state — return it directly.
+    -- Outside combat, ocs_power is nil (cleared on disengage), so we always recalculate fresh.
+    -- This ensures distance multiplier reflects the squad's current position, not a stale cache.
     if (not raw) and ocs_power[squad.id] then
         return ocs_power[squad.id]
     end
@@ -780,13 +783,12 @@ function calculate_squad_power(squad, community, raw)
         end
     end
 
-    power = power * calculate_squad_distance_combat_multiplier(squad)
+    if not no_distance then
+        power = power * calculate_squad_distance_combat_multiplier(squad)
+    end
     power = math_ceil(power)
 
     --printf("-pwr [%s] = %s", squad:name(), power)
-    if (not raw) then
-        ocs_power[squad.id] = power
-    end
 
     return power
 end
