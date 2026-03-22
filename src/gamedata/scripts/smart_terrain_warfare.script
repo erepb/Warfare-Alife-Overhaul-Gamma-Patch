@@ -1011,7 +1011,6 @@ function process_base_squads(smart)
 
     local aggression = invading_faction_props.expansion_aggression
     local isMorning = (warfare_utils.get_warfare_hour() > 7 and warfare_utils.get_warfare_hour() < 15)  -- In the morning, squads at base are given new targets or sent out for invasion
-    local isSunset = (warfare_utils.get_warfare_hour() > 15 and warfare_utils.get_warfare_hour() < 20)  -- Around sunset, overflow squads are shuffled to other bases
 
     local bases = {}
     local resources = {}
@@ -1026,6 +1025,7 @@ function process_base_squads(smart)
             -- Different actions between squads that own the smart terrain vs those that do not (squatters)
             if (squad:get_squad_community() == faction) then
                 -- Second criterion: Squad movement happens in the morning. An invasion will have already been sent out via `process_targets()`, which happens before this function
+                local squad_sent = false
                 if isMorning or (night_activity_allowed[smart.id] == 1) then
                     -- Retask random patrols during the day
                     if (random_patrols[squad.id]) and (math.random(100) <= 20) then
@@ -1041,7 +1041,6 @@ function process_base_squads(smart)
                         break
                     end
                     -- Send squads to resources unless faction doesn't care about resources
-                    local squad_sent = false
                     if not (warfare_options.options.factions[faction] and warfare_options.options.factions[faction].use_bases_not_resources) then
                         -- Find nearby resources to send base squads to in the morning - this is only done once per function call
                         if not (#resources > 0) then
@@ -1102,43 +1101,42 @@ function process_base_squads(smart)
                         end
                     end
 
-                    -- No resource/territory to send to and base has overflow: try invasion or contribute to one
-                    if not squad_sent and not base_has_vacancy(smart, faction) then
-                        -- if committed to supporting another base's invasion, send overflow squad there
-                        if supporting_invasion[smart.id] then
-                            local inv_base_id = supporting_invasion[smart.id]
-                            if invasions[inv_base_id] then
-                                sim_squad_warfare.set_target(squad, inv_base_id)
-                            else
-                                supporting_invasion[smart.id] = nil  -- invasion ended
-                            end
-                        elseif not invasions[smart.id] and (math.random(100) <= aggression) then
-                            -- try planning own invasion or send one squad to help another (aggression gated)
-                            local inv_target = get_invasion_target(smart)
-                            if inv_target then
-                                create_invasion_plan(smart, inv_target)
-                            end
-                            if not invasions[smart.id] and not supporting_invasion[smart.id] then
-                                contribute_to_other_invasion(smart)
-                            end
-                        end
-                        break  -- limit to one action per cycle
-                    end
+                end
 
-                -- Third criterion: overflow squads are moved during sunset
-                elseif isSunset then
-                    if not base_has_vacancy(smart, faction) then
+                -- Overflow: try invasion then redirect excess to ally base (runs at any time of day)
+                if not squad_sent and not base_has_vacancy(smart, faction) then
+                    if supporting_invasion[smart.id] then
+                        -- committed to supporting another base's invasion: send overflow squad there
+                        local inv_base_id = supporting_invasion[smart.id]
+                        if invasions[inv_base_id] then
+                            sim_squad_warfare.set_target(squad, inv_base_id)
+                        else
+                            supporting_invasion[smart.id] = nil  -- invasion ended
+                        end
+                    elseif not invasions[smart.id] and (math.random(100) <= aggression) then
+                        -- try planning own invasion or contributing to another (aggression gated)
+                        local inv_target = get_invasion_target(smart)
+                        if inv_target then
+                            create_invasion_plan(smart, inv_target)
+                        end
+                        if not invasions[smart.id] and not supporting_invasion[smart.id] then
+                            contribute_to_other_invasion(smart)
+                        end
+                    end
+                    -- overflow to nearest ally base if not committed to an invasion
+                    if not invasions[smart.id] and not supporting_invasion[smart.id] then
                         if not (#bases > 0) then
                             bases = find_nearby_bases(smart, faction)
                         end
-                        process_overflow_squad(smart, squad, bases)  -- Send squad to nearest vacant base
+                        process_overflow_squad(smart, squad, bases)
                     end
+                    break  -- limit to one action per cycle
                 end
             else
                 local squatter_faction = squad:get_squad_community()
                 if (squatter_faction ~= "stalker") and (squatter_faction ~= "ecolog") and (squatter_faction ~= "monster") then
                     -- Non loner/ecolog squads squatting on bases they don't own are moved back to their own bases
-                    if isMorning or isSunset or (night_activity_allowed[smart.id] == 1) then
+                    if isMorning or (warfare_utils.get_warfare_hour() > 15 and warfare_utils.get_warfare_hour() < 20) or (night_activity_allowed[smart.id] == 1) then
                         local squatter_bases = find_nearby_bases(smart, squatter_faction)
                         process_overflow_squad(smart, squad, squatter_bases)
                     end
