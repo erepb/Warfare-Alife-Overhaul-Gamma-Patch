@@ -4105,8 +4105,6 @@ function smart_terrain.se_smart_terrain:show()
                     local display_key = faction
                     if under_attack[self.id] and faction == warfare.actor_faction and pda_icons["target_" .. faction] then
                         display_key = "target_" .. faction
-                    elseif dbg_show_invasion_source and (invasions[self.id] or supporting_invasion[self.id]) then
-                        display_key = "invasion_source"
                     end
 
                     -- if spot already exists, remove it and re-add it to update
@@ -4121,6 +4119,17 @@ function smart_terrain.se_smart_terrain:show()
                     else
                         level.map_add_object_spot(self.id, pda_icons[display_key], info)        -- if no spot already, add it
                         self.warfare_spot = display_key
+                    end
+
+                    -- debug: draw invasion_source marker as a second overlay on top of the normal icon
+                    if dbg_show_invasion_source and (invasions[self.id] or supporting_invasion[self.id]) then
+                        if not self.dbg_invasion_spot then
+                            level.map_add_object_spot(self.id, pda_icons["invasion_source"], "")
+                            self.dbg_invasion_spot = true
+                        end
+                    elseif self.dbg_invasion_spot then
+                        level.map_remove_object_spot(self.id, pda_icons["invasion_source"])
+                        self.dbg_invasion_spot = nil
                     end
 
                 else
@@ -4285,8 +4294,6 @@ function smart_terrain.se_smart_terrain:show()
                 local display_key = faction
                 if under_attack[self.id] and faction == warfare.actor_faction and pda_icons["target_" .. faction] then
                     display_key = "target_" .. faction
-                elseif dbg_show_invasion_source and invasions[self.id] then
-                    display_key = "invasion_source"
                 end
 
                 -- map spot already exists: hide it or replace it depending on options
@@ -4329,6 +4336,17 @@ function smart_terrain.se_smart_terrain:show()
                         end
                     end
                 end
+
+                -- debug: draw invasion_source marker as a second overlay on top of the normal icon
+                if dbg_show_invasion_source and self.warfare_spot and invasions[self.id] then
+                    if not self.dbg_invasion_spot then
+                        level.map_add_object_spot(self.id, pda_icons["invasion_source"], "")
+                        self.dbg_invasion_spot = true
+                    end
+                elseif self.dbg_invasion_spot then
+                    level.map_remove_object_spot(self.id, pda_icons["invasion_source"])
+                    self.dbg_invasion_spot = nil
+                end
             end
 
     -------------------av661194
@@ -4358,6 +4376,11 @@ function smart_terrain.se_smart_terrain:hide()
     if (self.warfare_spot) then
         level.map_remove_object_spot(self.id, pda_icons[self.warfare_spot])
         self.warfare_spot = nil
+    end
+
+    if (self.dbg_invasion_spot) then
+        level.map_remove_object_spot(self.id, pda_icons["invasion_source"])
+        self.dbg_invasion_spot = nil
     end
 
     if (self.target_spots) then
