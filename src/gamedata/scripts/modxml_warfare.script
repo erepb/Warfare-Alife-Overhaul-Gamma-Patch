@@ -61,9 +61,7 @@ function init_settings_map()
     }
     local faction_time_dhms = {
         "min_faction_respawn",
-        "max_faction_respawn",
         "min_patrol_time",
-        "max_patrol_time",
         "min_patrol_rest_time",
         "max_patrol_rest_time",
         "min_resurgence_wait_time",
@@ -150,12 +148,10 @@ function ui_options.init_opt_coder()
 
         { id = "keep_last_base", type = "check", val = 1, def = false, hint = "alife_warfare_faction_keep_last_base" },
         { id = "min_faction_respawn", type = "track", val = 2, def = 500, min = 0, max = 20000, step = 50, hint = "alife_warfare_faction_min_faction_respawn" },
-        { id = "max_faction_respawn", type = "track", val = 2, def = 35000, min = 0, max = 1000000, step = 500, hint = "alife_warfare_faction_max_faction_respawn" },
 
         { id = "min_invasion_size", type = "track", val = 2, def = 1, min = 0, max = 5, step = 0.1, hint = "alife_warfare_faction_min_invasion_size" },
         { id = "max_invasion_size", type = "track", val = 2, def = 1.5, min = 0, max = 5, step = 0.1, hint = "alife_warfare_faction_max_invasion_size" },
         { id = "min_patrol_time", type = "track", val = 2, def = 1000, min = 0, max = 20000, step = 50, hint = "alife_warfare_faction_min_patrol_time" },
-        { id = "max_patrol_time", type = "track", val = 2, def = 70000, min = 0, max = 1000000, step = 500, hint = "alife_warfare_faction_max_patrol_time" },
         { id = "min_patrol_squads", type = "track", val = 2, def = 0, min = 0, max = 5, step = 1, hint = "alife_warfare_faction_min_patrol_squads" },
         { id = "max_patrol_squads", type = "track", val = 2, def = 0, min = 0, max = 5, step = 1, hint = "alife_warfare_faction_max_patrol_squads" },
         { id = "patrol_hunt_chance", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1, hint = "alife_warfare_faction_patrol_hunt_chance" },
@@ -303,6 +299,7 @@ function ui_options.init_opt_coder()
 
             { id= "use_new_resurgence_logic"                         ,type= "check"    ,val= 1    ,def= true },
             { id= "spawn_speed_multiplier"                          ,type= "track"    ,val= 2    ,def= 1.0     ,min= 0.1     ,max= 10.0        ,step= 0.1 },
+            { id= "spawn_timer_max_multiplier"                      ,type= "track"    ,val= 2    ,def= 200     ,min= 1       ,max= 1000        ,step= 5 },
             { id= "enable_gradual_time_step"                        ,type= "check"    ,val= 1    ,def= false },
 
             { id = "min_invasion_depart_time", type = "track", val = 2, def = 1800, min = 0, max = 20000, step = 100, hint = "alife_warfare_faction_min_invasion_depart_time" },

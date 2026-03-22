@@ -106,6 +106,7 @@ function update_settings()
     options.use_new_resurgence_logic            = ui_options.get("alife/warfare/general/use_new_resurgence_logic")
     local spawn_speed_ui = ui_options.get("alife/warfare/general/spawn_speed_multiplier") or 1
     options.spawn_speed_multiplier            = 1 / spawn_speed_ui
+    options.spawn_timer_max_multiplier        = ui_options.get("alife/warfare/general/spawn_timer_max_multiplier") or 200
     options.enable_gradual_time_step        = ui_options.get("alife/warfare/general/enable_gradual_time_step")
     options.min_invasion_depart_time         = ui_options.get("alife/warfare/general/min_invasion_depart_time")
     options.max_invasion_depart_time         = ui_options.get("alife/warfare/general/max_invasion_depart_time")
@@ -152,7 +153,7 @@ function update_settings()
         options.factions[faction].max_random_squad_count = ui_options.get("alife/warfare/" .. faction .. "/max_random_squad_count")
 
         options.factions[faction].min_faction_respawn = ui_options.get("alife/warfare/" .. faction .. "/min_faction_respawn")
-        options.factions[faction].max_faction_respawn = ui_options.get("alife/warfare/" .. faction .. "/max_faction_respawn")
+        options.factions[faction].max_faction_respawn = options.factions[faction].min_faction_respawn * options.spawn_timer_max_multiplier
 
         options.factions[faction].random_patrols = ui_options.get("alife/warfare/" .. faction .. "/random_patrols")
         options.factions[faction].max_random_patrols = ui_options.get("alife/warfare/" .. faction .. "/max_random_patrols")
@@ -168,7 +169,7 @@ function update_settings()
         options.factions[faction].min_patrol_squads = ui_options.get("alife/warfare/" .. faction .. "/min_patrol_squads")
         options.factions[faction].max_patrol_squads = ui_options.get("alife/warfare/" .. faction .. "/max_patrol_squads")
         options.factions[faction].min_patrol_time = ui_options.get("alife/warfare/" .. faction .. "/min_patrol_time")
-        options.factions[faction].max_patrol_time = ui_options.get("alife/warfare/" .. faction .. "/max_patrol_time")
+        options.factions[faction].max_patrol_time = options.factions[faction].min_patrol_time * options.spawn_timer_max_multiplier
         options.factions[faction].patrol_hunt_chance = ui_options.get("alife/warfare/" .. faction .. "/patrol_hunt_chance")
         options.factions[faction].min_patrol_rest_time = ui_options.get("alife/warfare/" .. faction .. "/min_patrol_rest_time")
         options.factions[faction].max_patrol_rest_time = ui_options.get("alife/warfare/" .. faction .. "/max_patrol_rest_time")
@@ -207,6 +208,14 @@ function update_settings()
     if (options.all_out_war) then
         warfare.need_all_out_war_applied = true
     end
+
+    -- TODO: remove in a few versions - write computed max values back so older installs can still read them from settings
+    for _, faction in pairs(warfare_factions.factions) do
+        local base = "alife/warfare/" .. faction .. "/"
+        axr_main.config:w_value("options", base .. "max_faction_respawn", options.factions[faction].max_faction_respawn)
+        axr_main.config:w_value("options", base .. "max_patrol_time",     options.factions[faction].max_patrol_time)
+    end
+    axr_main.config:save()
 
     printf("end setup")
 end
