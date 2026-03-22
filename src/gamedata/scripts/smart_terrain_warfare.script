@@ -315,34 +315,34 @@ local uniques = {
     ["zat_b40_smart_terrain"]  = { 1, 1, 0, 0, 0 },
 }
 
--- 1 if location has unique questgivers, 2 if not
 local main_bases = {
-    ["mar_smart_terrain_base"] = 1,  -- Clear Sky Base
-    ["esc_smart_terrain_2_12"] = 1,  -- Rookie Village
-    ["val_smart_terrain_7_3"]  = 2,  -- Bandit Base
-    ["val_smart_terrain_7_4"]  = 1,
-    ["val_smart_terrain_7_5"]  = 1,
-    ["agr_smart_terrain_1_6"]  = 1,  -- Army Base
-    ["agr_smart_terrain_1_6_near_1"]  = 1,
-    ["agr_smart_terrain_1_6_near_2"]  = 1,  -- location of some 1_6 uniques
-    ["bar_dolg_general"]       = 1,  -- Duty Base
-    ["bar_dolg_bunker"]           = 1,
-    ["bar_visitors"]           = 1,     -- 100 Rads Bar
-    ["bar_zastava"]                  = 2,  -- guard posts
-    ["bar_zastava_2"]           = 2,
-    ["mil_smart_terrain_7_7"]  = 1,  -- Freedom Base
-    ["mil_smart_terrain_7_8"]  = 2,  -- entrance
-    ["mil_smart_terrain_7_10"] = 1,
-    ["mil_smart_terrain_7_12"] = 1,     -- location for 7_10 uniques
-    ["cit_killers"]            = 1,  -- Mercenary Base
-    ["red_smart_terrain_3_2"]  = 1,  -- Sin Base
-    ["pri_monolith"]           = 1,  -- Monolith Base
-    ["pri_a18_smart_terrain"]  = 1,  -- Laundromat Base
-    ["pri_a16"]                = 1,  -- Stranded Mercenaries
-    ["yan_smart_terrain_6_4"]  = 1,  -- Scientist Bunker
-    ["jup_a6"]                 = 1,  -- Yanov Station
-    ["jup_b41"]                = 1,  -- Scientist Bunker
-    ["zat_stalker_base_smart"] = 1,  -- Skadovsk
+    ["mar_smart_terrain_base"]       = "csky",     -- Clear Sky Base
+    ["mar_smart_terrain_3_3"]        = "renegade",
+    ["esc_smart_terrain_2_12"]       = "stalker",  -- Rookie Village
+    ["val_smart_terrain_7_3"]        = "bandit",   -- Bandit Base
+    ["val_smart_terrain_7_4"]        = "bandit",
+    ["val_smart_terrain_7_5"]        = "bandit",
+    ["agr_smart_terrain_1_6"]        = "army",     -- Army Base
+    ["agr_smart_terrain_1_6_near_1"] = "army",
+    ["agr_smart_terrain_1_6_near_2"] = "army",     -- location of some 1_6 uniques
+    ["bar_dolg_general"]             = "dolg",     -- Duty Base
+    ["bar_dolg_bunker"]              = "dolg",
+    ["bar_visitors"]                 = "dolg",     -- 100 Rads Bar
+    ["bar_zastava"]                  = "dolg",     -- guard posts
+    ["bar_zastava_2"]                = "dolg",
+    ["mil_smart_terrain_7_7"]        = "freedom",  -- Freedom Base
+    ["mil_smart_terrain_7_8"]        = "freedom",  -- entrance
+    ["mil_smart_terrain_7_10"]       = "freedom",
+    ["mil_smart_terrain_7_12"]       = "freedom",  -- location for 7_10 uniques
+    ["cit_killers"]                  = "killer",   -- Mercenary Base
+    ["red_smart_terrain_3_2"]        = "greh",     -- Sin Base
+    ["pri_monolith"]                 = "monolith", -- Monolith Base
+    ["pri_a18_smart_terrain"]        = "stalker",  -- Laundromat Base
+    ["pri_a16"]                      = "killer",   -- Stranded Mercenaries
+    ["yan_smart_terrain_6_4"]        = "ecolog",   -- Scientist Bunker
+    ["jup_a6"]                       = "freedom",  -- Yanov Station
+    ["jup_b41"]                      = "ecolog",   -- Scientist Bunker
+    ["zat_stalker_base_smart"]       = "stalker",  -- Skadovsk
 }
 
 -- Locations are prioritized over regular bases when ecolog/loner are looking for bases.
@@ -5246,11 +5246,6 @@ function find_random_patrol_target(smart, faction, sid)
                         priority = 10 * priority
                     end
 
-                    -- prevent main base attacks if option is enabled
-                    if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] then
-                        priority = -1000
-                    end
-
                 -- Duty random patrol goes to lairs
                 elseif (other.props.lair > 0) then
                     priority = 2
@@ -5271,6 +5266,12 @@ function find_random_patrol_target(smart, faction, sid)
                     priority = 1
                 end
             end
+        end
+
+        -- main base protection: never target or spawn on a base still held by its original faction
+        local other_faction_rp = other.owning_faction or "none"
+        if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and other_faction_rp == main_bases[other:name()] then
+            priority = -1000
         end
 
         if (priority > 1) then
@@ -5438,6 +5439,11 @@ function find_targets(smart, faction_override, overflow_squad)
             goto continue
         end
 
+        -- main base protection: never target a base still held by its original faction
+        if prevent_mainbase and main_bases[other:name()] and other_faction == main_bases[other:name()] then
+            goto continue
+        end
+
         -- Compute priority
         local priority = 0
         local d2 = other.defense_power or 0
@@ -5525,11 +5531,6 @@ function find_targets(smart, faction_override, overflow_squad)
 
             local distance = fetch_smart_distance(smart, other)
             local inv_dist = 1 / distance
-
-            -- prevent main base attacks if option is enabled
-            if prevent_mainbase and main_bases[other:name()] and other_faction ~= "none" then
-                inv_dist = inv_dist / 1000
-            end
 
             targets_n = targets_n + 1
             targets[targets_n] = { priority * inv_dist, other.id }
@@ -5649,13 +5650,14 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
                 priority = -1000
             end
 
+            -- main base protection: never target a base still held by its original faction
+            if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and other_faction == main_bases[other:name()] then
+                priority = -1000
+            end
+
             if (priority > 0) then
                 local distance = fetch_smart_distance(smart,other)
                 local inv_dist = (1 / distance)
-                -- prevent main base attacks if option is enabled
-                if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and (other_faction ~= "none") and other_faction ~= faction then
-                    inv_dist = inv_dist / 1000
-                end
 
                 -- extra weight on distance
                 targets[#targets+1] = { priority * inv_dist * inv_dist, other.id }

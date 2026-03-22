@@ -78,10 +78,10 @@
 		<text>Multiplier applied to mutant squad power during offline combat at night (22:00 - 06:00). Makes mutants harder to defeat in offline simulation during nighttime. Default: 2.0</text>
 	</string>
 	<string id="ui_mm_alife_warfare_general_prevent_mainbase_attacks">
-		<text>Disincentivise Attacks on Main Bases</text>
+		<text>Protect Original Main Bases from Attack</text>
 	</string>
 	<string id="ui_mm_alife_warfare_general_prevent_mainbase_attacks_desc">
-		<text>When this setting is enabled, all factions will no longer attack main bases of other factions unless they have no other available target. For example, the Freedom Base will no longer send an attack to the Duty Base at the Bar until no other capturable locations exist within linked-level distance (Army Warehouses, Dead City, Red Forest, Truck Cemetery). Enable this setting if you want to ensure that unique NPCs don't die from early invasions. DISABLE this setting when using randomized starting locations!</text>
+		<text>When enabled, no faction can ever target another faction's main base as long as it is still held by its original owner. For example, the Duty Base at Rostok cannot be targeted while Duty controls it, but becomes a valid target if another faction captures it. This prevents unique NPCs from being wiped out by early invasions. Disable this setting when using randomized starting locations.</text>
 	</string>
 	<string id="ui_mm_alife_warfare_general_offline_combat_distance">
 		<text>Offline Combat Distance (Warfare ONLY)</text>

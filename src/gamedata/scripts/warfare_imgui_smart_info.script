@@ -688,7 +688,7 @@ function render_mutant_smart_info(smart)
         -- Main base protection
         local is_main_base = smart_terrain_warfare.main_bases and smart_terrain_warfare.main_bases[smart:name()]
         local prevent_attacks = warfare_options and warfare_options.options and warfare_options.options.prevent_mainbase_attacks
-        if is_main_base and prevent_attacks then
+        if is_main_base and prevent_attacks and smart.owning_faction == is_main_base then
             ImGui.Text("  Main Base Protection: Active (cannot be targeted)")
         end
     end

@@ -279,7 +279,7 @@ function ui_options.init_opt_coder()
             { id = "debug_logging", type = "check", val = 1, def = false },
 
             { id = "territory_diplo_penalty", type = "check", val = 1, def = true },
-            { id = "prevent_mainbase_attacks", type = "check", val = 1, def = false },
+            { id = "prevent_mainbase_attacks", type = "check", val = 1, def = true },
             { id = "use_old_auto_capture", type = "check", val = 1, def = false },
             { id = "extra_loner_fog_of_war", type = "check", val = 1, def = true },
             { id = "hide_lair_smarts", type = "check", val = 1, def = false },
