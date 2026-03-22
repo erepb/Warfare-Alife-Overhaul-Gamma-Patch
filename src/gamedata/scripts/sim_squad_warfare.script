@@ -594,7 +594,9 @@ end
 -- xr_Sanya
 
 -- Builds squad tooltip info. full_detail adds power, patrol, and target details.
-function get_squad_info(squad, full_detail)
+function get_squad_info(squad, full_detail, show_target)
+    -- show_target: whether to reveal the squad's current target (default: same as full_detail)
+    if show_target == nil then show_target = full_detail end
     printd(0, squad:name())
 
     local section = squad:section_name()
@@ -690,7 +692,9 @@ function get_squad_info(squad, full_detail)
                     warfareName = game.translate_string("actor_monster")
                 end
 
-                props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
+                if (show_target) then
+                    props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
+                end
 
                 if (finalName) then
                     props = props .. " \\n" .. str_wrfr[12] .. ": " .. lvl .. " \\n"
@@ -701,7 +705,9 @@ function get_squad_info(squad, full_detail)
                 if ase_target.player_id and is_squad_monster[ase_target.player_id] then
                     warfareName = game.translate_string("actor_monster")
                 end
-                props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
+                if (show_target) then
+                    props = props .. " \\n" .. str_wrfr[15] .. ": " .. warfareName .. " \\n"
+                end
 
                 if (finalName) then
                     props = props .. " \\n" .. str_wrfr[12] .. ": " .. lvl .. " \\n"
@@ -728,7 +734,8 @@ function get_enemy_info(squad)
 end
 
 function get_warfare_info(squad)
-    return get_squad_info(squad, true)
+    local show_target = warfare.dbg_all_faction_tooltips or squad:get_squad_community() == warfare.actor_faction
+    return get_squad_info(squad, true, show_target)
 end
 
 local BASE_WEIGHT = 3
