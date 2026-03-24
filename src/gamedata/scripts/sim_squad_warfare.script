@@ -223,6 +223,25 @@ function squad_warfare_update(squad)
                             squad.arrive_time = warfare.get_time()
                             squad.wait_time = math.random(10, 60)
                         end
+                    else
+                        local reached = se_target:am_i_reached(squad)
+                        local has_opponent = sim_offline_combat and sim_offline_combat.opponents[squad.id]
+
+                        -- Rescue stuck squads: if the squad has physically reached an enemy
+                        -- main base that is protected (held by its original faction), redirect
+                        -- the squad home since offline combat will never engage here.
+                        if reached and not has_opponent then
+                            local target_name = se_target.name and se_target:name()
+                            local original_faction = target_name and smart_terrain_warfare.get_main_base_faction(target_name)
+                            if original_faction and original_faction == smartOwner
+                            and warfare_options and warfare_options.options.prevent_mainbase_attacks then
+                                -- Let the squad "arrive" so warfare processing can redirect it
+                                se_target:on_after_reach(squad)
+                                squad.current_action = 1
+                                squad.arrive_time = warfare.get_time()
+                                squad.wait_time = 0
+                            end
+                        end
                     end
                     -- Human factions at enemy terrain: offline combat handles it
                 else

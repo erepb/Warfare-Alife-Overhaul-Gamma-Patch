@@ -563,6 +563,31 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                     end
                 end
 
+                -- Skip offline combat when one side is a defender at a protected main base
+                -- that STILL belongs to its original faction. The warfare targeting layer
+                -- already prevents squads from attacking main bases, so any nearby enemy
+                -- is just passing through, not attacking.
+                -- Only protect when the main base is held by its original faction.
+                -- If another faction captured it, combat should proceed normally.
+                if _G.WARFARE and warfare_options and warfare_options.options.prevent_mainbase_attacks then
+                    local sm1 = squad_1.assigned_target_id and alife_object(squad_1.assigned_target_id)
+                    if sm1 and sm1.owning_faction == community_1 then
+                        local sm1_name = sm1.name and sm1:name()
+                        local original_faction_1 = sm1_name and smart_terrain_warfare.get_main_base_faction(sm1_name)
+                        if sm1_name and original_faction_1 and original_faction_1 == community_1 then
+                            return false
+                        end
+                    end
+                    local sm2 = squad_2.assigned_target_id and alife_object(squad_2.assigned_target_id)
+                    if sm2 and sm2.owning_faction == community_2 then
+                        local sm2_name = sm2.name and sm2:name()
+                        local original_faction_2 = sm2_name and smart_terrain_warfare.get_main_base_faction(sm2_name)
+                        if sm2_name and original_faction_2 and original_faction_2 == community_2 then
+                            return false
+                        end
+                    end
+                end
+
                 -- Simulate battle
                 simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2, lid)
 

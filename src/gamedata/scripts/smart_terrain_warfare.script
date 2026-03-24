@@ -5867,6 +5867,10 @@ function is_main_base(smart_name)
     return main_bases[smart_name] ~= nil
 end
 
+function get_main_base_faction(smart_name)
+    return main_bases[smart_name]
+end
+
 ------------------------------------------------------------
 -- Callbacks
 ------------------------------------------------------------
