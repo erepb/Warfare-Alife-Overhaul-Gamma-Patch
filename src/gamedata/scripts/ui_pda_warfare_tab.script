@@ -294,14 +294,6 @@ end
 function pda_warfare_tab:Update()
     CUIScriptWnd.Update(self)
     
-    --[[ Auto-update if checked.
-    local tg = time_global()
-    if not self._tmr or self._tmr < tg then
-        self._tmr = tg + 10000
-        self:Reset()
-    end
-    --]]
-    
     -- Gather faction squads in each active level
     local faction_territory = {}
     for lvl,v in pairs(self.faction_smarts_lvls) do

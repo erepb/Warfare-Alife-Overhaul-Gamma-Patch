@@ -647,10 +647,6 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
     -- Release victim squad if it got rekt
     if (ocs_power[id_2] <= 0) then
 
-        if enable_debug then
-            --printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
-        end
-
         -- Post-battle state
         set_battle_outcome(true, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
 
@@ -666,16 +662,8 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
         -- Kill the victim NPC if the damage dealt exceeds its rank
     elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2, squad_2) then
 
-        if enable_debug then
-            --printf("~ OCS | Squad [%s] lost NPC [%s] | Remaining power: %s | Moment: %s sec", squad_2:name(), se_victim:name(), ocs_power[id_2], math_ceil(time_global()/1000))
-        end
-
         -- Post-battle state
         set_battle_outcome(false, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
-
-        if enable_debug and squad_2:npc_count() <= 1 then
-            --printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
-        end
 
         if squad_2:npc_count() <= 1 then
             remove_squad_info(squad_2, id_2, id_1, lid)
@@ -684,17 +672,6 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
         -- Release
         se_victim:on_death(se_attacker)
 
-        --[[
-        squad_2:remove_npc(se_victim.id)
-
-        if squad_2:npc_count() <= 1 then
-            remove_squad_info(squad_2, id_2, id_1, lid)
-
-            if enable_debug then
-                --printf("! OCS | Squad gone [%s] | Moment: %s sec", squad_2:name(), math_ceil(time_global()/1000))
-            end
-        end
-        --]]
     end
 end
 

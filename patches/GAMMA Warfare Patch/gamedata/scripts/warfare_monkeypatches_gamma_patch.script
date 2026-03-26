@@ -50,13 +50,11 @@ end
 
 local old_guards_spawner_spawn_guard = guards_spawner.spawn_guard
 guards_spawner.spawn_guard = function()
-    local tg = time_global()
-    if (guards_spawner.upd_tmr and tg < guards_spawner.upd_tmr) then
+    local cur_game_time = game.get_game_time()
+    if (guards_spawner.upd_tmr and guards_spawner.upd_tmr:diffSec(cur_game_time) > 0) then
         return
     end
-    guards_spawner.upd_tmr = tg + guards_spawner.upd_upd_tmr
-
-    local cur_game_time = game.get_game_time()
+    guards_spawner.upd_tmr = warfare_utils.add_time(cur_game_time, 540)
     if not guards_spawner.prev_time then
         guards_spawner.prev_time = guards_spawner.ctime_to_t(cur_game_time)
     end

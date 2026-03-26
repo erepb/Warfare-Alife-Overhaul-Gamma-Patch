@@ -455,8 +455,8 @@ function actor_on_update()
         return
     end
 
-    -- get the current time
-    local tg = time_global()
+    -- get the current game time
+    local tg = game.get_game_time()
 
     if first_update then
         first_update = false
@@ -531,10 +531,10 @@ function actor_on_update()
 
     -- if last update time doesn't exist, set it.
     if (not last_update) then
-        last_update = tg + 10000
+        last_update = warfare_utils.add_time(tg, 60)
     end
 
-    if (tg < last_update) then
+    if (last_update:diffSec(tg) > 0) then
         printd(1, "actor_on_update")
         return
     end
@@ -542,7 +542,7 @@ function actor_on_update()
     printd(2, "actor_on_update")
 
     -- Gradual time advancement: prevents mass spawns after sleep
-    local real_time = game.get_game_time()
+    local real_time = tg
     if not warfare_time then
         warfare_time = real_time
     end
@@ -562,7 +562,7 @@ function actor_on_update()
         effective_delta = MAX_TIME_STEP
         advance_warfare_step()
         -- Disable throttle so next frame catches up another step in 1 sec
-        last_update = tg + 300
+        last_update = warfare_utils.add_time(tg, 2)
     elseif time_delta > 0 then
         -- Instant sync: if big jump (>1 game hour), advance all spawn timers
         -- so they keep their remaining time instead of mass-firing
@@ -575,9 +575,9 @@ function actor_on_update()
         warfare_time = real_time
         effective_delta = time_delta
         advance_warfare_reset()
-        last_update = tg + 10000
+        last_update = warfare_utils.add_time(tg, 60)
     else
-        last_update = tg + 10000
+        last_update = warfare_utils.add_time(tg, 60)
     end
 
     -- Night time correction: analytically compute night seconds in the delta

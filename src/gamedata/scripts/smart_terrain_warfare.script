@@ -5733,15 +5733,7 @@ function check_unique_npcs(smart)
     local sm_name = smart:name()
     local faction = smart.owning_faction
 
-    --[[
-    local tg = time_global()
 
-    if smart.last_unique_check ~= nil and tg < smart.last_unique_check then
-        printd(1, sm_name)
-        return
-    end]]
-
-    --smart.last_unique_check = tg + 1000 + math.random(3*60*1000,6*60*1000) -- xQd, delay trader spawns to 3-6 real life minutes. No more instant respawning traders when they die
 
     if not (smart.online) then
         printd(2, sm_name)
