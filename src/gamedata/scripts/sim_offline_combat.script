@@ -24,8 +24,9 @@
 
 local enable_debug = false
 
--- timer for rescanning squads and updating info [real seconds]
-local UPDATE_TIME = 30
+-- timer for rescanning squads and updating info [game seconds]
+local UPDATE_TIME = 180
+local last_coordinator_time = nil
 
 -- When the distance between 2 enemy squads is below this value, they will fight [m^2]
 local COMBAT_DISTANCE = 20 * 20
@@ -46,6 +47,10 @@ local HIT_FACTOR = 0.2
 local RANK_FRACTION = 250
 local RANK_COMMANDER_GAIN = 50
 
+-- Time-delta combat: one round per ROUND_INTERVAL game seconds
+local ROUND_INTERVAL = 180     -- 3 in-game minutes
+local ROUND_CAP = 30           -- safety cap per tick
+
 local can_fight_mutant
 local smart_battles_only
 local ini_ocs
@@ -63,6 +68,7 @@ ocs_power = {}
 opponents = {}
 squads_by_level = {}
 local faction_power = {}
+local last_combat_time = {}    -- [squad_id] = CTime of last combat round
 
 local c_cnt, c_tbl = 0, {} -- enemies collector
 local tbl_smart = {}
@@ -354,7 +360,6 @@ local function calculate_squad_distance_combat_multiplier(squad)
 end
 
 local function coordinator()
-    ResetTimeEvent("cycle", "ocs", UPDATE_TIME)
 
     -- Toggle feature
 
@@ -373,8 +378,7 @@ local function coordinator()
         end
         old_state = 0
         new_state = 0
-
-        return false
+        return
     end
 
     if (old_state ~= new_state) then
@@ -479,8 +483,19 @@ local function coordinator()
         end
     end
     --]]
+end
 
-    return false
+function try_coordinator()
+    if not last_coordinator_time then
+        last_coordinator_time = warfare.get_time()
+        coordinator()
+        return
+    end
+    local elapsed = warfare.get_time_ref():diffSec(last_coordinator_time)
+    if elapsed >= UPDATE_TIME then
+        last_coordinator_time = warfare.get_time()
+        coordinator()
+    end
 end
 
 function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
@@ -588,8 +603,26 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                     end
                 end
 
+                -- Calculate combat rounds from time delta
+                local now = warfare.get_time_ref()
+                local rounds = 1
+                local last_t = last_combat_time[id_1]
+                if last_t then
+                    local elapsed = now:diffSec(last_t)
+                    if elapsed < ROUND_INTERVAL then
+                        -- Not enough time for a round yet, stay locked in combat
+                        return true
+                    end
+                    rounds = math.floor(elapsed / ROUND_INTERVAL)
+                    if rounds > ROUND_CAP then
+                        printf("!OCS WARNING: round cap hit for [%s] vs [%s]: %s rounds capped to %s (elapsed %s sec)", squad_1:name(), squad_2:name(), rounds, ROUND_CAP, elapsed)
+                        rounds = ROUND_CAP
+                    end
+                end
+                last_combat_time[id_1] = warfare.get_time()
+
                 -- Simulate battle
-                simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2, lid)
+                simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2, lid, rounds)
 
                 return true
 
@@ -605,10 +638,11 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
     return false
 end
 
-function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2, lid)
+function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2, lid, rounds)
     -- printf("-offline_simulation | simulate_battle")
     --squad 1 = Attacker
     -- squad 2 = Victim
+    rounds = rounds or 1
 
     -- Get squad power
     ocs_power[id_1] = calculate_squad_power(squad_1, community_1)
@@ -625,53 +659,65 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
     opponents[id_2] = id_1
     --squad_2.assigned_target_id = id_1
 
-    -- Get squads MVPs
-    local se_attacker = get_random_npc(squad_1)
-    local se_victim = get_random_npc(squad_2)
-
-    -- Calculate damage dealt
-    local raw_power = calculate_squad_power(squad_2, community_2, true)
-    local damage = ocs_power[id_1] * (HIT_BASE + math_random() * HIT_FACTOR)
-    damage = math_ceil(damage)
-
-    if enable_debug then
-        printf("/ OCS | %s | Attacker [%s](Power: %s) vs Victim [%s](Power: %s) | Damage: %s", alife():level_name(lid), squad_1:name(), ocs_power[id_1], squad_2:name(), ocs_power[id_2], damage)
-    end
-
-    -- Cause damage
-    ocs_power[id_2] = ocs_power[id_2] - damage
-
-    -- local npc_pow = calculate_npc_power(se_victim, community_2, squad2)
-    --printf("/ OCS | %s | Victim [%s]: Raw power - %s, new power - %s, delta - %s, npc power - %s", alife():level_name(lid), squad_2:name(), raw_power, ocs_power[id_2], raw_power - ocs_power[id_2], npc_pow)
-
-    -- Release victim squad if it got rekt
-    if (ocs_power[id_2] <= 0) then
-
-        -- Post-battle state
-        set_battle_outcome(true, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
-
-        -- Release
-        remove_squad_info(squad_2, id_2, id_1, lid)
-        for k in squad_2:squad_members() do
-            local victim = alife_object(k.id)
-            if victim then
-                victim:on_death(se_attacker)
-            end
+    for round = 1, rounds do
+        -- Get squads MVPs (re-pick each round, NPCs may die between rounds)
+        local se_attacker = get_random_npc(squad_1)
+        local se_victim = get_random_npc(squad_2)
+        if not se_attacker or not se_victim then
+            printf("!OCS WARNING: nil NPC in combat - attacker [%s]: %s, victim [%s]: %s, round %s/%s", squad_1:name(), tostring(se_attacker), squad_2:name(), tostring(se_victim), round, rounds)
+            disengage_combat(id_1, squad_1, id_2, squad_2)
+            return
         end
+
+        -- Calculate damage dealt
+        local raw_power = calculate_squad_power(squad_2, community_2, true)
+        local damage = ocs_power[id_1] * (HIT_BASE + math_random() * HIT_FACTOR)
+        damage = math_ceil(damage)
+
+        if enable_debug then
+            printf("/ OCS | %s | Attacker [%s](Power: %s) vs Victim [%s](Power: %s) | Damage: %s | Round %s/%s", alife():level_name(lid), squad_1:name(), ocs_power[id_1], squad_2:name(), ocs_power[id_2], damage, round, rounds)
+        end
+
+        -- Cause damage
+        ocs_power[id_2] = ocs_power[id_2] - damage
+
+        -- Release victim squad if it got rekt
+        if (ocs_power[id_2] <= 0) then
+
+            -- Post-battle state
+            set_battle_outcome(true, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
+
+            -- Release
+            remove_squad_info(squad_2, id_2, id_1, lid)
+            for k in squad_2:squad_members() do
+                local victim = k.id and k.id ~= 65535 and alife_object(k.id)
+                if victim then
+                    victim:on_death(se_attacker)
+                end
+            end
+            return
 
         -- Kill the victim NPC if the damage dealt exceeds its rank
-    elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2, squad_2) then
+        elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2, squad_2) then
 
-        -- Post-battle state
-        set_battle_outcome(false, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
+            -- Post-battle state
+            set_battle_outcome(false, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
 
-        if squad_2:npc_count() <= 1 then
-            remove_squad_info(squad_2, id_2, id_1, lid)
+            if squad_2:npc_count() <= 1 then
+                remove_squad_info(squad_2, id_2, id_1, lid)
+                return
+            end
+
+            -- Release killed NPC
+            se_victim:on_death(se_attacker)
+
+            -- Recalculate victim power for next round since NPC was lost
+            ocs_power[id_2] = calculate_squad_power(squad_2, community_2, true)
+            if ocs_power[id_2] <= 0 then
+                disengage_combat(id_1, squad_1, id_2, squad_2)
+                return
+            end
         end
-
-        -- Release
-        se_victim:on_death(se_attacker)
-
     end
 end
 
@@ -719,6 +765,9 @@ function disengage_combat(id_1, squad_1, id_t, sq_t)
     -- Reset cached power so squads recalculate from actual NPC ranks next combat
     ocs_power[id_1] = nil
     ocs_power[id_t] = nil
+    -- Clear combat timestamps
+    last_combat_time[id_1] = nil
+    last_combat_time[id_t] = nil
 end
 
 function remove_squad_info(squad_2, id_2, id_1, lid)
@@ -733,8 +782,10 @@ function remove_squad_info(squad_2, id_2, id_1, lid)
 
     if id_1 then
         opponents[id_1] = nil
+        last_combat_time[id_1] = nil
     end
     opponents[id_2] = nil
+    last_combat_time[id_2] = nil
 
     if squads_by_level[lid] then
         squads_by_level[lid][id_2] = nil
@@ -778,7 +829,7 @@ function calculate_squad_power(squad, community, raw, no_distance)
     community = community or squad:get_squad_community()
 
     for k in squad:squad_members() do
-        local se_obj = k.id and sim:object(k.id)
+        local se_obj = k.id and k.id ~= 65535 and sim:object(k.id)
 
         if (se_obj) then
             power = power + calculate_npc_power(se_obj, community, nil)
@@ -801,9 +852,15 @@ end
 function get_random_npc(squad)
     local squad_npcs = {}
     for k in squad:squad_members() do
-        squad_npcs[#squad_npcs + 1] = k.id
+        local se = k.id and k.id ~= 65535 and alife_object(k.id)
+        if se then
+            squad_npcs[#squad_npcs + 1] = se
+        end
     end
-    return alife_object(squad_npcs[math_random(#squad_npcs)])
+    if #squad_npcs == 0 then
+        return nil
+    end
+    return squad_npcs[math_random(#squad_npcs)]
 end
 
 function distance_to_xz_sqr(a, b)
@@ -926,7 +983,7 @@ function on_game_start()
     end
 
     local function on_game_load()
-        CreateTimeEvent("cycle", "ocs", 2, coordinator)
+        RegisterScriptCallback("actor_on_update", try_coordinator)
         RegisterScriptCallback("save_state", save_state)
     end
 
