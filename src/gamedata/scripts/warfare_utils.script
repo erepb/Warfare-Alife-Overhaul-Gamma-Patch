@@ -73,7 +73,7 @@ function add_time(time, secs)
     return res
 end
 
--- Returns current hour from warfare virtual clock (compatible with gradual time advance)
+-- Returns current hour from game clock
 function get_warfare_hour()
     local h = get_warfare_hms()
     return h

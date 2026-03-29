@@ -114,12 +114,6 @@
     <string id="ui_mm_alife_warfare_general_spawn_timer_max_multiplier_desc">
         <text>Определяет, насколько больше максимальное время спавна/патрулирования по сравнению с минимальным. Фактическое время для базы рассчитывается интерполяцией между минимумом и максимумом в зависимости от силы фракции; максимум = минимум ? множитель. По умолчанию: 200</text>
     </string>
-    <string id="ui_mm_alife_warfare_general_enable_gradual_time_step">
-        <text>Включить постепенное продвижение времени</text>
-    </string>
-    <string id="ui_mm_alife_warfare_general_enable_gradual_time_step_desc">
-        <text>При включении время войны после сна или пропуска времени продвигается небольшими шагами по 6 минут, предотвращая массовый спавн. При выключении время войны синхронизируется мгновенно, что быстрее, но может вызвать всплеск спавнов.</text>
-    </string>
     <string id="ui_mm_alife_warfare_faction_use_bases_not_resources">
         <text>Качество отрядов зависит от количества баз (вместо ресурсов)</text>
     </string>

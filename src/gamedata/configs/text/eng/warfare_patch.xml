@@ -160,12 +160,6 @@
 	<string id="ui_mm_alife_warfare_general_spawn_timer_max_multiplier_desc">
 		<text>Controls how much longer the maximum spawn/patrol timer is compared to the minimum. The actual timer for a base is interpolated between min and max based on faction strength; max = min * multiplier. Default: 200</text>
 	</string>
-	<string id="ui_mm_alife_warfare_general_enable_gradual_time_step">
-		<text>Enable gradual time step</text>
-	</string>
-	<string id="ui_mm_alife_warfare_general_enable_gradual_time_step_desc">
-		<text>When enabled, warfare time advances in small steps after sleeping or time skips, preventing mass spawns. When disabled, warfare time syncs instantly to game time after sleep, which is faster but may cause spawn bursts.</text>
-	</string>
 	<string id="ui_mm_alife_warfare_faction_use_bases_not_resources">
 		<text>Squad quality depends on base count (instead of resources)</text>
 	</string>

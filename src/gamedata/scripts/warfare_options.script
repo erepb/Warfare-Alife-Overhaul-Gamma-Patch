@@ -107,7 +107,6 @@ function update_settings()
     local spawn_speed_ui = ui_options.get("alife/warfare/general/spawn_speed_multiplier") or 1
     options.spawn_speed_multiplier            = 1 / spawn_speed_ui
     options.spawn_timer_max_multiplier        = ui_options.get("alife/warfare/general/spawn_timer_max_multiplier") or 200
-    options.enable_gradual_time_step        = ui_options.get("alife/warfare/general/enable_gradual_time_step")
     options.min_invasion_depart_time         = ui_options.get("alife/warfare/general/min_invasion_depart_time")
     options.max_invasion_depart_time         = ui_options.get("alife/warfare/general/max_invasion_depart_time")
 
