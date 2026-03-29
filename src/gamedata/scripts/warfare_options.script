@@ -312,7 +312,7 @@ function sim_squad_scripted.sim_squad_scripted.check_online_status(self)
     elseif (db.actor and not get_object_story_id(self.id) and not self.online) then
         -- exclude from coming online except if already online or storied
         local dist = ui_options.get("alife/general/excl_dist")
-        if (dist > 0 and not db.actor:has_info("actor_is_sleeping")) then
+        if (dist > 0 and not db.actor:has_info("actor_is_sleeping") and not (simulated_time and simulated_time.is_active())) then
             local actor = alife():actor()
             if (self.position:distance_to(actor.position) <= dist) then
                 b = false

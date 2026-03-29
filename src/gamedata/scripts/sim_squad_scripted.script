@@ -1088,7 +1088,7 @@ function sim_squad_scripted:check_online_status()
 			else
 				if not (self.online) then
 					local dist = excl_dist
-					if (dist > 0 and not db.actor:has_info("actor_is_sleeping")) then 
+					if (dist > 0 and not db.actor:has_info("actor_is_sleeping") and not (simulated_time and simulated_time.is_active())) then
 						if (self.position:distance_to(db.actor:position()) <= dist) then
 							b = false -- force offline for online exclusion
 						end
