@@ -245,6 +245,9 @@
 	<string id="st_wrfr_prop_departure">
 		<text>Атака</text>
 	</string>
+	<string id="st_wrfr_prop_patrol_at_cap">
+		<text>лимит</text>
+	</string>
 
 	<string id="st_wrfr_heli">
 		<text>Вертолет</text>

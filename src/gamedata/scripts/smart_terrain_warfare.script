@@ -459,6 +459,7 @@ function refresh_strings()
     str_wrfr[20] = game.translate_string("st_wrfr_prop_supporting_invasion")
     str_wrfr[21] = game.translate_string("st_wrfr_prop_launch_base")
     str_wrfr[22] = game.translate_string("st_wrfr_prop_departure")
+    str_wrfr[23] = game.translate_string("st_wrfr_prop_patrol_at_cap")
 end
 
 function translate_smart_name(name)
@@ -4543,7 +4544,20 @@ function get_warfare_info(smart, visible)
         local next_patrol = get_current_patrol_respawn_interval(smart.owning_faction)
 
         local remaining = format_real_seconds(warfare_utils.get_real_seconds_until_spawn(patrol_timer, next_patrol*6))
-        props = props .. " \\n" .. clr_gr .. str_wrfr[12] .. ": ".. clr_y .. remaining
+
+        local patrol_count = 0
+        if patrol_squads[smart.id] then
+            for _ in pairs(patrol_squads[smart.id]) do
+                patrol_count = patrol_count + 1
+            end
+        end
+        local patrol_pop = warfare_factions.faction_information[smart.owning_faction].patrol_pop_factor
+
+        if patrol_count >= patrol_pop then
+            props = props .. " \\n" .. clr_gr .. str_wrfr[12] .. ": ".. clr_o .. remaining .. " (" .. str_wrfr[23] .. ")"
+        else
+            props = props .. " \\n" .. clr_gr .. str_wrfr[12] .. ": ".. clr_y .. remaining
+        end
     end
 
     local f = false

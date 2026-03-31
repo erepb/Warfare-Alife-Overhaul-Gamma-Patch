@@ -245,6 +245,9 @@
 	<string id="st_wrfr_prop_departure">
 		<text>Departure</text>
 	</string>
+	<string id="st_wrfr_prop_patrol_at_cap">
+		<text>at cap</text>
+	</string>
 	
 	<string id="st_wrfr_heli">
 		<text>Helicopter</text>
