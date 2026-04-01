@@ -5245,6 +5245,78 @@ function calculate_target_density(smart)
     return final_distance
 end
 
+-- Zone helpers for storyline travel restrictions
+local function is_south_level(lvl)
+    return (lvl < 12) or (lvl > 31)    -- 1-11 + Truck Cemetery (32) + Meadow (34)
+end
+
+local function is_north_level(lvl)
+    return (lvl >= 12 and lvl <= 19) or (lvl == 27) or (lvl == 28) or (lvl == 30)
+end
+
+local function is_underground_level(lvl)
+    return (lvl >= 20 and lvl <= 26) or (lvl == 29) or (lvl == 31)
+end
+
+local function is_scorcher_zone(lvl)
+    return (lvl == 13) or (lvl == 14)   -- Radar + Red Forest
+end
+
+-- Check if travel/targeting from source_level to target_level is allowed for faction.
+-- source_level may be nil (e.g. during squad spawning); directional checks are skipped in that case.
+-- Covers: underground exclusion, Brain Scorcher, Miracle Machine, Monolith south restriction.
+function is_travel_allowed(source_level, target_level, faction)
+    -- Monsters and Sin are exempt from all travel restrictions
+    if (faction == "monster") or (faction == "greh") then
+        return true
+    end
+
+    -- Underground/lab levels are never valid targets
+    if is_underground_level(target_level) then
+        return false
+    end
+
+    local scorcher_immune = (faction == "monolith") or (faction == "zombied")
+
+    -- Brain Scorcher restrictions
+    if not has_alife_info("bar_deactivate_radar_done") then
+        -- Scorcher zone (Radar + Red Forest) blocked for all non-immune (including mercs and ISG)
+        if not scorcher_immune and is_scorcher_zone(target_level) then
+            return false
+        end
+
+        -- South <-> North blocked for non-immune, non-merc factions
+        if not scorcher_immune and (faction ~= "killer") and source_level then
+            if (is_south_level(source_level) and is_north_level(target_level)) or
+               (is_north_level(source_level) and is_south_level(target_level)) then
+                return false
+            end
+        end
+    end
+
+    -- Miracle Machine: south (excl Dead City) <-> Dead City blocked
+    -- Mercs exempt (present in Dead City)
+    if not has_alife_info("yan_labx16_switcher_primary_off") and source_level then
+        if not scorcher_immune and (faction ~= "killer") then
+            local src_south_not_dc = is_south_level(source_level) and (source_level ~= 11)
+            local tgt_south_not_dc = is_south_level(target_level) and (target_level ~= 11)
+            if (src_south_not_dc and target_level == 11) or (source_level == 11 and tgt_south_not_dc) then
+                return false
+            end
+        end
+    end
+
+    -- Monolith south restriction (story mode, non-actor, except Army Warehouses)
+    if (faction == "monolith") and IsStoryMode() and (faction ~= warfare.actor_faction) then
+        if is_south_level(target_level) and (target_level ~= 9) then
+            return false
+        end
+    end
+
+    return true
+end
+
+
 function find_random_patrol_target(smart, faction, sid)
     printd(0, "find_random_patrol_target: "..(smart and smart:name() or "spawn"))
 
@@ -5345,6 +5417,11 @@ function find_random_patrol_target(smart, faction, sid)
                     priority = 1
                 end
             end
+        end
+
+        -- storyline travel restrictions
+        if smart_level and not is_travel_allowed(smart_level, other.level_id, faction) then
+            priority = -1000
         end
 
         -- main base protection: never target or spawn on a base still held by its original faction
@@ -5472,12 +5549,9 @@ function find_targets(smart, faction_override, overflow_squad)
     local smart_id                = smart.id
 
     -- Cache game state queries (constant within a single call)
-    local scorcher_done       = has_alife_info("bar_deactivate_radar_done")
-    local miracle_machine_off = has_alife_info("yan_labx16_switcher_primary_off")
     local is_story_mode       = IsStoryMode()
     local is_monolith         = faction == "monolith"
     local is_isg              = faction == "isg"
-    local is_scorcher_immune  = is_monolith or faction == "greh" or faction == "zombied"
 
     for i = 1, #smartCollection do
         local sid = smartCollection[i]
@@ -5494,8 +5568,8 @@ function find_targets(smart, faction_override, overflow_squad)
         -- Early skips for candidates that will always end up with priority <= 0.
         -- Each of these originally set priority = -1000 which always fails the priority > 0 gate.
 
-        -- labs and underground locations will not be targets of bases
-        if (other_level > 19 and other_level < 27) or other_level == 29 or other_level == 31 then
+        -- storyline travel restrictions (Scorcher, Miracle Machine, underground, Monolith south)
+        if not is_travel_allowed(level, other_level, faction) then
             goto continue
         end
 
@@ -5506,21 +5580,6 @@ function find_targets(smart, faction_override, overflow_squad)
 
         -- non-enemy, non-empty, non-loner/ecolog targets are not valid
         if not (is_factions_enemies(faction, other_faction) or other_faction == "none") and (other_faction ~= "stalker") and (other_faction ~= "ecolog") then
-            goto continue
-        end
-
-        -- normal factions cannot target Radar/Pripyat until Brain Scorcher disabled
-        if not is_scorcher_immune and (other_level == 13 or other_level == 16) and not scorcher_done then
-            goto continue
-        end
-
-        -- normal factions cannot travel between Yantar/Dead City until Miracle Machine disabled
-        if not is_scorcher_immune and ((level == 10 and other_level == 11) or (level == 11 and other_level == 10)) and not miracle_machine_off then
-            goto continue
-        end
-
-        -- Monolith non-actor cannot target southern levels (except Army Warehouses at level 9)
-        if is_monolith and is_story_mode and (other_level < 12 or other_level > 31) and faction ~= w_actor_faction and other_level ~= 9 then
             goto continue
         end
 
@@ -5692,8 +5751,8 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
                 priority = priority + (other.props.resource * faction_props.resource_priority)
             end
 
-            -- labs and underground locations will not be the target of overflow squads
-            if ((other_level > 19) and (other_level < 27)) or (other_level == 29) or (other_level == 31) then
+            -- storyline travel restrictions (Scorcher, Miracle Machine, underground, Monolith south)
+            if not is_travel_allowed(level, other_level, faction) then
                 priority = -1000
             end
 
@@ -5716,23 +5775,9 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
                 priority = priority * 1.5
             end
 
-            -- Monolith will onlu be allowed to target southern levels if they are the player faction or there is literally no other option
-            if IsStoryMode() and (faction == "monolith") and ( (other_level < 12) or (other_level > 31) ) then
-                if (faction == warfare.actor_faction) or (other_level == 9) then
-                    priority = priority * 0.05            -- lower priority for southern levels if actor faction or army warehouses
-                else
-                    priority = 0.0001 * priority
-                end
-            end
-
-            -- normal factions will not be allowed to target Radar or Pripyat until the Brain Scorcher is disabled
-            if (faction ~= "monolith") and (faction ~= "greh") and (faction ~= "zombied") and ( (other_level == 13) or (other_level == 16) ) and not has_alife_info("bar_deactivate_radar_done") then
-                priority = -1000
-            end
-
-            -- normal factions cannot travel between Yantar/Dead City until the Miracle Machine is disabled
-            if (faction ~= "monolith") and (faction ~= "greh") and (faction ~= "zombied") and ( (level == 10 and other_level == 11) or (level == 11 and other_level == 10) ) and not has_alife_info("yan_labx16_switcher_primary_off") then
-                priority = -1000
+            -- Monolith actor: soft de-prioritize southern levels (hard block handled by is_travel_allowed)
+            if IsStoryMode() and (faction == "monolith") and (faction == warfare.actor_faction) and ( (other_level < 12) or (other_level > 31) ) then
+                priority = priority * 0.05
             end
 
             -- main base protection: never target a base still held by its original faction
