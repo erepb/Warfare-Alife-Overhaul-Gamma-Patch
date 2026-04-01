@@ -315,35 +315,84 @@ local uniques = {
     ["zat_b40_smart_terrain"]  = { 1, 1, 0, 0, 0 },
 }
 
-local main_bases = {
-    ["mar_smart_terrain_base"]       = "csky",     -- Clear Sky Base
-    ["mar_smart_terrain_3_3"]        = "renegade",
-    ["esc_smart_terrain_2_12"]       = "stalker",  -- Rookie Village
-    ["val_smart_terrain_7_3"]        = "bandit",   -- Bandit Base
-    ["val_smart_terrain_7_4"]        = "bandit",
-    ["val_smart_terrain_7_5"]        = "bandit",
-    ["agr_smart_terrain_1_6"]        = "army",     -- Army Base
-    ["agr_smart_terrain_1_6_near_1"] = "army",
-    ["agr_smart_terrain_1_6_near_2"] = "army",     -- location of some 1_6 uniques
-    ["bar_dolg_general"]             = "dolg",     -- Duty Base
-    ["bar_dolg_bunker"]              = "dolg",
-    ["bar_visitors"]                 = "dolg",     -- 100 Rads Bar
-    ["bar_zastava"]                  = "dolg",     -- guard posts
-    ["bar_zastava_2"]                = "dolg",
-    ["mil_smart_terrain_7_7"]        = "freedom",  -- Freedom Base
-    ["mil_smart_terrain_7_8"]        = "freedom",  -- entrance
-    ["mil_smart_terrain_7_10"]       = "freedom",
-    ["mil_smart_terrain_7_12"]       = "freedom",  -- location for 7_10 uniques
-    ["cit_killers"]                  = "killer",   -- Mercenary Base
-    ["red_smart_terrain_3_2"]        = "greh",     -- Sin Base
-    ["pri_monolith"]                 = "monolith", -- Monolith Base
-    ["pri_a18_smart_terrain"]        = "stalker",  -- Laundromat Base
-    ["pri_a16"]                      = "killer",   -- Stranded Mercenaries
-    ["yan_smart_terrain_6_4"]        = "ecolog",   -- Scientist Bunker
-    ["jup_a6"]                       = "freedom",  -- Yanov Station
-    ["jup_b41"]                      = "ecolog",   -- Scientist Bunker
-    ["zat_stalker_base_smart"]       = "stalker",  -- Skadovsk
+-- Main base registry (single source of truth)
+-- Each entry: smart_name -> { faction, protect, resurrect }
+--   faction   = canonical owning faction
+--   protect   = used by: attack protection (prevent_mainbase_attacks), keep-last-squad garrison,
+--               debug owner-change logging, resurrection avoidance (don't spawn on others' homes)
+--   resurrect = used by: resurrection target priority (prefer homeland), resurrection proximity (geographic anchor)
+-- Reverse indices (resurrect_by_faction) are auto-built below.
+-- Some smarts are resurrection anchors for a second faction (resurrect_also).
+local main_base_data = {
+    -- Clear Sky
+    ["mar_smart_terrain_base"]       = { faction = "csky",     protect = true,  resurrect = true  }, -- Clear Sky Base
+    ["mar_smart_terrain_3_3"]        = { faction = "renegade", protect = true,  resurrect = true  },
+    -- Loner
+    ["esc_smart_terrain_2_12"]       = { faction = "stalker",  protect = true,  resurrect = true  }, -- Rookie Village
+    ["pri_a18_smart_terrain"]        = { faction = "stalker",  protect = true,  resurrect = false }, -- Laundromat Base
+    ["zat_stalker_base_smart"]       = { faction = "stalker",  protect = true,  resurrect = true  }, -- Skadovsk
+    -- Bandit
+    ["val_smart_terrain_7_3"]        = { faction = "bandit",   protect = true,  resurrect = true  }, -- Bandit Base (mechanic shack)
+    ["val_smart_terrain_7_4"]        = { faction = "bandit",   protect = true,  resurrect = true  },
+    ["val_smart_terrain_7_5"]        = { faction = "bandit",   protect = true,  resurrect = true  },
+    -- Military
+    ["agr_smart_terrain_1_6"]        = { faction = "army",     protect = true,  resurrect = true, resurrect_also = {"isg"} }, -- Army Base
+    ["agr_smart_terrain_1_6_near_1"] = { faction = "army",     protect = false, resurrect = true  },
+    ["agr_smart_terrain_1_6_near_2"] = { faction = "army",     protect = true,  resurrect = true  }, -- location of some 1_6 uniques
+    -- Duty
+    ["bar_dolg_general"]             = { faction = "dolg",     protect = true,  resurrect = true  }, -- Duty Base
+    ["bar_dolg_bunker"]              = { faction = "dolg",     protect = true,  resurrect = true  },
+    ["bar_visitors"]                 = { faction = "dolg",     protect = true,  resurrect = true  }, -- 100 Rads Bar
+    ["bar_zastava"]                  = { faction = "dolg",     protect = false, resurrect = true  }, -- guard posts
+    ["bar_zastava_2"]                = { faction = "dolg",     protect = false, resurrect = true  },
+    -- Freedom
+    ["mil_smart_terrain_7_7"]        = { faction = "freedom",  protect = true,  resurrect = true  }, -- Freedom Base
+    ["mil_smart_terrain_7_8"]        = { faction = "freedom",  protect = false, resurrect = true  }, -- entrance
+    ["mil_smart_terrain_7_10"]       = { faction = "freedom",  protect = true,  resurrect = true  },
+    ["mil_smart_terrain_7_12"]       = { faction = "freedom",  protect = true,  resurrect = true  }, -- location for 7_10 uniques
+    ["jup_a6"]                       = { faction = "freedom",  protect = true,  resurrect = false }, -- Yanov Station
+    -- Mercenary
+    ["cit_killers"]                  = { faction = "killer",   protect = true,  resurrect = true  }, -- Mercenary Base
+    ["pri_a18_smart_terrain"]        = { faction = "killer",   protect = true,  resurrect = false }, -- Book Store
+    -- Sin
+    ["red_smart_terrain_4_2"]        = { faction = "greh",     protect = true,  resurrect = true  }, -- Sin (from faction_main_bases)
+    -- Monolith
+    ["pri_monolith"]                            = { faction = "monolith", protect = true,  resurrect = true }, -- Monolith Base
+    ["mlr_terrain"]                          = { faction = "monolith", protect = true,  resurrect = true },
+    ["pri_b306"]                             = { faction = "monolith", protect = false, resurrect = true, resurrect_also = {"isg"} },
+    ["aes_smart_terrain_monolit_blockpost4"] = { faction = "monolith", protect = false, resurrect = true },
+    ["gen_smart_terrain_lab_entrance"]       = { faction = "monolith", protect = false, resurrect = true },
+    ["rad_antenna_patrol"]                   = { faction = "monolith", protect = false, resurrect = true },
+    ["rad_antenna_monolith"]                 = { faction = "monolith", protect = false, resurrect = true },
+    ["rad2_prip_teleport"]                   = { faction = "monolith", protect = false, resurrect = true },
+    ["katacomb_smart_terrain"]               = { faction = "monolith", protect = false, resurrect = true },
+    ["lim_smart_terrain_10"]                 = { faction = "monolith", protect = false, resurrect = true },
+    -- Ecologists
+    ["yan_smart_terrain_6_4"]        = { faction = "ecolog",   protect = true,  resurrect = true  }, -- Scientist Bunker
+    ["jup_b41"]                      = { faction = "ecolog",   protect = true,  resurrect = true  }, -- Scientist Bunker
+    -- ISG (no protected home base, resurrection anchors only)
+    ["jup_a10_smart_terrain"]        = { faction = "isg",      protect = false, resurrect = true  },
+    ["zat_b103_merc_smart"]          = { faction = "isg",      protect = false, resurrect = true  },
+    ["val_smart_terrain_1_2"]        = { faction = "isg",      protect = false, resurrect = true },
 }
+
+-- Reverse index: faction -> { smart_name, ... } for resurrection anchors
+-- Built once at load time from main_base_data. Never maintained manually.
+local resurrect_by_faction = {}
+for smart_name, data in pairs(main_base_data) do
+    if data.resurrect then
+        local f = data.faction
+        if not resurrect_by_faction[f] then resurrect_by_faction[f] = {} end
+        resurrect_by_faction[f][#resurrect_by_faction[f] + 1] = smart_name
+        -- secondary factions that also use this smart as resurrection anchor
+        if data.resurrect_also then
+            for _, f2 in ipairs(data.resurrect_also) do
+                if not resurrect_by_faction[f2] then resurrect_by_faction[f2] = {} end
+                resurrect_by_faction[f2][#resurrect_by_faction[f2] + 1] = smart_name
+            end
+        end
+    end
+end
 
 -- Locations are prioritized over regular bases when ecolog/loner are looking for bases.
 local travel_hubs = {
@@ -3067,7 +3116,7 @@ function process_loners(smart)
             local priority_targets = {}
 
             if (smart.props and smart.props.base > 0) and (isDaylight) and (math.random(1,10) < 9) then                                                -- updates squads at a base. Squads are assigned to resource locations during daylight hours. 10% chance that they're lazy bums and sit at base until the next update
-                local is_stalker_mainbase = main_bases[smart:name()] == "stalker"
+                local is_stalker_mainbase = get_main_base_faction(smart:name()) == "stalker"
                 if ((smart.owning_faction ~= "stalker" and not is_stalker_mainbase) or (squad_count(smart, "stalker") > 1)) then                -- Loner-owned or loner main bases keep their last squad to retain control
                     if (math.random(1, 10) < 7) then                                                                                                    -- 70% chance of staying on-level
                         if (math.random(1,20) < 19) then                                                                                                -- 5% chance for an on-level squad to be mutant hunters, going to lairs instead
@@ -3465,7 +3514,7 @@ function process_ecolog(smart)
             local all_targets = {}
 
             if (smart.props and smart.props.base > 0) and (isDaylight) and (math.random(1,10) < 9) then                                                -- updates squads at a base. Squads are assigned to resource locations during daylight hours. 10% chance that they're lazy bums and sit at base until the next update
-                local is_ecolog_mainbase = main_bases[smart:name()] == "ecolog"
+                local is_ecolog_mainbase = get_main_base_faction(smart:name()) == "ecolog"
                 if ((smart.owning_faction ~= "ecolog" and not is_ecolog_mainbase) or (squad_count(smart, "ecolog") > 1)) then                -- Ecologist-owned or ecologist main bases keep their last squad to retain control
                     if (math.random(1, 10) < 5) then                                                                                                    -- 50% chance of staying on-level
                         local level_info = warfare_levels.level_information[smart.level_id]
@@ -4959,6 +5008,10 @@ function check_owner(smart)
         smart.check_owner_timer = warfare.get_time()
     end
 
+    local smart_name = smart:name()
+    local mb_entry = main_base_data[smart_name]
+    local is_mb = mb_entry and mb_entry.faction
+
     if (not SIMBOARD.smarts[smart.id]) then
         smart.owning_faction = "none"
         patrol_timers[smart.id] = nil
@@ -5300,7 +5353,7 @@ function find_random_patrol_target(smart, faction, sid)
 
         -- main base protection: never target or spawn on a base still held by its original faction
         local other_faction_rp = other.owning_faction or "none"
-        if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and other_faction_rp == main_bases[other:name()] then
+        if warfare_options.options.prevent_mainbase_attacks and other_faction_rp == get_protected_base_faction(other:name()) then
             priority = -1000
         end
 
@@ -5354,6 +5407,12 @@ end
 function remove_random_patrol(squad_id)
     local faction = random_patrols[squad_id]
     if faction then
+        local sq = alife_object(squad_id)
+        local caller = (debug.traceback("", 2) or "?"):gsub("\n", " | ")
+        local npc = sq and sq:npc_count() or -1
+        local action = sq and sq.current_action or "nil"
+        local target = sq and sq.current_target_id and alife_object(sq.current_target_id)
+        local tgt_name = target and target:name() or tostring(sq and sq.current_target_id)
         random_patrols[squad_id] = nil
         if random_patrol_counts[faction] and random_patrol_counts[faction] > 0 then
             random_patrol_counts[faction] = random_patrol_counts[faction] - 1
@@ -5470,7 +5529,7 @@ function find_targets(smart, faction_override, overflow_squad)
         end
 
         -- main base protection: never target a base still held by its original faction
-        if prevent_mainbase and main_bases[other:name()] and other_faction == main_bases[other:name()] then
+        if prevent_mainbase and other_faction == get_protected_base_faction(other:name()) then
             goto continue
         end
 
@@ -5681,7 +5740,7 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
             end
 
             -- main base protection: never target a base still held by its original faction
-            if warfare_options.options.prevent_mainbase_attacks and main_bases[other:name()] and other_faction == main_bases[other:name()] then
+            if warfare_options.options.prevent_mainbase_attacks and other_faction == get_protected_base_faction(other:name()) then
                 priority = -1000
             end
 
@@ -5894,11 +5953,38 @@ function notify_npc_created(squad_id, sm_name, faction, npc_type)
 end
 
 function is_main_base(smart_name)
-    return main_bases[smart_name] ~= nil
+    return main_base_data[smart_name] ~= nil
 end
 
 function get_main_base_faction(smart_name)
-    return main_bases[smart_name]
+    local entry = main_base_data[smart_name]
+    return entry and entry.faction
+end
+
+function is_protected_base(smart_name)
+    local entry = main_base_data[smart_name]
+    return entry ~= nil and entry.protect
+end
+
+function get_protected_base_faction(smart_name)
+    local entry = main_base_data[smart_name]
+    return (entry and entry.protect) and entry.faction or nil
+end
+
+function is_resurrect_base(smart_name, faction)
+    local entry = main_base_data[smart_name]
+    if not entry then return false end
+    if entry.resurrect and entry.faction == faction then return true end
+    if entry.resurrect_also then
+        for _, f in ipairs(entry.resurrect_also) do
+            if f == faction then return true end
+        end
+    end
+    return false
+end
+
+function get_resurrect_bases(faction)
+    return resurrect_by_faction[faction]
 end
 
 ------------------------------------------------------------

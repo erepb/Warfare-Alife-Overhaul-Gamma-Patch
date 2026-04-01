@@ -232,7 +232,7 @@ function squad_warfare_update(squad)
                         -- the squad home since offline combat will never engage here.
                         if reached and not has_opponent then
                             local target_name = se_target.name and se_target:name()
-                            local original_faction = target_name and smart_terrain_warfare.get_main_base_faction(target_name)
+                            local original_faction = target_name and smart_terrain_warfare.get_protected_base_faction(target_name)
                             if original_faction and original_faction == smartOwner
                             and warfare_options and warfare_options.options.prevent_mainbase_attacks then
                                 -- Let the squad "arrive" so warfare processing can redirect it

@@ -588,7 +588,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                     local sm1 = squad_1.assigned_target_id and alife_object(squad_1.assigned_target_id)
                     if sm1 and sm1.owning_faction == community_1 then
                         local sm1_name = sm1.name and sm1:name()
-                        local original_faction_1 = sm1_name and smart_terrain_warfare.get_main_base_faction(sm1_name)
+                        local original_faction_1 = sm1_name and smart_terrain_warfare.get_protected_base_faction(sm1_name)
                         if sm1_name and original_faction_1 and original_faction_1 == community_1 then
                             return false
                         end
@@ -596,7 +596,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                     local sm2 = squad_2.assigned_target_id and alife_object(squad_2.assigned_target_id)
                     if sm2 and sm2.owning_faction == community_2 then
                         local sm2_name = sm2.name and sm2:name()
-                        local original_faction_2 = sm2_name and smart_terrain_warfare.get_main_base_faction(sm2_name)
+                        local original_faction_2 = sm2_name and smart_terrain_warfare.get_protected_base_faction(sm2_name)
                         if sm2_name and original_faction_2 and original_faction_2 == community_2 then
                             return false
                         end

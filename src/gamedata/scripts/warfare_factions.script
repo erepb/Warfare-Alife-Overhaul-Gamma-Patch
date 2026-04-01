@@ -53,22 +53,6 @@ all_factions = {
     "zombied",
 }
 
--- Mapping of main bases to their original factions
-local faction_main_bases = {
-    ["dolg"] = {"bar_dolg_general", "bar_dolg_bunker", "bar_zastava", "bar_zastava_2"},
-    ["freedom"] = {"mil_smart_terrain_7_7", "mil_smart_terrain_7_8", "mil_smart_terrain_7_10", "mil_smart_terrain_7_12", "jup_a6"},
-    ["army"] = {"agr_smart_terrain_1_6", "agr_smart_terrain_1_6_near_1", "agr_smart_terrain_1_6_near_2", "esc_smart_terrain_3_16", "val_smart_terrain_1_2"},
-    ["bandit"] = {"val_smart_terrain_7_4", "val_smart_terrain_7_5", "val_smart_terrain_8_6"},
-    ["killer"] = {"cit_killers"},
-    ["monolith"] = {"pri_monolith"},
-    ["ecolog"] = {"yan_smart_terrain_6_4", "jup_b41"},
-    ["csky"] = {"mar_smart_terrain_base"},
-    ["stalker"] = {"esc_smart_terrain_2_12", "zat_stalker_base_smart"},
-    ["renegade"] = {"mar_smart_terrain_3_3"},
-    ["greh"] = {"red_smart_terrain_4_2"},
-    ["isg"] = {"agr_smart_terrain_1_6", "val_smart_terrain_1_2", "jup_a10_smart_terrain", "zat_b103_merc_smart", "pri_b306"},
-}
-
 faction_information = {}
 faction_timers = {}
 
@@ -418,10 +402,10 @@ function emergency_resurrection_spawn(faction)
                         if (smart.props and smart.props.base > 0) then
                             if (smart.owning_faction == "none" or game_relations.is_factions_enemies(smart.owning_faction, faction)) then
                                 if enable_debug then printf("Emergency resurrection: Found target %s owned by %s", smart:name(), smart.owning_faction) end
-                                if is_faction_main_base(smart:name(), faction) then
+                                if smart_terrain_warfare.is_resurrect_base(smart:name(), faction) then
                                     if enable_debug then printf("Emergency resurrection: %s is a priority (former main) base of %s", smart:name(), faction) end
                                     priority_targets[#priority_targets+1] = smart
-                                elseif not is_smart_main_base(smart:name()) then
+                                elseif not smart_terrain_warfare.is_main_base(smart:name()) then
                                     all_targets[#all_targets+1] = smart
                                 end
                             end
@@ -441,11 +425,11 @@ function emergency_resurrection_spawn(faction)
         if enable_debug then printf("Emergency resurrection: Selected priority target %s for %s", best_target:name(), faction) end
     elseif #all_targets > 0 then
         if enable_debug then printf("Emergency resurrection: No priority targets, selecting from %s regular targets for %s", #all_targets, faction) end
-        -- Find closest target to any of the faction's known main bases
+        -- Find closest target to any of the faction's known resurrection bases
         local main_base_smarts = {}
-        local main_base_names = faction_main_bases[faction]
-        if main_base_names then
-            for _, base_name in pairs(main_base_names) do
+        local resurrect_names = smart_terrain_warfare.get_resurrect_bases(faction)
+        if resurrect_names then
+            for _, base_name in pairs(resurrect_names) do
                 local smart = alife():story_object(base_name)
                 if smart then main_base_smarts[#main_base_smarts+1] = smart end
             end
@@ -573,36 +557,3 @@ end
 
 
 
--- Helper function to check if a smart terrain is a main base (uses smart_terrain_warfare's function)
-function is_smart_main_base(smart_name)
-    if not smart_name then
-        return false
-    end
-
-    -- Use the function from smart_terrain_warfare.script
-    if smart_terrain_warfare and smart_terrain_warfare.is_main_base then
-        return smart_terrain_warfare.is_main_base(smart_name)
-    end
-
-    return false
-end
-
--- Helper function to check if a smart terrain is a main base belonging to a specific faction
-function is_faction_main_base(smart_name, faction)
-    if not smart_name or not faction then
-        return false
-    end
-
-    local bases = faction_main_bases[faction]
-    if not bases then
-        return false
-    end
-
-    for _, base_name in pairs(bases) do
-        if base_name == smart_name then
-            return true
-        end
-    end
-
-    return false
-end
