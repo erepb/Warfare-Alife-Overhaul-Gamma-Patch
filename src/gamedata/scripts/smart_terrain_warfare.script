@@ -3045,7 +3045,8 @@ function process_loners(smart)
             local priority_targets = {}
 
             if (smart.props and smart.props.base > 0) and (isDaylight) and (math.random(1,10) < 9) then                                                -- updates squads at a base. Squads are assigned to resource locations during daylight hours. 10% chance that they're lazy bums and sit at base until the next update
-                if ((smart.owning_faction ~= "stalker") or (smart.owning_faction == "stalker" and squad_count(smart, "stalker") > 1)) then                -- Loner-owned bases keep their last squad to retain control
+                local is_stalker_mainbase = main_bases[smart:name()] == "stalker"
+                if ((smart.owning_faction ~= "stalker" and not is_stalker_mainbase) or (squad_count(smart, "stalker") > 1)) then                -- Loner-owned or loner main bases keep their last squad to retain control
                     if (math.random(1, 10) < 7) then                                                                                                    -- 70% chance of staying on-level
                         if (math.random(1,20) < 19) then                                                                                                -- 5% chance for an on-level squad to be mutant hunters, going to lairs instead
                             local level_info = warfare_levels.level_information[smart.level_id]
@@ -3442,7 +3443,8 @@ function process_ecolog(smart)
             local all_targets = {}
 
             if (smart.props and smart.props.base > 0) and (isDaylight) and (math.random(1,10) < 9) then                                                -- updates squads at a base. Squads are assigned to resource locations during daylight hours. 10% chance that they're lazy bums and sit at base until the next update
-                if ((smart.owning_faction ~= "ecolog") or (smart.owning_faction == "ecolog" and squad_count(smart, "ecolog") > 1)) then                -- Ecologist-owned bases keep their last squad to retain control
+                local is_ecolog_mainbase = main_bases[smart:name()] == "ecolog"
+                if ((smart.owning_faction ~= "ecolog" and not is_ecolog_mainbase) or (squad_count(smart, "ecolog") > 1)) then                -- Ecologist-owned or ecologist main bases keep their last squad to retain control
                     if (math.random(1, 10) < 5) then                                                                                                    -- 50% chance of staying on-level
                         local level_info = warfare_levels.level_information[smart.level_id]
 
