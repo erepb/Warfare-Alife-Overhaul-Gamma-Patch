@@ -1622,59 +1622,65 @@ function process_invasion_departure(smart)
 
     -- check if time to send invasion out, then do so if ready
     local invasion_size = invasions[smart.id][2]
-    if (regular_squads + stationary_sq_num >= invasion_size + guards) then
-        if not (invasions[smart.id][3]) then
-            invasions[smart.id][3] = warfare.get_time()
+    if (regular_squads + stationary_sq_num < invasion_size + guards) then
+        -- lost squads below threshold: reset departure timer so it restarts when squads are replenished
+        invasions[smart.id][3] = nil
+        return
+    end
+
+    if not (invasions[smart.id][3]) then
+        invasions[smart.id][3] = warfare.get_time()
+    end
+
+    local diff = warfare.get_time_ref():diffSec(invasions[smart.id][3])
+    local wait = invasions[smart.id][4] or 0
+    if (diff <= (wait * 6)) then
+        return
+    end
+
+    -- check loner/ecolog target pop to see if invasion will grant control
+    local loner_squads = squad_count_defending(target, target.owning_faction)
+    local takeover_possible = false
+    if not is_factions_enemies(smart.owning_faction, target.owning_faction) then
+        if (loner_squads < 2) then
+            takeover_possible = true
         end
+    else
+        takeover_possible = true
+    end
 
-        local diff = warfare.get_time_ref():diffSec(invasions[smart.id][3])
-        local wait = invasions[smart.id][4] or 0
-        if (diff > (wait * 6)) then
-            -- check loner/ecolog target pop to see if invasion will grant control
-            local loner_squads = squad_count_defending(target, target.owning_faction)
-            local takeover_possible = false
-            if not is_factions_enemies(smart.owning_faction, target.owning_faction) then
-                if (loner_squads < 2) then
-                    takeover_possible = true
-                end
-            else
-                takeover_possible = true
-            end
+    -- don't send out invasions during emissions or when under attack
+    if takeover_possible and not under_attack[smart.id] then
+        local numSent = 0
+        local squads = SIMBOARD.smarts[smart.id].squads
 
-            -- don't send out invasions during emissions or when under attack
-            if takeover_possible and not under_attack[smart.id] then
-                local numSent = 0
-                local squads = SIMBOARD.smarts[smart.id].squads
+        for sid,_ in pairs(squads) do
+            local squad = sid and alife_object(sid)
 
-                for sid,_ in pairs(squads) do
-                    local squad = sid and alife_object(sid)
+            if squad_is_commandable(squad) and (squad:get_squad_community() == smart.owning_faction) and (squad.current_action == 1) then
+                numSent = numSent + 1
+                sim_squad_warfare.set_target(squad, target.id)
 
-                    if squad_is_commandable(squad) and (squad:get_squad_community() == smart.owning_faction) and (squad.current_action == 1) then
-                        numSent = numSent + 1
-                        sim_squad_warfare.set_target(squad, target.id)
-
-                        if (numSent == invasion_size) then
-                            if enable_debug then
-                                printf("sending %s %s squads from %s to attack %s", invasion_size, smart.owning_faction, smart:name(), target:name())
-                            end
-                            break
-                        end
+                if (numSent == invasion_size) then
+                    if enable_debug then
+                        printf("sending %s %s squads from %s to attack %s", invasion_size, smart.owning_faction, smart:name(), target:name())
                     end
+                    break
                 end
-
-                -- inform actor, if on-level, about invasion
-                if (warfare.actor_faction) and (warfare.actor_faction == smart.owning_faction) and (target.is_on_actor_level) then
-                    local icon = smart.owning_faction
-                    local smart_translated = translate_smart_name(smart:name()) or smart:name()
-                    local target_translated = translate_smart_name(target:name()) or target:name()
-                    local text = strformat(game.translate_string("st_wrfr_invasion_attack"), smart_translated, target_translated)
-                    news_manager.send_tip( db.actor, text, nil, icon, nil, nil )
-                end
-
-                -- end invasion targeting
-                invasions[smart.id] = nil
             end
         end
+
+        -- inform actor, if on-level, about invasion
+        if (warfare.actor_faction) and (warfare.actor_faction == smart.owning_faction) and (target.is_on_actor_level) then
+            local icon = smart.owning_faction
+            local smart_translated = translate_smart_name(smart:name()) or smart:name()
+            local target_translated = translate_smart_name(target:name()) or target:name()
+            local text = strformat(game.translate_string("st_wrfr_invasion_attack"), smart_translated, target_translated)
+            news_manager.send_tip( db.actor, text, nil, icon, nil, nil )
+        end
+
+        -- end invasion targeting
+        invasions[smart.id] = nil
     end
 end
 
