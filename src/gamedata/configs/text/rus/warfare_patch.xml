@@ -222,4 +222,16 @@
     <string id="ui_mm_alife_warfare_stalker_base_count_modifier_desc">
         <text>Сколько баз добавляется к количеству баз, принадлежащих фракции. Это значение может быть отрицательным. Более высокие числа вызывают более длительное время возрождения баз, приближаясь к значению, установленному максимальным временем возрождения.</text>
     </string>
+    <string id="ui_mm_alife_warfare_general_emission_effect">
+        <text>Влияние выброса на отряды</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_emission_effect_desc">
+        <text>Как действует выброс на отряды. Смерть - смерть. Зомбирование заменияет на зомби патруль соответствующего ранга и такого же или меньше размера</text>
+    </string>
+    <string id="ui_mm_lst_kill">
+        <text>Смерть</text>
+    </string>
+    <string id="ui_mm_lst_zombify">
+        <text>Зобмирование</text>
+    </string>
 </string_table>

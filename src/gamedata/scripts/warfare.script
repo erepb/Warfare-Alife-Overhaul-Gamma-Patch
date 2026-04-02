@@ -1242,29 +1242,89 @@ function is_squad_section_enemy_of_faction(squad_section, faction)
     end
 end
 
+local function get_zombied_section(original_section)
+    if string.find(original_section, "_veteran") then
+        return "zombied_sim_squad_veteran"
+    elseif string.find(original_section, "_advanced") then
+        return "zombied_sim_squad_advanced"
+    end
+    return "zombied_sim_squad_novice"
+end
+
 function snap()
-    if (warfare_options.options.purge_zone_on_emission) then
-        local p = warfare_options.options.purge_zone_percentage or 50
+    local mode = warfare_options.options.emission_effect
+    if (not mode) or (mode == "off") then return end
 
-        for faction, tbl in pairs(registered_squads) do
-            for squad_id, _ in pairs(tbl) do
-                local squad = alife_object(squad_id)
+    local p = warfare_options.options.purge_zone_percentage or 50
 
-                if (math.random(100) <= p) then
-                    -- Skip squads defending a protected main base still held by their faction
-                    local target_id = squad and squad.current_target_id
-                    local target = target_id and alife_object(target_id)
-                    if target and target.owning_faction == faction then
-                        local t_name = target.name and target:name()
-                        if t_name and smart_terrain_warfare.get_protected_base_faction(t_name) == faction then
-                            goto skip_snap
-                        end
-                    end
-                    sim_squad_warfare.remove_squad(squad)
-                    squad:remove_squad()
-                    ::skip_snap::
+    -- Collect all squad IDs first — modifying registered_squads during pairs() is unsafe
+    local to_process = {}
+    for faction, tbl in pairs(registered_squads) do
+        for squad_id, _ in pairs(tbl) do
+            to_process[#to_process + 1] = { id = squad_id, faction = faction }
+        end
+    end
+
+    for _, entry in ipairs(to_process) do
+        local squad = alife_object(entry.id)
+        local faction = entry.faction
+
+        if squad and (math.random(100) <= p) then
+            -- Skip squads defending a protected main base still held by their faction
+            local target_id = squad.current_target_id
+            local target = target_id and alife_object(target_id)
+            if target and target.owning_faction == faction then
+                local t_name = target.name and target:name()
+                if t_name and smart_terrain_warfare.get_protected_base_faction(t_name) == faction then
+                    goto continue
                 end
             end
+
+            if mode == "zombify" and faction ~= "zombied" and faction ~= "monster" then
+                local original_count = squad:npc_count()
+                local original_section = squad:section_name()
+                local smart_id = squad.current_target_id or squad.smart_id
+                local smart_obj = smart_id and alife_object(smart_id)
+                local smart_name = smart_obj and smart_obj:name()
+
+                sim_squad_warfare.remove_squad(squad)
+                squad:remove_squad()
+
+                -- Spawn zombied replacement as random patrol
+                if smart_name and original_count > 0 then
+                    local section = get_zombied_section(original_section)
+                    local new_squad = utils_obj.create_squad(section, smart_name)
+                    if new_squad then
+                        -- Trim zombie squad down to original member count
+                        local excess = new_squad:npc_count() - original_count
+                        if excess > 0 then
+                            local remove_list = {}
+                            for k in new_squad:squad_members() do
+                                if #remove_list >= excess then break end
+                                if k.id ~= new_squad:commander_id() then
+                                    remove_list[#remove_list + 1] = k.id
+                                end
+                            end
+                            for _, npc_id in ipairs(remove_list) do
+                                new_squad:remove_npc(npc_id, true)
+                            end
+                        end
+                        -- Register as random patrol
+                        smart_terrain_warfare.set_random_patrol(new_squad.id, "zombied")
+                        local patrol_target = smart_terrain_warfare.find_random_patrol_target(smart_obj, "zombied", new_squad.id)
+                        if patrol_target then
+                            sim_squad_warfare.set_target(new_squad, patrol_target)
+                        end
+                        printf("emission zombified %s squad at %s (%s -> %s members)", faction, smart_name, tostring(original_count), tostring(new_squad:npc_count()))
+                    end
+                end
+            else
+                -- Kill mode (or zombify skips zombie/monster squads — just kill them)
+                sim_squad_warfare.remove_squad(squad)
+                squad:remove_squad()
+            end
+
+            ::continue::
         end
     end
 end

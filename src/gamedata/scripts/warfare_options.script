@@ -60,7 +60,17 @@ function update_settings()
     options.enemy_resource_boost = ui_options.get("alife/warfare/general/enemy_resource_boost")
     options.enemy_base_boost = ui_options.get("alife/warfare/general/enemy_base_boost")
 
-    options.purge_zone_on_emission = ui_options.get("alife/warfare/general/purge_zone_on_emission")
+    -- Migrate old boolean purge_zone_on_emission -> emission_effect
+    local old_purge = axr_main.config:r_value("options", "alife/warfare/general/purge_zone_on_emission", 0)
+    if old_purge ~= nil then
+        local old_val = axr_main.config:r_value("options", "alife/warfare/general/purge_zone_on_emission", 1)
+        local migrated = old_val == true and "kill" or "off"
+        axr_main.config:w_value("options", "alife/warfare/general/emission_effect", migrated)
+        axr_main.config:remove_line("options", "alife/warfare/general/purge_zone_on_emission")
+        axr_main.config:save()
+    end
+
+    options.emission_effect = ui_options.get("alife/warfare/general/emission_effect")
     options.purge_zone_percentage = ui_options.get("alife/warfare/general/purge_zone_percentage")
 
     options.actor_support_enemy_rank_weight = ui_options.get("alife/warfare/general/actor_support_enemy_rank_weight")

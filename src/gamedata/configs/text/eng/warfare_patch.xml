@@ -270,4 +270,16 @@
 	<string id="ui_mm_alife_warfare_stalker_base_count_modifier_desc">
 		<text>How many bases are added to a faction's owned base count. This can be negative. Higher numbers cause longer base respawn times, approaching the value set by maximum respawn time.</text>
 	</string>
+	<string id="ui_mm_alife_warfare_general_emission_effect">
+		<text>Emission effect on warfare squads</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_emission_effect_desc">
+		<text>What happens to warfare squads during an emission. Kill removes them. Zombify replaces them with zombied patrol squads matching the original squad's tier.</text>
+	</string>
+	<string id="ui_mm_lst_kill">
+		<text>Kill</text>
+	</string>
+	<string id="ui_mm_lst_zombify">
+		<text>Zombify</text>
+	</string>
 </string_table>
