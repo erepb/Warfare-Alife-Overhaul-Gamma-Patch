@@ -552,8 +552,12 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 
                             remove_squad_info(squad_2, id_2, id_1, lid)
                             local se_attacker = get_random_npc(squad_1)
+                            local member_ids = {}
                             for k in squad_2:squad_members() do
-                                local victim = alife_object(k.id)
+                                member_ids[#member_ids + 1] = k.id
+                            end
+                            for i = 1, #member_ids do
+                                local victim = alife_object(member_ids[i])
                                 if victim then
                                     victim:on_death(se_attacker)
                                 end
@@ -566,8 +570,12 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 
                             remove_squad_info(squad_1, id_1, id_2, lid)
                             local se_attacker = get_random_npc(squad_2)
+                            local member_ids = {}
                             for k in squad_1:squad_members() do
-                                local victim = alife_object(k.id)
+                                member_ids[#member_ids + 1] = k.id
+                            end
+                            for i = 1, #member_ids do
+                                local victim = alife_object(member_ids[i])
                                 if victim then
                                     victim:on_death(se_attacker)
                                 end
@@ -687,10 +695,16 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
             -- Post-battle state
             set_battle_outcome(true, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
 
-            -- Release
+            -- Release: collect member IDs first to avoid iterator invalidation
+            -- on_death -> squad:on_npc_death -> remove_npc -> unregister_member modifies m_members
             remove_squad_info(squad_2, id_2, id_1, lid)
+            local member_ids = {}
             for k in squad_2:squad_members() do
-                local victim = k.id and k.id ~= 65535 and alife_object(k.id)
+                member_ids[#member_ids + 1] = k.id
+            end
+            for i = 1, #member_ids do
+                local mid = member_ids[i]
+                local victim = mid and mid ~= 65535 and alife_object(mid)
                 if victim then
                     victim:on_death(se_attacker)
                 end
