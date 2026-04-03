@@ -1271,12 +1271,14 @@ function snap()
 
         if squad and (math.random(100) <= p) then
             -- Skip squads defending a protected main base still held by their faction
-            local target_id = squad.current_target_id
-            local target = target_id and alife_object(target_id)
-            if target and target.owning_faction == faction then
-                local t_name = target.name and target:name()
-                if t_name and smart_terrain_warfare.get_protected_base_faction(t_name) == faction then
-                    goto continue
+            if warfare_options and warfare_options.options.prevent_mainbase_attacks then
+                local target_id = squad.current_target_id
+                local target = target_id and alife_object(target_id)
+                if target and target.owning_faction == faction then
+                    local t_name = target.name and target:name()
+                    if t_name and smart_terrain_warfare.get_protected_base_faction(t_name) == faction then
+                        goto continue
+                    end
                 end
             end
 

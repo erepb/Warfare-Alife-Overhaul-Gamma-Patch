@@ -405,7 +405,7 @@ function emergency_resurrection_spawn(faction)
                                 if smart_terrain_warfare.is_resurrect_base(smart:name(), faction) then
                                     if enable_debug then printf("Emergency resurrection: %s is a priority (former main) base of %s", smart:name(), faction) end
                                     priority_targets[#priority_targets+1] = smart
-                                elseif not smart_terrain_warfare.is_main_base(smart:name()) then
+                                elseif not (warfare_options.options.prevent_mainbase_attacks and smart_terrain_warfare.is_main_base(smart:name())) then
                                     all_targets[#all_targets+1] = smart
                                 end
                             end
