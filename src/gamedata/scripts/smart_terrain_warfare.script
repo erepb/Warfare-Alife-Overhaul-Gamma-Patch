@@ -5008,10 +5008,6 @@ function check_owner(smart)
         smart.check_owner_timer = warfare.get_time()
     end
 
-    local smart_name = smart:name()
-    local mb_entry = main_base_data[smart_name]
-    local is_mb = mb_entry and mb_entry.faction
-
     if (not SIMBOARD.smarts[smart.id]) then
         smart.owning_faction = "none"
         patrol_timers[smart.id] = nil
