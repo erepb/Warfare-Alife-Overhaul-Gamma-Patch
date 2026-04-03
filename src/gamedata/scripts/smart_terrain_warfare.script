@@ -5278,6 +5278,55 @@ local function is_scorcher_zone(lvl)
     return (lvl == 13) or (lvl == 14)   -- Radar + Red Forest
 end
 
+-- Returns true if the Brain Scorcher blocks travel from source_level to target_level for faction.
+-- In story mode the scorcher is active until the player disables it; in freeplay it's always off.
+local function is_scorcher_blocked(source_level, target_level, faction)
+    if not IsStoryMode() or has_alife_info("bar_deactivate_radar_done") then
+        return false
+    end
+
+    local scorcher_immune = (faction == "monolith") or (faction == "zombied")
+    if scorcher_immune then
+        return false
+    end
+
+    -- Scorcher zone (Radar + Red Forest) blocked for all non-immune (including mercs and ISG)
+    if is_scorcher_zone(target_level) then
+        return true
+    end
+
+    -- South <-> North blocked for non-immune, non-merc factions
+    if (faction ~= "killer") and source_level then
+        if (is_south_level(source_level) and is_north_level(target_level)) or
+           (is_north_level(source_level) and is_south_level(target_level)) then
+            return true
+        end
+    end
+
+    return false
+end
+
+-- Returns true if the Miracle Machine blocks travel from source_level to target_level for faction.
+-- Blocks south (excl Dead City) <-> Dead City; mercs exempt (present in Dead City).
+local function is_miracle_machine_blocked(source_level, target_level, faction)
+    if not IsStoryMode() or has_alife_info("yan_labx16_switcher_primary_off") then
+        return false
+    end
+
+    local scorcher_immune = (faction == "monolith") or (faction == "zombied")
+    if scorcher_immune or (faction == "killer") then
+        return false
+    end
+
+    local src_south_not_dc = is_south_level(source_level) and (source_level ~= 11)
+    local tgt_south_not_dc = is_south_level(target_level) and (target_level ~= 11)
+    if (src_south_not_dc and target_level == 11) or (source_level == 11 and tgt_south_not_dc) then
+        return true
+    end
+
+    return false
+end
+
 -- Check if travel/targeting from source_level to target_level is allowed for faction.
 -- source_level may be nil (e.g. during squad spawning); directional checks are skipped in that case.
 -- Covers: underground exclusion, Brain Scorcher, Miracle Machine, Monolith south restriction.
@@ -5292,38 +5341,20 @@ function is_travel_allowed(source_level, target_level, faction)
         return false
     end
 
-    local scorcher_immune = (faction == "monolith") or (faction == "zombied")
+    -- DEBUG: bypass all travel restrictions (scorcher, miracle machine, etc.)
+    -- return true
 
-    -- Brain Scorcher restrictions
-    if not has_alife_info("bar_deactivate_radar_done") then
-        -- Scorcher zone (Radar + Red Forest) blocked for all non-immune (including mercs and ISG)
-        if not scorcher_immune and is_scorcher_zone(target_level) then
-            return false
-        end
-
-        -- South <-> North blocked for non-immune, non-merc factions
-        if not scorcher_immune and (faction ~= "killer") and source_level then
-            if (is_south_level(source_level) and is_north_level(target_level)) or
-               (is_north_level(source_level) and is_south_level(target_level)) then
-                return false
-            end
-        end
+    if is_scorcher_blocked(source_level, target_level, faction) then
+        return false
     end
 
-    -- Miracle Machine: south (excl Dead City) <-> Dead City blocked
-    -- Mercs exempt (present in Dead City)
-    if not has_alife_info("yan_labx16_switcher_primary_off") and source_level then
-        if not scorcher_immune and (faction ~= "killer") then
-            local src_south_not_dc = is_south_level(source_level) and (source_level ~= 11)
-            local tgt_south_not_dc = is_south_level(target_level) and (target_level ~= 11)
-            if (src_south_not_dc and target_level == 11) or (source_level == 11 and tgt_south_not_dc) then
-                return false
-            end
-        end
+    if is_miracle_machine_blocked(source_level, target_level, faction) then
+        return false
     end
 
-    -- Monolith south restriction (story mode, non-actor, except Army Warehouses)
-    if (faction == "monolith") and IsStoryMode() and (faction ~= warfare.actor_faction) then
+    -- Monolith south restriction: while scorcher is active, only Army Warehouses (9) allowed south
+    if (faction == "monolith") and IsStoryMode() and (faction ~= warfare.actor_faction)
+       and not has_alife_info("bar_deactivate_radar_done") then
         if is_south_level(target_level) and (target_level ~= 9) then
             return false
         end
@@ -5654,8 +5685,8 @@ function find_targets(smart, faction_override, overflow_squad)
             priority = priority * 1.2
         end
 
-        -- Monolith: lower priority for southern levels (non-actor non-warehouses case already skipped above)
-        if is_monolith and is_story_mode and (other_level < 12 or other_level > 31) then
+        -- Monolith: lower priority for southern levels while scorcher active (non-actor non-warehouses case already skipped above)
+        if is_monolith and is_story_mode and not has_alife_info("bar_deactivate_radar_done") and (other_level < 12 or other_level > 31) then
             priority = priority * 0.05
         end
 
@@ -5791,8 +5822,8 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
                 priority = priority * 1.5
             end
 
-            -- Monolith actor: soft de-prioritize southern levels (hard block handled by is_travel_allowed)
-            if IsStoryMode() and (faction == "monolith") and (faction == warfare.actor_faction) and ( (other_level < 12) or (other_level > 31) ) then
+            -- Monolith actor: soft de-prioritize southern levels while scorcher active (hard block handled by is_travel_allowed)
+            if IsStoryMode() and not has_alife_info("bar_deactivate_radar_done") and (faction == "monolith") and (faction == warfare.actor_faction) and ( (other_level < 12) or (other_level > 31) ) then
                 priority = priority * 0.05
             end
 
