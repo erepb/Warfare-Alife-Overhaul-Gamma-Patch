@@ -1255,7 +1255,7 @@ function process_nonbase_squads(smart, always_recall, keep_one)
         for sid,_ in pairs(squads) do
             local squad = sid and alife_object(sid)
             local faction = squad and squad:get_squad_community()
-            if (squad) and squad_is_commandable(squad) and (squad.current_action == 1) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
+            if (squad) and (squad_is_commandable(squad) or squad.patrol_table) and (squad.current_action == 1) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
                 eligible_count = eligible_count + 1
             end
         end
@@ -1271,7 +1271,7 @@ function process_nonbase_squads(smart, always_recall, keep_one)
             printf("[PNBS_DBG] %s at %s: orphan! action=%s target=%s", squad:name(), smart:name(), tostring(squad.current_action), tostring(squad.current_target_id))
         end
         local faction = squad:get_squad_community()
-        if (squad) and squad_is_commandable(squad) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
+        if (squad) and (squad_is_commandable(squad) or squad.patrol_table) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
             if squad.current_action ~= 1 then
                 -- already moving, skip
             else
