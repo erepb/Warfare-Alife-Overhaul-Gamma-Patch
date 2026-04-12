@@ -5727,7 +5727,7 @@ function find_targets(smart, faction_override, overflow_squad)
 
         -- Monolith: lower priority for southern levels while scorcher active (non-actor non-warehouses case already skipped above)
         if is_monolith and is_story_mode and not has_alife_info("bar_deactivate_radar_done") and (other_level < 12 or other_level > 31) then
-            priority = priority * 0.05
+            priority = priority * 0.8
         end
 
         -- ISG extremely interested in targeting labs
@@ -5864,7 +5864,7 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
 
             -- Monolith actor: soft de-prioritize southern levels while scorcher active (hard block handled by is_travel_allowed)
             if IsStoryMode() and not has_alife_info("bar_deactivate_radar_done") and (faction == "monolith") and (faction == warfare.actor_faction) and ( (other_level < 12) or (other_level > 31) ) then
-                priority = priority * 0.05
+                priority = priority * 0.8
             end
 
             -- main base protection: never target a base still held by its original faction
