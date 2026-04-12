@@ -340,6 +340,15 @@ function sim_squad_scripted.sim_squad_scripted.show(self)
         local enemy = game_relations.is_factions_enemies(warfare.actor_faction, faction)
         local friend = warfare.actor_faction == faction or game_relations.is_factions_friends(warfare.actor_faction, faction)
 
+        local info = ""
+        if is_pda_open() then
+            if (warfare.dbg_all_faction_tooltips or self:get_squad_community() == warfare.actor_faction or game_relations.is_factions_friends(self:get_squad_community(), warfare.actor_faction)) then
+                info = get_warfare_info(self)
+            else
+                info = get_enemy_info(self)
+            end
+        end
+
         if (warfare_options.options.fog_of_war) then
             local fog_of_war_distance = warfare_options.options.fog_of_war_distance
             fog_of_war_distance = tonumber(fog_of_war_distance)
@@ -379,16 +388,8 @@ function sim_squad_scripted.sim_squad_scripted.show(self)
                 end
             end
 
-            local info = nil
-
-            if (warfare.dbg_all_faction_tooltips or self:get_squad_community() == warfare.actor_faction or game_relations.is_factions_friends(self:get_squad_community(), warfare.actor_faction)) then
-                info = get_warfare_info(self)
-            else
-                info = get_enemy_info(self)
-
-                if (game_relations.is_factions_enemies(self:get_squad_community(), warfare.actor_faction) and warfare_options.options.hide_unfriendly_squads) then
-                    visible = false
-                end
+            if (game_relations.is_factions_enemies(self:get_squad_community(), warfare.actor_faction) and warfare_options.options.hide_unfriendly_squads) then
+                visible = false
             end
 
             if (visible) then
@@ -405,14 +406,6 @@ function sim_squad_scripted.sim_squad_scripted.show(self)
                 end
             end
         else
-            local info = nil
-
-            if (warfare.dbg_all_faction_tooltips or self:get_squad_community() == warfare.actor_faction or game_relations.is_factions_friends(self:get_squad_community(), warfare.actor_faction)) then
-                info = get_warfare_info(self)
-            else
-                info = get_enemy_info(self)
-            end
-
             if not (self.warfare_spot) then
                 local spot = squad_icons[faction]
 
@@ -679,6 +672,17 @@ function get_squad_info(squad, full_detail, show_target)
     printd(1, squad:name())
 
     return props
+end
+
+function is_pda_open()
+    local pda_menu = ActorMenu.get_pda_menu()
+    if pda_menu and pda_menu:IsShown() then
+        return true
+    end
+    if get_console_cmd(1, "g_3d_pda") and db.actor and db.actor:active_slot() == 8 then
+        return true
+    end
+    return false
 end
 
 function get_enemy_info(squad)
