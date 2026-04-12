@@ -223,18 +223,18 @@ function ui_options.init_opt_coder()
     local stalker_warfare_options = {
         id = "stalker",
         sh = true,
-        presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko", "warfare_alifeoverhaul_balanced" },
+        presets = { "warfare_alifeoverhaul_balanced", "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" },
         id_gr = "warfare_faction",
         apply_to_all = true,
         gr = options,
     }
 
     local warfare_options = ui_options.options[alife_options_index].gr[alife_warfare_options_index]
-    warfare_options.presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko", "warfare_alifeoverhaul_balanced" }
+    warfare_options.presets = { "warfare_alifeoverhaul_balanced", "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" }
     warfare_options.gr[alife_warfare_general_options_index] = {
         id = "general",
         sh = true,
-        presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko", "warfare_alifeoverhaul_balanced" },
+        presets = { "warfare_alifeoverhaul_balanced", "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" },
         gr = {
             { id = "slide_warfare", type = "slide", link = "ui_options_slider_warfare", text = "ui_mm_title_warfare", size = { 512, 50 } },
 
@@ -305,7 +305,7 @@ function ui_options.init_opt_coder()
             { id = "max_invasion_depart_time", type = "track", val = 2, def = 2400, min = 0, max = 20000, step = 100, hint = "alife_warfare_faction_max_invasion_depart_time" },
         },
     }
-    warfare_options.gr[alife_warfare_azazel_options_index].presets = { "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko", "warfare_alifeoverhaul_balanced" }
+    warfare_options.gr[alife_warfare_azazel_options_index].presets = { "warfare_alifeoverhaul_balanced", "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" }
     warfare_options.gr[alife_warfare_stalker_options_index] = stalker_warfare_options
 
     -- Auto-complete factions options for warfare
