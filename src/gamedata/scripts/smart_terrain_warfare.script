@@ -4844,14 +4844,10 @@ function squad_count(smart, faction)
 
         if (squad and squad:clsid() == clsid.online_offline_group_s) and warfare.registered_squads[faction][sid] then
             if (squad:get_squad_community() == faction) and not (axr_companions.companion_squads[squad.id]) and not (warfare.ignore[squad:section_name()]) then
-                local power = sim_offline_combat.calculate_squad_power(squad)
-
-                if (power and power > 0 and squad:npc_count() > 0 and squad.current_target_id and squad.current_target_id == smart.id) then
+                if (squad.current_target_id and squad.current_target_id == smart.id) then
                     squadCount = squadCount + 1
                 end
             end
-        else
-            warfare.registered_squads[faction][sid] = nil
         end
     end
 
