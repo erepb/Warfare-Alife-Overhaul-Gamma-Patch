@@ -13,10 +13,8 @@
 
 --]]
 
-local enable_debug = false
-
 printd = warfare.printd
-printdbg = warfare.printdbg
+print_dbg = warfare.print_dbg
 
 factions_p = {}
 factions = {
@@ -273,7 +271,7 @@ function update_faction(faction)
                         local current_level = start.level_id
                         local section = faction_expansions.get_spawn_section(faction, fi.resource_count, current_level)
                         local squad = utils_obj.create_squad(section, start:name())
-                        printdbg("WARFARE DEBUG: spawning random patrol squad faction: %s, resources: %s", faction, fi.resource_count)
+                        print_dbg("WARFARE DEBUG: spawning random patrol squad faction: %s, resources: %s", faction, fi.resource_count)
 
                         smart_terrain_warfare.set_random_patrol(squad.id, faction)
                         sim_squad_warfare.set_target(squad, target_id)
@@ -293,9 +291,7 @@ function update_faction(faction)
                     -- Emergency spawn: Create powerful squad for extinct factions
                     local emergency_attempted = emergency_resurrection_spawn(faction)
                     if emergency_attempted then
-                        if (enable_debug) then
-                            printf("Emergency resurrection activated for extinct faction: %s", faction)
-                        end
+                        print_dbg("Emergency resurrection activated for extinct faction: %s", faction)
                     end
                 else
                     -- Original resurgence logic with chance to skip
@@ -338,9 +334,7 @@ function update_faction(faction)
 
                                     attempted = true
 
-                                    if (enable_debug) then
-                                        printf("Resurgence of %s is underway, targeting %s with %s squads", faction, target:name(), target_pop)
-                                    end
+                                    print_dbg("Resurgence of %s is underway, targeting %s with %s squads", faction, target:name(), target_pop)
 
                                     for _, ter in pairs(spawns) do
                                         local d = smart_terrain_warfare.fetch_smart_distance(target, ter)
@@ -375,7 +369,7 @@ end
 
 -- Emergency resurrection function for extinct factions
 function emergency_resurrection_spawn(faction)
-    printf("warfare debug: emergency_resurrection_spawn for %s", faction)
+    printf("emergency_resurrection_spawn for %s", faction)
     if not faction or faction == "none" then
         return false
     end
@@ -401,9 +395,9 @@ function emergency_resurrection_spawn(faction)
                     if game_graph():vertex(smart.m_game_vertex_id):level_id() ~= get_player_level_id() then
                         if (smart.props and smart.props.base > 0) then
                             if (smart.owning_faction == "none" or game_relations.is_factions_enemies(smart.owning_faction, faction)) then
-                                if enable_debug then printf("Emergency resurrection: Found target %s owned by %s", smart:name(), smart.owning_faction) end
+                                print_dbg("Emergency resurrection: Found target %s owned by %s", smart:name(), smart.owning_faction)
                                 if smart_terrain_warfare.is_resurrect_base(smart:name(), faction) then
-                                    if enable_debug then printf("Emergency resurrection: %s is a priority (former main) base of %s", smart:name(), faction) end
+                                    print_dbg("Emergency resurrection: %s is a priority (former main) base of %s", smart:name(), faction)
                                     priority_targets[#priority_targets+1] = smart
                                 elseif not (warfare_options.options.prevent_mainbase_attacks and smart_terrain_warfare.is_main_base(smart:name())) then
                                     all_targets[#all_targets+1] = smart
@@ -422,9 +416,9 @@ function emergency_resurrection_spawn(faction)
     if #priority_targets > 0 then
         -- Pick a random former faction base as target
         best_target = priority_targets[math.random(#priority_targets)]
-        if enable_debug then printf("Emergency resurrection: Selected priority target %s for %s", best_target:name(), faction) end
+        print_dbg("Emergency resurrection: Selected priority target %s for %s", best_target:name(), faction)
     elseif #all_targets > 0 then
-        if enable_debug then printf("Emergency resurrection: No priority targets, selecting from %s regular targets for %s", #all_targets, faction) end
+        print_dbg("Emergency resurrection: No priority targets, selecting from %s regular targets for %s", #all_targets, faction)
         -- Find closest target to any of the faction's known resurrection bases
         local main_base_smarts = {}
         local resurrect_names = smart_terrain_warfare.get_resurrect_bases(faction)
@@ -446,20 +440,20 @@ function emergency_resurrection_spawn(faction)
                     end
                 end
             end
-            if enable_debug and best_target then
-                printf("Emergency resurrection: Selected target %s closest to %s main base (dist: %s)", best_target:name(), faction, best_dist)
+            if best_target then
+                print_dbg("Emergency resurrection: Selected target %s closest to %s main base (dist: %s)", best_target:name(), faction, best_dist)
             end
         end
 
         -- Last resort: pick a random target if main base proximity didn't yield one
         if not best_target then
             best_target = all_targets[math.random(#all_targets)]
-            if enable_debug then printf("Emergency resurrection: Random fallback target %s for %s", best_target:name(), faction) end
+            print_dbg("Emergency resurrection: Random fallback target %s for %s", best_target:name(), faction)
         end
     end
 
     if not best_target then
-        if enable_debug then printf("Emergency resurrection: No valid target found for %s", faction) end
+        print_dbg("Emergency resurrection: No valid target found for %s", faction)
         return false
     end
 
@@ -506,17 +500,15 @@ function emergency_resurrection_spawn(faction)
     end
 
     if not best_spawn then
-        if enable_debug then printf("Emergency resurrection: No valid spawn found for %s targeting %s", faction, best_target:name()) end
+        print_dbg("Emergency resurrection: No valid spawn found for %s targeting %s", faction, best_target:name())
         return false
     end
 
     -- Step 4: Spawn squads at the selected spawn point targeting the selected base
     local emergency_squad_count = math.min(4, math.ceil(best_target.max_population * 1.5))
 
-    if enable_debug then
-        printf("Emergency resurrection: spawning %s squads for %s at %s, targeting %s (dist: %s)",
-               emergency_squad_count, faction, best_spawn:name(), best_target:name(), best_spawn_dist)
-    end
+    print_dbg("Emergency resurrection: spawning %s squads for %s at %s, targeting %s (dist: %s)",
+           emergency_squad_count, faction, best_spawn:name(), best_target:name(), best_spawn_dist)
 
     for j=1,emergency_squad_count do
         local section = faction_expansions.get_spawn_section(faction, faction_information[faction].resource_count)

@@ -1,3 +1,5 @@
+print_dbg = warfare.print_dbg
+
 local ui_options_UIOptions_callback_track = ui_options.UIOptions.Callback_Track
 function ui_options.UIOptions.Callback_Track(self, ctrl, path, opt, v, value)
     ui_options_UIOptions_callback_track(self, ctrl, path, opt, v, value)
@@ -328,9 +330,9 @@ function ui_options.init_opt_coder()
                 path = ui_options.cc(id, gr[i].id)
                 ui_options.opt_index[path] = ui_options.cc(num, i)
                 ui_options.opt_val[path] = gr[i].val
-                --printf("-[%s] (%s) | index: %s - type: %s", path, id, ui_options.opt_index[path], ui_options.opt_val[path])
+                print_dbg("code_option - [%s] (%s) | index: %s - type: %s", path, id, ui_options.opt_index[path], ui_options.opt_val[path])
             else
-                --printf("code_option %s type not allowed: %s", gr[i].id, gr[i].type)
+                print_dbg("code_option %s type not allowed: %s", gr[i].id, gr[i].type)
             end
         end
     end
@@ -354,7 +356,7 @@ function ui_options.init_opt_coder()
                         if ui_options.options[i].gr[ii].gr[iii].sh then
                             code_option((ui_options.options[i].gr[ii].gr[iii].gr), (id_1 .. ui_options._opt_ .. id_2 .. ui_options._opt_ .. id_3), (i .. ui_options._opt_ .. ii .. ui_options._opt_ .. iii))
                         else
-                            --printf("code_option too long: %s", ui_options.options[i].gr[ii].gr[iii].id)
+                            print_dbg("code_option too long: %s", ui_options.options[i].gr[ii].gr[iii].id)
                         end
                     end
 

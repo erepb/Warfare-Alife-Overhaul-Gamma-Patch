@@ -1,5 +1,7 @@
 -- Monkey patches for Warfare
 
+print_dbg = warfare.print_dbg
+
 -- Scientist escort task patch for xr_conditions.script + xr_effects.script
 old_anomaly_task_cond = xr_conditions.has_task_target_anomaly
 function xr_conditions.has_task_target_anomaly()
@@ -334,9 +336,9 @@ function faction_expansions.get_spawn_section(faction, resource, current_level)
         resource = resource + math.floor(days_in_zone / 2)
         resource = math.min(resource, warfare.resource_count)
     if (resource) then
-        --printf("has valid resource count")
+        print_dbg("has valid resource count")
     else
-        printf("resource count was %s for spawn section for faction %s on level %s", resource, faction, current_level)
+        print_dbg("resource count was %s for spawn section for faction %s on level %s", resource, faction, current_level)
         resource = 0  -- nil resource count
     end
 
@@ -463,10 +465,10 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
     if (not smrt) then
         return
     end
-    --printf("~ %s | scanning smart: %s", task_id, smrt_name)
+    print_dbg("~ %s | scanning smart: %s", task_id, smrt_name)
 
     for sq_id, _ in pairs(smrt.squads) do
-        --printf("# %s | found squad (%s) in smart: %s", task_id, sq_id, smrt_name)
+        print_dbg("# %s | found squad (%s) in smart: %s", task_id, sq_id, smrt_name)
 
         -- if warfare, override checks on stay time, default squad stuff
         -- if smart's squad is on its level + they are targeting it
@@ -488,7 +490,7 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
                 or no_script_target
         )
         then
-            --printf("# %s | smart (%s) [%s] w/ squad (%s) [%s] = Checking", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
+            print_dbg("# %s | smart (%s) [%s] w/ squad (%s) [%s] = Checking", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
             local is_legit_mutant_squad = tasks_assault.is_legit_mutant_squad
             for fac, _ in pairs(faction_def) do
 
@@ -496,7 +498,7 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
                 if (is_legit_mutant_squad(squad) and squad.player_id == fac) then
                     --squad.stay_time = warfare.get_time()
                     tbl[sq_id] = smrt_id
-                    --printf("- %s | smart (%s) [%s] w/ squad (%s) [%s] = Added", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
+                    print_dbg("- %s | smart (%s) [%s] w/ squad (%s) [%s] = Added", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
                 end
             end
         end
@@ -511,7 +513,7 @@ function tasks_assault.evaluate_squads_smarts(task_id, var, squad, smart)
 
     if squad and simulation_objects.is_on_the_same_level(squad, smart) then
         if not (squad.first_update) then
-            --printf("~ %s | not all squads are loaded yet!", task_id)
+            print_dbg("~ %s | not all squads are loaded yet!", task_id)
             return true
         end
 
@@ -520,7 +522,7 @@ function tasks_assault.evaluate_squads_smarts(task_id, var, squad, smart)
         then
             local cache_assault_func = tasks_assault.cache_assault_func
             local is_legit_mutant_squad = tasks_assault.is_legit_mutant_squad
-            --printf("- %s | squad (%s) [%s] is targeting smart (%s)", task_id, squad.id, squad.player_id, smart.id)
+            print_dbg("- %s | squad (%s) [%s] is targeting smart (%s)", task_id, squad.id, squad.player_id, smart.id)
             for i = 1, #cache_assault_func[task_id] do
                 local fac = cache_assault_func[task_id][i]
                 if (is_legit_mutant_squad(squad) and squad.player_id == fac) then
@@ -533,7 +535,7 @@ function tasks_assault.evaluate_squads_smarts(task_id, var, squad, smart)
                     --WARFARE END
 
                     squad.force_online = true
-                    --printf("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)
+                    print_dbg("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)
                     return true
                 end
             end
@@ -600,7 +602,7 @@ function sim_squad_scripted.create_npc(self, spawn_smart, pos, lvid, gvid)
 
         self.smart_id = spawn_smart.id
     else
-        printf('spawn smart: %s', spawn_smart)
+        print_dbg('spawn smart: %s', spawn_smart)
         base_spawn_position = pos or self.position
         base_lvi = lvid or self.m_level_vertex_id
         base_gvi = gvid or self.m_game_vertex_id
@@ -627,7 +629,7 @@ function sim_squad_scripted.create_npc(self, spawn_smart, pos, lvid, gvid)
             local faction = ini_sys:r_string_ex(settings_id, "faction")
             if (warfare_options.options.factions[faction]) then
                 if (warfare_options.options.factions[faction].random_squad_count) then
-                    --printf("!!! GETTING RANDOM COUNT FOR "..faction.." | " .. tonumber(warfare_options.options.factions[faction].min_random_squad_count) .. " - " .. tonumber(warfare_options.options.factions[faction].max_random_squad_count) .. " !!!!")
+                    print_dbg("!!! GETTING RANDOM COUNT FOR "..faction.." | " .. tonumber(warfare_options.options.factions[faction].min_random_squad_count) .. " - " .. tonumber(warfare_options.options.factions[faction].max_random_squad_count) .. " !!!!")
                     count[1] = tonumber(warfare_options.options.factions[faction].min_random_squad_count)
                     count[2] = tonumber(warfare_options.options.factions[faction].max_random_squad_count)
                 end
@@ -693,10 +695,10 @@ function tasks_smart_control.evaluate_smarts_squads(task_id, tbl, smart, squad_d
     if (not smrt) then
         return
     end
-    --printf("~ %s | scanning smart: %s", task_id, smrt_name)
+    print_dbg("~ %s | scanning smart: %s", task_id, smrt_name)
 
     for sq_id, _ in pairs(smrt.squads) do
-        --printf("# %s | found squad (%s) in smart: %s", task_id, sq_id, smrt_name)
+        print_dbg("# %s | found squad (%s) in smart: %s", task_id, sq_id, smrt_name)
 
         -- if warfare, override checks on stay time
         -- if smart's squad is on its level + they are targeting it
@@ -712,7 +714,7 @@ function tasks_smart_control.evaluate_smarts_squads(task_id, tbl, smart, squad_d
                 ) or not squad:get_script_target()
         )
         then
-            --printf("# %s | smart (%s) [%s] w/ squad (%s) [%s] = Checking", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
+            print_dbg("# %s | smart (%s) [%s] w/ squad (%s) [%s] = Checking", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
             local is_legit_mutant_squad = tasks_smart_control.is_legit_mutant_squad
 
             for fac, _ in pairs(faction_def) do
@@ -721,7 +723,7 @@ function tasks_smart_control.evaluate_smarts_squads(task_id, tbl, smart, squad_d
                 if (is_legit_mutant_squad(squad) and squad.player_id == fac) then
                     --squad.stay_time = warfare.get_time()
                     tbl[#tbl + 1] = sq_id
-                    --printf("- %s | smart (%s) [%s] w/ squad (%s) [%s] = Added", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
+                    print_dbg("- %s | smart (%s) [%s] w/ squad (%s) [%s] = Added", task_id, smrt_id, smrt_name, sq_id, squad.player_id)
                 end
             end
         end
@@ -739,14 +741,14 @@ function tasks_smart_control.evaluate_squads_smarts(task_id, var, smart, smrt)
         local squad = alife_object(sq_id)
         if squad and simulation_objects.is_on_the_same_level(squad, smart) then
             if not (squad.first_update) then
-                --printf("~ %s | not all squads are loaded yet!", task_id)
+                print_dbg("~ %s | not all squads are loaded yet!", task_id)
                 return true
             end
 
             if (var.scripted or (not squad:get_script_target()))
                     and (squad.current_target_id and squad.current_target_id == smart.id and squad.current_action == 1)
             then
-                --printf("- %s | squad (%s) [%s] is targeting smart (%s)", task_id, squad.id, squad.player_id, smart.id)
+                print_dbg("- %s | squad (%s) [%s] is targeting smart (%s)", task_id, squad.id, squad.player_id, smart.id)
                 local cache_func = tasks_smart_control.cache_func
                 local is_legit_mutant_squad = tasks_smart_control.is_legit_mutant_squad
                 for i = 1, #cache_func[task_id] do
@@ -756,7 +758,7 @@ function tasks_smart_control.evaluate_squads_smarts(task_id, var, smart, smrt)
                         -- squad.stay_time = warfare.get_time()
 
                         squad.force_online = true
-                        --printf("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)
+                        print_dbg("- %s | squad (%s) [%s] is saved", task_id, squad.id, squad.player_id)
                         return sq_id
                     end
                 end

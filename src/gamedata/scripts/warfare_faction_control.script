@@ -1,5 +1,6 @@
 -- Take controls over your squads and smarts from the PDA
 
+print_dbg = warfare.print_dbg
 printd = warfare.printd
 
 player_heli = nil
@@ -478,7 +479,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                         return
                     elseif (prop == str_wrfr[16]) then
-                        --printf("!!! SEND ALL SQUADS !!!")
+                        print_dbg("!!! SEND ALL SQUADS !!!")
                         local squads = SIMBOARD.smarts[selectedObject.id].squads
                                             
                         for sid,_ in pairs(squads) do
@@ -522,7 +523,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                             end
                         end
                     elseif (prop == str_wrfr[13]) then
-                        --printf("!!! SEND ALL SQUADS !!!")
+                        print_dbg("!!! SEND ALL SQUADS !!!")
                         local squads = SIMBOARD.smarts[selectedObject.id].squads
                                             
                         for sid,_ in pairs(squads) do
@@ -587,7 +588,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                         return
                     elseif (prop == str_wrfr[16]) then
-                        --printf("!!! SEND ALL SQUADS !!!")
+                        print_dbg("!!! SEND ALL SQUADS !!!")
                         local squads = SIMBOARD.smarts[selectedObject.id].squads
                                             
                         for sid,_ in pairs(squads) do
@@ -643,7 +644,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                                 if (squad) then
                                     if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                        --printf("sending " .. squad:name() .. " to " .. obj:name())
+                                        print_dbg("sending " .. squad:name() .. " to " .. obj:name())
                                         sim_squad_warfare.set_target(squad, selectedObject.id)
                                     end
                                 end
@@ -681,7 +682,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                         return
                     elseif (prop == str_wrfr[13]) then
-                        --printf("!!! SEND ALL SQUADS !!!")
+                        print_dbg("!!! SEND ALL SQUADS !!!")
                         local squads = SIMBOARD.smarts[selectedObject.id].squads
                                             
                         for sid,_ in pairs(squads) do
@@ -689,7 +690,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                             if (squad) then
                                 if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                    --printf("sending " .. squad:name() .. " to " .. obj:name())
+                                    print_dbg("sending " .. squad:name() .. " to " .. obj:name())
                                     sim_squad_warfare.set_target(squad, obj.id)
                                 end
                             end
