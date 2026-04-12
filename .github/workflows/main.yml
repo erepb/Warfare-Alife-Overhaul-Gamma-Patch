@@ -3,10 +3,10 @@ name: Create Release with 7z Archive
 on:
   push:
     branches:
-      - master
+      - master_1.4
   pull_request:
     branches:
-      - master
+      - master_1.4
   workflow_dispatch:
     inputs:
       version_tag:
