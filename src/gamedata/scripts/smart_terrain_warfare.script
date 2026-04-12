@@ -166,6 +166,7 @@ supporting_invasion = {}                     -- tracks which base a smart is con
 local invasion_cooldown = {}                 -- cooldown timer for bases that failed to start an invasion: invasion_cooldown[smart.id] = CTime
 local invasion_max_size = 5                  -- hard cap on invasion force size
 local invasion_cooldown_hours = 6            -- cooldown in game hours after a failed invasion attempt
+local invasion_targets_per_bases = 5         -- faction allowed 1 invasion target per this many bases owned
 
 -- Resource count takes the maximum amount of resources owned on a given day, with the count reset at midday every day
 max_resource_count = {
@@ -1976,6 +1977,40 @@ function process_targets(smart)
 end
 
 
+-- Count distinct invasion targets for a faction and check against the per-base limit.
+-- Returns true if the faction already has the maximum allowed invasion targets.
+function faction_at_invasion_target_limit(faction)
+    local fi = warfare_factions.faction_information[faction]
+    if not fi then return true end
+    local max_targets = math.floor(fi.base_count / invasion_targets_per_bases)
+    if max_targets < 1 then return true end
+    local targets = {}
+    local count = 0
+    for base_id, inv in pairs(invasions) do
+        local base = alife_object(base_id)
+        if base and base.owning_faction == faction and not targets[inv[1]] then
+            targets[inv[1]] = true
+            count = count + 1
+            if count >= max_targets then return true end
+        end
+    end
+    return false
+end
+
+-- Returns true if the faction already has an active invasion targeting this specific smart ID.
+function faction_is_invading_target(faction, target_id)
+    for base_id, inv in pairs(invasions) do
+        if inv[1] == target_id then
+            local base = alife_object(base_id)
+            if base and base.owning_faction == faction then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+
 function get_invasion_target(smart)
     local target
     local target_dist = 9999999999
@@ -2161,6 +2196,11 @@ function create_invasion_plan(smart, target)
                 end
             end
         end
+    end
+
+    -- new target for this faction: enforce per-base invasion target limit
+    if not faction_is_invading_target(smart.owning_faction, target.id) and faction_at_invasion_target_limit(smart.owning_faction) then
+        return
     end
 
     local invading_faction_props = warfare_options.options.factions[smart.owning_faction]
