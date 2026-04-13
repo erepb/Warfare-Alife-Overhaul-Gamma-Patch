@@ -418,7 +418,7 @@ local function coordinator()
         local se_npc = id and sim:object(id)
         local squad = se_npc and se_npc.group_id and se_npc.group_id ~= 65535 and sim:object(se_npc.group_id)
         if squad then
-            print_dbg("OCS | excluded task giver squad [%s] from simulation",tsk_sq_se.id)
+            print_dbg("OCS | excluded task giver squad [%s] from simulation",squad.id)
             task_giver_squads[squad.id] = true
         end
     end
