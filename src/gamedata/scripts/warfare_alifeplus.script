@@ -1,0 +1,126 @@
+print_dbg = warfare.print_dbg
+
+local ap_enabled = false
+
+local function has_alifeplus()
+    return ap_core_broker ~= nil and ap_core_broker.register_owner ~= nil
+end
+
+local function get_squad_base(squad)
+    if squad.current_action ~= 1 then return nil end
+    local smart_id = squad.current_target_id
+    if not smart_id then return nil end
+    local smart = alife_object(smart_id)
+    if smart and smart.props and smart.props.base > 0 then return smart end
+    return nil
+end
+
+local function is_lendable(squad)
+    if is_squad_monster[squad.player_id] then return true end
+    if squad.patrol_table then return true end
+    if smart_terrain_warfare.random_patrols[squad.id] then return true end
+    if squad.current_action ~= 1 then
+        print_dbg("[AP] not_lendable | %s (id=%s) reason=moving action=%s", squad:name(), squad.id, squad.current_action)
+        return false
+    end
+    local base = get_squad_base(squad)
+    if not base then return true end
+    if not smart_terrain_warfare.base_can_send(base) then
+        print_dbg("[AP] not_lendable | %s (id=%s) reason=base_cant_spare base=%s", squad:name(), squad.id, base:name())
+        return false
+    end
+    return true
+end
+
+function is_ap_controlled(squad)
+    if not ap_enabled then return false end
+    return ap_core_broker.get_scripted_ids()[squad.id] ~= nil
+end
+
+function log_ap_controlled(squad, caller)
+    local target_name = squad.scripted_target or "?"
+    local pretty = smart_terrain_warfare.translate_smart_name(target_name) or target_name
+    print_dbg("[AP] %s | %s (id=%s) -> %s", caller, squad:name(), squad.id, pretty)
+end
+
+local function _other_label(record)
+    local who = record.other_name
+    if not who or who == "" then who = record.other_species_display end
+    local fac = record.other_faction_display
+    if who and who ~= "" then
+        if fac and fac ~= "" then return who .. " (" .. fac .. ")" end
+        return who
+    end
+    if fac and fac ~= "" then return fac end
+    return nil
+end
+
+function get_ap_status(squad)
+    if not ap_enabled then return nil end
+    if not ap_core_broker.get_scripted_ids()[squad.id] then return nil end
+    local record = ap_core_broker.get_record({ squad_id = squad.id, assigned = true })
+    if not record then return game.translate_string("st_wrfr_ap_unknown") end
+
+    local action
+    local info = ap_core_const.CONSEQUENCE_INFO[record.consequence]
+    local key = info and info.action_key
+    if key then
+        local translated = game.translate_string(key)
+        if translated and translated ~= "" and translated ~= key then action = translated end
+    end
+    if not action then action = game.translate_string("st_wrfr_ap_unknown") end
+
+    local other = _other_label(record)
+    if other then action = action .. " - " .. other end
+
+    local lines = { action }
+
+    if record.smart_id then
+        local smart = alife_object(record.smart_id)
+        if smart then
+            local sname = smart_terrain_warfare.translate_smart_name(smart:name()) or smart:name()
+            lines[#lines + 1] = game.translate_string("st_wrfr_prop_target") .. ": " .. sname
+        end
+    end
+
+    if record.level_id then
+        local lvl_key = alife():level_name(record.level_id)
+        if lvl_key then
+            local lvl = game.translate_string(lvl_key)
+            if lvl and lvl ~= "" then
+                lines[#lines + 1] = game.translate_string("st_wrfr_sim_12") .. ": " .. lvl
+            end
+        end
+    end
+
+    return table.concat(lines, " \\n  \\n ")
+end
+
+function on_game_start()
+    if not has_alifeplus() then return end
+    ap_enabled = true
+
+    ap_core_broker.register_owner("warfare", function(squad)
+        if not squad then return false end
+        if squad.registered_with_warfare ~= true then return false end
+        return not is_lendable(squad)
+    end)
+
+    RegisterScriptCallback("on_game_load", function()
+        local count = 0
+        for faction, squads in pairs(warfare.registered_squads) do
+            for sid in pairs(squads) do
+                local squad = alife_object(sid)
+                if squad and squad.scripted_target == "" then
+                    squad.scripted_target = nil
+                    count = count + 1
+                end
+            end
+        end
+        if count > 0 then
+            printf("[WARFARE] AP migration: cleared stale scripted_target on %s squads", count)
+        end
+    end)
+
+    printf("[WARFARE] AlifePlus detected, cooperative lending enabled")
+end

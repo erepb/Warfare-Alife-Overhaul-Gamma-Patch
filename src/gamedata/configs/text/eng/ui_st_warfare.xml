@@ -298,4 +298,7 @@
 	<string id="st_wrfr_sim_12">
 		<text>Target level</text>
 	</string>
+	<string id="st_wrfr_ap_unknown">
+		<text>Unknown activity</text>
+	</string>
 </string_table>

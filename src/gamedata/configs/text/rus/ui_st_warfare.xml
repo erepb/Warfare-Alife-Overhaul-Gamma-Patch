@@ -298,4 +298,7 @@
 	<string id="st_wrfr_sim_12">
 		<text>Уровень цели</text>
 	</string>
+	<string id="st_wrfr_ap_unknown">
+		<text>Цель неизвестна</text>
+	</string>
 </string_table>

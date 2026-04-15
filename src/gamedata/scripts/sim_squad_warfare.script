@@ -146,6 +146,11 @@ function squad_on_update(squad)
     squad.global_position = global_position.from(squad)
 
     if not (axr_companions.companion_squads[squad.id]) then
+        if warfare_alifeplus.is_ap_controlled(squad) then
+            warfare_alifeplus.log_ap_controlled(squad, "squad_on_update")
+            return
+        end
+
         if squad.current_action and squad.current_action == 0 then
             squad.rush_to_target = true
         else
@@ -620,7 +625,10 @@ function get_squad_info(squad, full_detail, show_target)
 
             props = props .. "\\n----------\\n"
 
-            if sim_offline_combat.opponents[squad.id] then
+            local ap_status = show_target and warfare_alifeplus.get_ap_status(squad)
+            if ap_status then
+                props = props .. " \\n" .. ap_status .. " \\n"
+            elseif sim_offline_combat.opponents[squad.id] then
                 props = props .. " \\n" .. str_wrfr[5] .. " \\n"
             elseif (squad.current_action == 0) then
                 props = props .. " \\n" .. str_wrfr[6] .. " \\n"
@@ -655,7 +663,10 @@ function get_squad_info(squad, full_detail, show_target)
             end
         end
     else
-        if sim_offline_combat.opponents[squad.id] then
+        local ap_status = show_target and warfare_alifeplus.get_ap_status(squad)
+        if ap_status then
+            props = props .. " \\n" .. ap_status .. " \\n"
+        elseif sim_offline_combat.opponents[squad.id] then
             props = props .. " \\n" .. str_wrfr[5] .. " \\n"
         elseif (squad.current_action == 0) then
             props = props .. " \\n" .. str_wrfr[6] .. " \\n"
@@ -819,7 +830,7 @@ function set_target(squad, target)
         end
 
         squad.current_action = 0
-        squad.scripted_target = ""
+        squad.scripted_target = nil
         squad.current_target_id = target
         squad.assigned_target_id = target
         squad.registered_with_warfare = true

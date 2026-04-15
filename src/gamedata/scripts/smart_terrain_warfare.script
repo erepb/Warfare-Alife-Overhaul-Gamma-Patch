@@ -1006,17 +1006,8 @@ function process_base_squads(smart)
         return
     end
 
-    -- don't process squads while under attack or while holding squads for invasion departure
-    if under_attack[smart.id] then
+    if not base_can_send(smart) then
         return
-    end
-
-    if invasions[smart.id] then
-        local regular_squads,sq_pow,stationary_sq_num = squad_count_detailed(smart, smart.owning_faction)
-        local guards = math.max(guard_size, stationary_sq_num)
-        if (regular_squads + stationary_sq_num <= invasions[smart.id][2] + guards) then
-            return  -- not enough excess squads, hold for invasion
-        end
     end
 
     -- supporting another base's invasion: send available squads there, don't assign to resources
@@ -1451,8 +1442,11 @@ function process_squads_old(smart)
 
         local squad = sid and alife_object(sid)
 
-        -- don't operate on ignore_list squads or story squads, or squads that are not idle
+        -- don't operate on ignore_list squads or story squads, or squads that are not idle or under AP control
         if (squad) and (squad.registered_with_warfare) and (not warfare.ignore[squad:section_name()]) and (not sim_offline_combat.stationary_squads[squad:section_name()]) and (squad.current_action == 1) then
+          if warfare_alifeplus.is_ap_controlled(squad) then
+            warfare_alifeplus.log_ap_controlled(squad, "process_squads")
+          else
             local faction = squad:get_squad_community()
 
             if (faction ~= "stalker") and (faction ~= "ecolog") then                                    -- only operate on non-loner, non-ecolog squads
@@ -1530,6 +1524,7 @@ function process_squads_old(smart)
                     end
                 end
             end
+          end
         end
     end
 end
@@ -4913,8 +4908,17 @@ function squad_count_targeting(smart, faction)
 end
 
 
--- used to check if a squad is qualified to be handled by Warfare, to be moved around or used for invasion or defense forces
--- essentially used to stop stationary, story, companion, patrol, random patrol, or invalid squads from moving around unintentionally
+function base_can_send(smart)
+    if under_attack[smart.id] then return false end
+    if not smart.owning_faction or not warfare.registered_squads[smart.owning_faction] then return false end
+    local regular, _, stationary = squad_count_detailed(smart, smart.owning_faction)
+    local guards = math.max(guard_size, stationary)
+    if invasions[smart.id] then
+        if regular + stationary <= invasions[smart.id][2] + guards then return false end
+    end
+    return regular > guards
+end
+
 function squad_is_commandable(squad, random_patrol_override)
     if squad
     and squad.registered_with_warfare
@@ -4923,6 +4927,10 @@ function squad_is_commandable(squad, random_patrol_override)
     and (not sim_offline_combat.stationary_squads[squad:section_name()])
     and (not squad.patrol_table)
     and (not axr_companions.companion_squads[squad.id]) then
+        if warfare_alifeplus.is_ap_controlled(squad) then
+            warfare_alifeplus.log_ap_controlled(squad, "squad_is_commandable")
+            return false
+        end
         if (not random_patrol_override) and (not random_patrols[squad.id]) then
             return true
         elseif random_patrol_override then        -- loner/ecolog random patrols are handled by process_loner/process_ecolog
