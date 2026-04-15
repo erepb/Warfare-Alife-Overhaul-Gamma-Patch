@@ -146,11 +146,6 @@ function squad_on_update(squad)
     squad.global_position = global_position.from(squad)
 
     if not (axr_companions.companion_squads[squad.id]) then
-        -- Make sure generic_update and specific return early as both have code that interfere with warfare.
-        -- Hopefully setting scripted_target every update won't cause any memory issues or performance decreases...
-        squad.__lock = true
-        squad.scripted_target = ""
-
         if squad.current_action and squad.current_action == 0 then
             squad.rush_to_target = true
         else

@@ -1,0 +1,37 @@
+local sim_sq_script = sim_squad_scripted.sim_squad_scripted
+
+function on_game_start()
+    local orig_generic_update = sim_sq_script.generic_update
+    local orig_specific_update = sim_sq_script.specific_update
+    local orig_get_current_task = sim_sq_script.get_current_task
+
+    function sim_sq_script.generic_update(self)
+        if self.registered_with_warfare and not axr_companions.companion_squads[self.id] then
+            return
+        end
+        return orig_generic_update(self)
+    end
+
+    function sim_sq_script.specific_update(self, script_target_id)
+        if self.registered_with_warfare
+            and not axr_companions.companion_squads[self.id]
+            and not (self.scripted_target and self.scripted_target ~= "")
+        then
+            return
+        end
+        return orig_specific_update(self, script_target_id)
+    end
+
+    function sim_sq_script.get_current_task(self)
+        local se_target = self.assigned_target_id
+                          and simulation_objects.get_server_entity(self.assigned_target_id)
+        if se_target then
+            return orig_get_current_task(self)
+        end
+        local se_obj = self.assigned_target_id and alife_object(self.assigned_target_id)
+        if se_obj then
+            return CALifeSmartTerrainTask(se_obj.m_game_vertex_id, se_obj.m_level_vertex_id)
+        end
+        return self:get_alife_task()
+    end
+end
