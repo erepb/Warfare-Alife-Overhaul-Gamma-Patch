@@ -136,6 +136,58 @@ registered_squads = {
     zombied = {},
 }
 
+-- Remove a registered squad id from both the live table and the persistent save
+-- buffer. Without the m_data purge, stale entries survive across saves and get
+-- restored as ghosts on the next load.
+function remove_registered_squad(faction, id)
+    if not (faction and id) then
+        return
+    end
+    if registered_squads[faction] then
+        registered_squads[faction][id] = nil
+    end
+    local mdata = alife_storage_manager and alife_storage_manager.get_state and alife_storage_manager.get_state()
+    if mdata and mdata.warfare and mdata.warfare.squads and mdata.warfare.squads[faction] then
+        mdata.warfare.squads[faction][id] = nil
+    end
+end
+
+-- One-shot cleanup to purge ghost entries from poisoned saves. Runs at
+-- actor_on_first_update when alife is fully populated, so alife_object(id) is
+-- authoritative. Removes entries whose id does not resolve to a squad in this
+-- faction's bucket: missing alife object, non-squad clsid (recycled id), or
+-- squad of a different community (wrong bucket).
+function cleanup_ghost_squads()
+    local removed = {}
+    for faction, tbl in pairs(registered_squads) do
+        for id in pairs(tbl) do
+            local obj = alife_object(id)
+            local reason
+            if not obj then
+                reason = "no_alife"
+            elseif type(obj.clsid) ~= "function" or obj:clsid() ~= clsid.online_offline_group_s then
+                reason = "not_squad"
+            elseif type(obj.get_squad_community) ~= "function" or obj:get_squad_community() ~= faction then
+                local actual = (type(obj.get_squad_community) == "function") and tostring(obj:get_squad_community()) or "<no method>"
+                reason = "faction_mismatch:" .. actual
+            end
+            if reason then
+                removed[#removed + 1] = { faction = faction, id = id, reason = reason }
+            end
+        end
+    end
+    for _, e in ipairs(removed) do
+        remove_registered_squad(e.faction, e.id)
+    end
+    if #removed > 0 then
+        printf("[regsq_cleanup] removed %s ghost entries after load", tostring(#removed))
+        for _, e in ipairs(removed) do
+            printf("[regsq_cleanup]   faction=%s id=%s reason=%s",
+                tostring(e.faction), tostring(e.id), tostring(e.reason))
+        end
+    end
+end
+
 -- save warfare state
 function save_state(m_data)
     printd(0, "save_state")
@@ -1067,7 +1119,7 @@ function squad_on_unregister(squad, type_name)
 
         if (registered_squads[faction]) then
             print_dbg("unregistering squad: " .. faction .. " with number of members: " .. squad:npc_count())
-            registered_squads[faction][squad.id] = nil
+            remove_registered_squad(faction, squad.id)
 
             if (smart_terrain_warfare.random_patrols[squad.id]) then
                 print_dbg("unregistering random patrol: " .. faction .. " with number of members: " .. squad:npc_count())
@@ -1098,6 +1150,7 @@ function on_game_start()
     RegisterScriptCallback("save_state", save_state)
     RegisterScriptCallback("squad_on_npc_death", sim_squad_warfare.squad_on_npc_death)
     RegisterScriptCallback("server_entity_on_unregister", squad_on_unregister)
+    RegisterScriptCallback("actor_on_first_update", cleanup_ghost_squads)
     printd(2, "on_game_start")
 
     local function on_game_load()
@@ -1343,6 +1396,7 @@ function resetter()
         UnregisterScriptCallback("save_state", save_state)
         UnregisterScriptCallback("squad_on_npc_death", sim_squad_warfare.squad_on_npc_death)
         UnregisterScriptCallback("server_entity_on_unregister", squad_on_unregister)
+        UnregisterScriptCallback("actor_on_first_update", cleanup_ghost_squads)
         print_dbg("~ Warfare is not loaded, unregistered warfare callbacks")
     end
     return true

@@ -4792,7 +4792,7 @@ function squad_count_defending(smart, faction)
                 end
             end
         else
-            warfare.registered_squads[faction][sid] = nil
+            warfare.remove_registered_squad(faction, sid)
         end
     end
 
@@ -4833,7 +4833,7 @@ function squad_count_detailed(smart, faction)
                 end
             end
         else
-            warfare.registered_squads[faction][sid] = nil
+            warfare.remove_registered_squad(faction, sid)
         end
     end
 
@@ -4875,7 +4875,7 @@ function squad_count_defending_all(smart)
         elseif squad then
             local faction = squad:get_squad_community()
             if faction then
-                warfare.registered_squads[faction][sid] = nil
+                warfare.remove_registered_squad(faction, sid)
             end
         end
     end
@@ -4903,7 +4903,7 @@ function squad_count_targeting(smart, faction)
                 squadCount = squadCount + 1
             end
         else
-            warfare.registered_squads[faction][sid] = nil
+            warfare.remove_registered_squad(faction, sid)
         end
     end
 
