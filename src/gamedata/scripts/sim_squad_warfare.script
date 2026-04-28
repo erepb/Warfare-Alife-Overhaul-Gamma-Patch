@@ -204,7 +204,7 @@ function squad_warfare_update(squad)
 
         if (se_target) then
             if (squad.smart_id ~= squad.current_target_id and se_target:clsid() == clsid.smart_terrain) then
-                squad:assign_smart(se_target, squad.smart_id)
+                SIMBOARD:assign_squad_to_smart(squad, se_target.id)
             end
 
             -- Only need to check if the squad has reached its destination.
