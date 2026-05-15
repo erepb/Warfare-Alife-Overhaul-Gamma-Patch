@@ -1,7 +1,7 @@
 local ap_enabled = false
 
 local function has_alifeplus()
-    return ap_core_broker ~= nil and ap_core_broker.register_owner ~= nil
+    return ap_api ~= nil and ap_api.register_owner ~= nil
 end
 
 local function get_squad_base(squad)
@@ -35,7 +35,8 @@ function is_ap_controlled(squad)
         warfare_log.warn("is_ap_controlled: nil squad")
         return false
     end
-    return ap_core_broker.get_scripted_ids()[squad.id] ~= nil
+    if not ap_api.get_scripted_squad then return false end
+    return ap_api.get_scripted_squad(squad.id) ~= nil
 end
 
 function log_ap_controlled(squad, caller)
@@ -67,8 +68,13 @@ end
 
 local function _other_label(record)
     local who = record.other_name
-    if not who or who == "" then who = record.other_species_display end
-    local fac = record.other_faction_display
+    if (not who or who == "") and record.other_species_key and ap_api.get_text then
+        who = ap_api.get_text(record.other_species_key)
+    end
+    local fac
+    if record.other_faction_key and ap_api.get_text then
+        fac = ap_api.get_text(record.other_faction_key)
+    end
     if who and who ~= "" then
         if fac and fac ~= "" then return who .. " (" .. fac .. ")" end
         return who
@@ -79,20 +85,19 @@ end
 
 function get_ap_status(squad)
     if not ap_enabled then return nil end
-    if not ap_core_broker.get_scripted_ids()[squad.id] then return nil end
+    if not (ap_api.get_scripted_squad and ap_api.get_record) then return nil end
+    if not ap_api.get_scripted_squad(squad.id) then return nil end
     warfare_log.debug("get_ap_status: squad=%s", tostring(squad.id))
-    local record = ap_core_broker.get_record({ squad_id = squad.id, assigned = true })
+    local record = ap_api.get_record({ squad_id = squad.id, assigned = true })
     if not record then
         warfare_log.debug("get_ap_status: no record for squad=%s", tostring(squad.id))
         return game.translate_string("st_wrfr_ap_unknown")
     end
 
     local action
-    local info = ap_core_const.CONSEQUENCE_INFO[record.consequence]
-    local key = info and info.action_key
-    if key then
-        local translated = game.translate_string(key)
-        if translated and translated ~= "" and translated ~= key then action = translated end
+    if record.action_key and ap_api.get_text then
+        local translated = ap_api.get_text(record.action_key)
+        if translated and translated ~= "" and translated ~= record.action_key then action = translated end
     end
     if not action then action = game.translate_string("st_wrfr_ap_unknown") end
 
@@ -130,7 +135,7 @@ function on_game_start()
     ap_enabled = true
     warfare_log.info("warfare_alifeplus: AlifePlus detected, registering owner handler")
 
-    ap_core_broker.register_owner("warfare", function(squad)
+    ap_api.register_owner("warfare", function(squad)
         if not squad then return false end
         if squad.registered_with_warfare ~= true then return false end
         return not is_lendable(squad)
