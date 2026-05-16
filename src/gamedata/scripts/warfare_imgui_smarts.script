@@ -171,6 +171,7 @@ end
 
 -- Sort smarts by column
 function sort_smarts(smarts, column, ascending)
+    warfare_log.trace("warfare_imgui_smarts.sort_smarts: n=%s column=%s asc=%s", tostring(#smarts), tostring(column), tostring(ascending))
     table.sort(smarts, function(a, b)
         local val_a = get_sortable_value(a, column)
         local val_b = get_sortable_value(b, column)

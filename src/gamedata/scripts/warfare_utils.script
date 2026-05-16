@@ -129,6 +129,7 @@ local FULL_DAY    = 24 * 3600  -- 86400s
 -- start_time: CTime object for interval start; delta: interval length in game seconds.
 function compute_night_seconds(start_time, delta)
     if delta <= 0 then return 0 end
+    warfare_log.trace("compute_night_seconds: delta=%s", tostring(delta))
     local h, m, s = get_warfare_hms(start_time)
     local total_night = 0
     local pos = h * 3600 + m * 60 + s
@@ -160,6 +161,7 @@ end
 -- return real game-seconds until spawn, projecting through night periods.
 -- During night the timer is effectively frozen, so real time includes the skip.
 function get_real_seconds_until_spawn(timer, interval)
+    warfare_log.trace("get_real_seconds_until_spawn: interval=%s", tostring(interval))
     local diff = warfare.get_time_ref():diffSec(timer)
     -- Subtract accumulated night so far (timer hasn't been corrected yet)
     if is_night() then
@@ -210,6 +212,7 @@ end
 --We need this class to allocate memory for string constants only once per whole loop
 class "CheckUniqueSquad"
 function CheckUniqueSquad:__init(faction)
+    warfare_log.debug("CheckUniqueSquad: init for faction=%s", tostring(faction))
     self.trader = faction .. "_sim_squad_trader"
     self.mechanic = faction .. "_sim_squad_mechanic"
     self.medic = faction .. "_sim_squad_medic"

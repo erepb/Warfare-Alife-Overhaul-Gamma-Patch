@@ -22,6 +22,7 @@ options = {}
 -- Will want to cycle through each variable to ensure it exists within
 -- warfare_options.ltx, or set it to defaults
 function update_settings()
+    warfare_log.info("warfare_options.update_settings: reading MCM settings")
     options.factions = {}
     options.factions.monster = {}
 
@@ -65,6 +66,7 @@ function update_settings()
     if old_purge ~= nil then
         local old_val = axr_main.config:r_value("options", "alife/warfare/general/purge_zone_on_emission", 1)
         local migrated = old_val == true and "kill" or "off"
+        warfare_log.info("warfare_options: migrating purge_zone_on_emission=%s -> emission_effect=%s", tostring(old_val), tostring(migrated))
         axr_main.config:w_value("options", "alife/warfare/general/emission_effect", migrated)
         axr_main.config:remove_line("options", "alife/warfare/general/purge_zone_on_emission")
         axr_main.config:save()
@@ -214,6 +216,7 @@ function update_settings()
     end
 
     if (options.all_out_war) then
+        warfare_log.info("warfare_options: all_out_war flagged for apply")
         warfare.need_all_out_war_applied = true
     end
 
@@ -250,6 +253,7 @@ SQUAD_COUNT_MIN = 2
 SQUAD_COUNT_MAX = 4
 
 function override_functions()
+    warfare_log.info("warfare_options.override_functions: replacing heli_alife.update and sim_squad_scripted updates")
     heli_alife.update = heli_alife_warfare.update
     heli_alife.force_target_destination = heli_alife_warfare.force_target_destination
     sim_squad_scripted.sim_squad_scripted.generic_update = function(self)
@@ -259,6 +263,7 @@ function override_functions()
 end
 
 function get_random_start_location()
+    warfare_log.debug("warfare_options.get_random_start_location: picking random start")
 
     start_table = {}
     local loc_ini = ini_file("plugins\\new_game_start_locations.ltx")
@@ -275,6 +280,7 @@ function get_random_start_location()
     end
 
     start_location = start_table[math.random(#start_table)]
+    warfare_log.info("warfare_options.get_random_start_location: picked=%s (of %s)", tostring(start_location), tostring(#start_table))
 
 
     return start_location
@@ -329,5 +335,6 @@ function sim_squad_scripted.sim_squad_scripted.check_online_status(self)
 end
 
 function on_game_start()
+    warfare_log.debug("warfare_options.on_game_start: registering on_option_change handler")
     RegisterScriptCallback("on_option_change", update_settings)
 end

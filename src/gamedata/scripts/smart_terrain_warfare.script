@@ -72,8 +72,12 @@ local nonbase_smart_collection = nil
 local smart_collections_built = false
 
 function build_smart_collections()
-    if smart_collections_built then return end
+    if smart_collections_built then
+        warfare_log.trace("build_smart_collections: already built, skipping")
+        return
+    end
     smart_collections_built = true
+    warfare_log.info("build_smart_collections: building collections")
 
     -- Build all-levels collection
     all_smart_collection = {}
@@ -119,6 +123,8 @@ function build_smart_collections()
             nonbase_smart_collection[#nonbase_smart_collection + 1] = all_smart_collection[i]
         end
     end
+    warfare_log.info("build_smart_collections: built all=%s nonbase=%s levels=%s",
+        tostring(#all_smart_collection), tostring(#nonbase_smart_collection), tostring(table.getn(linked_smart_collection)))
 end
 
 -- Timer used for capturing smart terrains.
@@ -479,6 +485,7 @@ local clr_y = utils_xml.get_color("white")
 
 local str_wrfr = {}
 function refresh_strings()
+    warfare_log.info("refresh_strings: reloading translated strings")
     str_wrfr[1] = game.translate_string("st_wrfr_smrt_auto_capture")
     str_wrfr[2] = game.translate_string("st_wrfr_prop_base")
     str_wrfr[3] = game.translate_string("st_wrfr_prop_resource")
@@ -523,6 +530,8 @@ function set_max_population(smart)
     else
         smart.max_population = round_idp(math.max(1, smart.default_max_population * monster_pop_factor))
     end
+    warfare_log.debug("set_max_population: smart=%s max_pop=%s default=%s",
+        smart:name(), tostring(smart.max_population), tostring(smart.default_max_population))
 end
 
 
@@ -538,6 +547,8 @@ function smart_terrain_on_update(smart)
     if not (IsWarfare()) then
         return
     end
+    warfare_log.trace("smart_terrain_on_update: smart=%s faction=%s",
+        smart:name(), tostring(smart.owning_faction))
 
     -- avoid vanilla respawns
     local curr_time = warfare.get_time()
@@ -550,6 +561,7 @@ function smart_terrain_on_update(smart)
 
     if not (smart.first_update) then
         smart.first_update = true
+        warfare_log.debug("smart_terrain_on_update: first update smart=%s", smart:name())
 
         -- hackish and will result in the squatting squads, but meh.
         if (smart.max_population == 0) then
@@ -561,6 +573,8 @@ function smart_terrain_on_update(smart)
         if (smart_owners[smart.id]) then
             smart.owning_faction = smart_owners[smart.id]
             smart.last_owner = smart_owners[smart.id]
+            warfare_log.debug("smart_terrain_on_update: restored owner smart=%s faction=%s",
+                smart:name(), smart_owners[smart.id])
         else
             smart.owning_faction = "none"
             smart.last_owner = "none"
@@ -575,6 +589,8 @@ function smart_terrain_on_update(smart)
     check_owner(smart)
 
     if smart.owning_faction and smart.owning_faction ~= "none" and not warfare_options.options.factions[smart.owning_faction].participate_in_warfare then
+        warfare_log.trace("smart_terrain_on_update: skip non-participating faction=%s smart=%s",
+            smart.owning_faction, smart:name())
         return
     end
 
@@ -592,6 +608,7 @@ function smart_terrain_on_update(smart)
     end
 
     if not (warfare.initialized) then
+        warfare_log.trace("smart_terrain_on_update: warfare not initialized yet")
         return
     end
 
@@ -665,8 +682,12 @@ function get_night_activity_flag(smart)
         if (night_activity_allowed[smart.id] == 0) then
             if (math.random(0,100) < night_chance) then
                 night_activity_allowed[smart.id] = 1
+                warfare_log.debug("get_night_activity_flag: night activity ALLOWED smart=%s faction=%s",
+                    smart:name(), tostring(smart.owning_faction))
             else
                 night_activity_allowed[smart.id] = -1
+                warfare_log.trace("get_night_activity_flag: night activity denied smart=%s",
+                    smart:name())
             end
         end
     else
@@ -699,6 +720,8 @@ function process_manual_capture(smart)
     if (manual_point == nil) and isNight then
         return
     end
+    warfare_log.trace("process_manual_capture: smart=%s manual_point=%s",
+        smart:name(), tostring(manual_point and manual_point[1]))
 
     -- STEP 1: when PDA is active on empty smart, check validity for capture, any nearby bases to send a squad, and pass the info to STEP 2
     -- if not already autocapturing and autocapture is enabled, begin the autocapture process
@@ -775,6 +798,8 @@ function process_manual_capture(smart)
 
                             -- store autocapture info, will be used to give messages even if invalid
                             manual_point = { smart.id, warfare.get_time(), closest_base, targeting_squad, 1 }
+                            warfare_log.info("process_manual_capture: autocapture started smart=%s closest_base=%s targeting_squad=%s",
+                                smart:name(), tostring(closest_base), tostring(targeting_squad))
                             local warfareName = translate_smart_name(smart:name())    or smart:name()
                             actor_menu.set_msg(1, strformat(str_wrfr[1], tostring(warfareName)), 3)
                             break
@@ -829,6 +854,8 @@ function process_manual_capture(smart)
                     local current_level = smart.level_id
                     local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
                     local squad = utils_obj.create_squad(section, closest_base:name())
+                    warfare_log.info("process_manual_capture: spawned squad section=%s from base=%s targeting smart=%s",
+                        tostring(section), closest_base:name(), smart:name())
                     sim_squad_warfare.set_target(squad, smart.id)
                     -- increase spawn timer of the sending base
                     if defense_delay[closest_base.id] == nil then
@@ -896,6 +923,8 @@ function process_manual_capture(smart)
                 -- no bases were in range of the position, inform actor
                 else
                     -- no bases were in range, inform player
+                    warfare_log.info("process_manual_capture: no nearby bases, denying autocapture smart=%s",
+                        smart:name())
                     local icon = warfare.actor_faction
                     local rnd_deny = round_idp(math.random()*4)+1
                     local text = game.translate_string("st_wrfr_respond_negative_"..rnd_deny)
@@ -919,6 +948,8 @@ end
 
 -- old method of autocapture, which is used depending on settings.
 function process_manual_capture_old(smart)
+    warfare_log.trace("process_manual_capture_old: smart=%s manual_point=%s",
+        smart:name(), tostring(manual_point and manual_point[1]))
     local lvl = game_graph():vertex(smart.m_game_vertex_id):level_id()
 
     if (manual_point == nil) and (warfare_options.options.enable_auto_capture) then
@@ -959,6 +990,8 @@ function process_manual_capture_old(smart)
                     local current_level = smart.level_id
                     local section = faction_expansions.get_spawn_section(warfare.actor_faction, warfare_factions.faction_information[warfare.actor_faction].resource_count, current_level)
                     local squad = utils_obj.create_squad(section, smart:name())
+                    warfare_log.info("process_manual_capture_old: spawned squad section=%s at smart=%s",
+                        tostring(section), smart:name())
                     sim_squad_warfare.set_target(squad, smart.id)
                 end
             else
@@ -996,12 +1029,15 @@ function process_base_squads(smart)
     else
         return
     end
+    warfare_log.trace("process_base_squads: smart=%s faction=%s",
+        smart:name(), tostring(smart.owning_faction))
 
     if currently_surge then
         return
     end
 
     if not base_can_send(smart) then
+        warfare_log.trace("process_base_squads: base_can_send=false smart=%s", smart:name())
         return
     end
 
@@ -1016,6 +1052,8 @@ function process_base_squads(smart)
                 for sid,_ in pairs(squads) do
                     local squad = sid and alife_object(sid)
                     if (squad) and squad_is_commandable(squad, true) and (squad.current_action == 1) and (squad:get_squad_community() == smart.owning_faction) and not random_patrols[squad.id] then
+                        warfare_log.debug("process_base_squads: support_invasion smart=%s squad=%s -> inv_base=%s",
+                            smart:name(), tostring(squad.id), tostring(inv_base_id))
                         sim_squad_warfare.set_target(squad, inv_base_id)
                         regular_squads = regular_squads - 1
                         if (regular_squads + stationary_sq_num <= guards) then
@@ -1026,6 +1064,7 @@ function process_base_squads(smart)
             end
             return  -- don't assign squads to resources while supporting invasion
         else
+            warfare_log.debug("process_base_squads: clearing stale supporting_invasion smart=%s", smart:name())
             supporting_invasion[smart.id] = nil  -- invasion ended
         end
     end
@@ -1064,6 +1103,8 @@ function process_base_squads(smart)
                         -- 20% chance of moving after a given update
                         local target = find_random_patrol_target(smart, faction, sid)
                         if (target) then
+                            warfare_log.debug("process_base_squads: retask random patrol squad=%s -> target=%s",
+                                tostring(squad.id), tostring(target))
                             sim_squad_warfare.set_target(squad, target)
                         end
                     end
@@ -1116,6 +1157,8 @@ function process_base_squads(smart)
                                 -- Only resources within the same distance as the nearest hostile base are considered
                                 if (closest_enemy_base_distance and (resource_distance < closest_enemy_base_distance)) or not closest_enemy_base_distance then
                                     if (numTargeting < 1) and (math.random(100) < aggression) then
+                                        warfare_log.debug("process_base_squads: send squad to resource smart=%s squad=%s -> resource=%s",
+                                            smart:name(), tostring(squad.id), tostring(resource_id))
                                         sim_squad_warfare.set_target(squad, resource_id)
                                         squad_sent = true
                                         regular_squads = regular_squads - 1  -- Keep count of squads remaining at base
@@ -1134,10 +1177,13 @@ function process_base_squads(smart)
 
                 -- Overflow: try invasion then redirect excess to ally base (runs at any time of day)
                 if not squad_sent and not base_has_vacancy(smart, faction) then
+                    warfare_log.debug("process_base_squads: overflow smart=%s faction=%s", smart:name(), faction)
                     if supporting_invasion[smart.id] then
                         -- committed to supporting another base's invasion: send overflow squad there
                         local inv_base_id = supporting_invasion[smart.id]
                         if invasions[inv_base_id] then
+                            warfare_log.debug("process_base_squads: overflow -> supporting inv smart=%s -> %s",
+                                smart:name(), tostring(inv_base_id))
                             sim_squad_warfare.set_target(squad, inv_base_id)
                         else
                             supporting_invasion[smart.id] = nil  -- invasion ended
@@ -1195,6 +1241,8 @@ function process_nonbase_squads(smart, always_recall, keep_one)
     else
         return
     end
+    warfare_log.trace("process_nonbase_squads: smart=%s faction=%s always_recall=%s keep_one=%s",
+        smart:name(), tostring(smart.owning_faction), tostring(always_recall), tostring(keep_one))
 
     if currently_surge then
         return    -- surge_behavior() overrides behavior here
@@ -1261,15 +1309,21 @@ function process_nonbase_squads(smart, always_recall, keep_one)
                 end
                 -- Send squad to nearest base
                 if (#bases > 0) then
+                    warfare_log.debug("process_nonbase_squads: recall smart=%s squad=%s -> ally_base=%s",
+                        smart:name(), tostring(squad.id), tostring(bases[1][1]))
                     sim_squad_warfare.set_target(squad, bases[1][1])
                     recalled = recalled + 1
                 elseif (#neutral_bases > 0) then
+                    warfare_log.debug("process_nonbase_squads: recall smart=%s squad=%s -> neutral_base=%s",
+                        smart:name(), tostring(squad.id), tostring(neutral_bases[1][1]))
                     sim_squad_warfare.set_target(squad, neutral_bases[1][1])
                     recalled = recalled + 1
                 else
                     -- No same-level bases found; try linked levels so squads do not get permanently stuck
                     local targets = find_targets_for_overflow(smart, faction)
                     if targets and (#targets > 0) then
+                        warfare_log.debug("process_nonbase_squads: recall via overflow smart=%s squad=%s",
+                            smart:name(), tostring(squad.id))
                         pick_target(smart, squad, targets, true)
                         recalled = recalled + 1
                     end
@@ -1295,6 +1349,8 @@ function find_nearby_bases(smart, faction, overflow_flag)
         neutral_bases: list of neutral bases sorted by shortest distance first
         hostile_bases: list of hostile bases sorted by weakest resistance first
 ]]
+    warfare_log.trace("find_nearby_bases: smart=%s faction=%s overflow=%s",
+        smart:name(), tostring(faction), tostring(overflow_flag))
     local bases = {}
     local neutral_bases = {}
     local hostile_bases = {}
@@ -1348,6 +1404,8 @@ function process_overflow_squad(smart, squad, bases)
 ]]
     local faction = squad:get_squad_community()  -- Note that this is the squad's faction, NOT the faction of the smart owner
     local movedSquad = false
+    warfare_log.trace("process_overflow_squad: smart=%s squad=%s faction=%s",
+        smart:name(), tostring(squad.id), tostring(faction))
 
     if not (#bases > 0) then
         bases = find_nearby_bases(smart, faction)
@@ -1356,6 +1414,8 @@ function process_overflow_squad(smart, squad, bases)
     -- Send squad to nearest on-level base
     for i=1,#bases do
         local base_id = bases[i][1]
+        warfare_log.debug("process_overflow_squad: smart=%s squad=%s -> base=%s",
+            smart:name(), tostring(squad.id), tostring(base_id))
         sim_squad_warfare.set_target(squad, base_id)
         movedSquad = true
         other = base_id and alife_object(base_id)
@@ -1371,6 +1431,8 @@ function process_overflow_squad(smart, squad, bases)
     end
     -- If nothing found within linked levels, delete the squad (if pop cap enabled)
     if (movedSquad == false) and (not warfare_options.options.disable_smart_pop_cap) then
+        warfare_log.warn("process_overflow_squad: deleting squad=%s with no valid target smart=%s faction=%s",
+            tostring(squad.id), smart:name(), tostring(faction))
         sim_squad_warfare.remove_squad(squad)
         squad:remove_squad()
     end
@@ -1393,6 +1455,8 @@ function base_has_vacancy(smart, faction)
     local guards = math.max(guard_size, stationary_sq_num)
     local max_allowable_size = math.max((invasion_force_size + guards), smart.max_population)    -- invasion prep allows temporary overflow at a given base
     if (regular_squads + stationary_sq_num > max_allowable_size) then
+        warfare_log.trace("base_has_vacancy: full smart=%s regular=%s stat=%s max=%s",
+            smart:name(), tostring(regular_squads), tostring(stationary_sq_num), tostring(max_allowable_size))
         return false
     else
         return true
@@ -1406,6 +1470,7 @@ end
 -- WARNING:
 -- This function is being phased out for the new behavior functions above
 function process_squads_old(smart)
+    warfare_log.trace("process_squads_old: smart=%s", smart:name())
     if not (smart.process_squads_time) or (warfare.get_time_ref():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*6) then
         if not smart.process_squads_time then
             smart.process_squads_time = warfare.get_time()
@@ -1533,11 +1598,15 @@ function surge_behavior(smart)
     else
         return
     end
+    warfare_log.trace("surge_behavior: smart=%s", smart:name())
 
     local emission = surge_manager.get_surge_manager()
     local psistorm = psi_storm_manager.get_psi_storm_manager()
 
     if (emission.started) or (psistorm.started) then
+        if not currently_surge then
+            warfare_log.info("surge_behavior: surge started smart=%s", smart:name())
+        end
         currently_surge = true
         if (smart.is_on_actor_level) and (smart.props) and (smart.props.surge < 1) then        -- only operate on terrains/squads on player's level that don't have shelter
             local squads = SIMBOARD.smarts[smart.id].squads
@@ -1579,6 +1648,8 @@ function surge_behavior(smart)
                         end
 
                         if (#shelter_targets > 0) then
+                            warfare_log.debug("surge_behavior: shelter squad=%s -> %s",
+                                tostring(squad.id), tostring(shelter_targets[1][1]))
                             sim_squad_warfare.set_target(squad, shelter_targets[1][1])
                         end
 
@@ -1589,6 +1660,9 @@ function surge_behavior(smart)
     end
 
     if (emission.finished) and (psistorm.finished) then
+        if currently_surge then
+            warfare_log.info("surge_behavior: surge ended, returning squads")
+        end
         if original_target then
             for sq_id,sm_id in pairs(original_target) do
                 local squad = sq_id and alife_object(sq_id)
@@ -1635,6 +1709,8 @@ function faction_diplomatic_penalty(contested_smart_id, faction_1, faction_2)
     local contested_smart = alife_object(contested_smart_id)
     local penalty_value = (-1) * delta * contested_smart.max_population
 
+    warfare_log.debug("faction_diplomatic_penalty: smart=%s %s vs %s delta=%s",
+        contested_smart and contested_smart:name() or "?", tostring(faction_1), tostring(faction_2), tostring(penalty_value))
     game_relations.change_faction_relations(faction_1, faction_2, penalty_value)
 end
 
@@ -1643,6 +1719,7 @@ end
 -- Separated so that invasions can depart even at night
 function process_invasion_departure(smart)
     if not invasions[smart.id] then return end
+    warfare_log.trace("process_invasion_departure: smart=%s", smart:name())
 
     local regular_squads,sq_pow,stationary_sq_num = squad_count_detailed(smart, smart.owning_faction)
     local guards = math.max(guard_size, stationary_sq_num)
@@ -1651,6 +1728,8 @@ function process_invasion_departure(smart)
 
     -- Invasion target is no longer valid
     if not is_factions_enemies(smart.owning_faction, target.owning_faction) and (target.owning_faction ~= "stalker") and (target.owning_faction ~= "ecolog") then
+        warfare_log.debug("process_invasion_departure: target no longer valid smart=%s target=%s",
+            smart:name(), target and target:name() or "?")
         invasions[smart.id] = nil
         return
     end
@@ -1688,6 +1767,8 @@ function process_invasion_departure(smart)
     if takeover_possible and not under_attack[smart.id] then
         local numSent = 0
         local squads = SIMBOARD.smarts[smart.id].squads
+        warfare_log.info("process_invasion_departure: launching invasion smart=%s -> target=%s size=%s",
+            smart:name(), target and target:name() or "?", tostring(invasion_size))
 
         for sid,_ in pairs(squads) do
             local squad = sid and alife_object(sid)
@@ -1736,6 +1817,7 @@ function process_targets(smart)
     else
         return
     end
+    warfare_log.trace("process_targets: smart=%s faction=%s", smart:name(), tostring(smart.owning_faction))
 
     if currently_surge then
         return
@@ -1902,6 +1984,8 @@ function process_targets(smart)
             end
         else
             -- failed aggression check: set cooldown so base doesn't retry every tick
+            warfare_log.trace("process_targets: invasion aggression failed smart=%s roll=%s aggr=%s",
+                smart:name(), tostring(roll), tostring(aggression))
             invasion_cooldown[smart.id] = warfare.get_time()
         end
     end
@@ -1909,6 +1993,8 @@ function process_targets(smart)
     -- if the faction has lost a base, re-check the targets for all bases
     local current_base_count = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
     if (auto_target_count > 0) and (current_base_count < base_recheck[smart.id]) then
+        warfare_log.debug("process_targets: base lost, recheck targets smart=%s faction=%s",
+            smart:name(), tostring(smart.owning_faction))
         -- reset targets
         smart.target_smarts = {}
         target_smart_count = 0
@@ -1975,6 +2061,7 @@ end
 
 
 function get_invasion_target(smart)
+    warfare_log.trace("get_invasion_target: smart=%s", smart:name())
     local target
     local target_dist = 9999999999
     for t,v in pairs(smart.player_target_smarts) do
@@ -2019,6 +2106,8 @@ end
 
 -- when an empty target is detected, the closest base to the target sends a squad to capture it.
 function capture_empty_location(smart, target)
+    warfare_log.trace("capture_empty_location: smart=%s target=%s",
+        smart:name(), target and target:name() or "?")
 
     -- disable this feature if manual control is turned on
     if (smart.owning_faction == warfare.actor_faction) and (pda_actor.manual_control) then
@@ -2077,6 +2166,8 @@ function capture_empty_location(smart, target)
                 -- only check for idle squads of same faction
                 if squad_is_commandable(squad) and (faction == other.owning_faction) and (squad.current_action == 1) then
                     -- send the available squad
+                    warfare_log.debug("capture_empty_location: dispatch from base=%s squad=%s -> target=%s",
+                        other:name(), tostring(squad.id), target and target:name() or "?")
                     sim_squad_warfare.set_target(squad, target.id)
 
                     -- exit function
@@ -2090,6 +2181,8 @@ end
 
 -- simple version of empty capture, with no regard for smart distances (remove computation of searching tables)
 function capture_empty_location_simple(smart, target)
+    warfare_log.trace("capture_empty_location_simple: smart=%s target=%s",
+        smart:name(), target and target:name() or "?")
     -- disable this feature if manual control is turned on
     if (smart.owning_faction == warfare.actor_faction) and (pda_actor.manual_control) then
         return
@@ -2105,6 +2198,8 @@ function capture_empty_location_simple(smart, target)
             -- only check for idle squads of same faction
             if squad_is_commandable(squad) and (faction == smart.owning_faction) and (squad.current_action == 1) then
                 -- send the available squad
+                warfare_log.debug("capture_empty_location_simple: dispatch squad=%s -> target=%s",
+                    tostring(squad.id), target and target:name() or "?")
                 sim_squad_warfare.set_target(squad, target.id)
                 return    -- exit function after sending one squad
             end
@@ -2121,6 +2216,8 @@ function create_invasion_plan(smart, target)
     if not target then
         return
     end
+    warfare_log.debug("create_invasion_plan: smart=%s target=%s",
+        smart:name(), target and target:name() or "?")
 
     if not (target.owning_faction) then
         check_owner(target)
@@ -2136,11 +2233,15 @@ function create_invasion_plan(smart, target)
                 local smart_dist = fetch_smart_distance(smart, target)
                 if smart_dist < other_dist then
                     -- This base is closer to the target: take over as main invasion base, old base will contribute naturally
+                    warfare_log.debug("create_invasion_plan: taking over invasion from %s, new main=%s",
+                        other:name(), smart:name())
                     invasions[other.id] = nil
                     supporting_invasion[other.id] = smart.id  -- old base now supports the new main base
                     break  -- continue to create a fresh invasion plan from this closer base
                 else
                     -- Other base is closer or equal: signal to contribute instead
+                    warfare_log.debug("create_invasion_plan: contributing instead smart=%s supports=%s",
+                        smart:name(), other:name())
                     supporting_invasion[smart.id] = other.id  -- this base supports the existing invasion base
                     return true
                 end
@@ -2286,6 +2387,8 @@ function create_invasion_plan(smart, target)
     -- invasion will be planned if the possible force is within reason
     if ( (invasion_force_size > 0) and (invasion_force_desired / invasion_force_size) < 2 ) or (immediate_invasion) then
         invasions[smart.id] = { target.id, invasion_force_size, inv_start, depart }
+        warfare_log.info("create_invasion_plan: planned smart=%s -> target=%s size=%s immediate=%s",
+            smart:name(), target:name(), tostring(invasion_force_size), tostring(immediate_invasion))
 
         if immediate_invasion then
         else
@@ -2298,6 +2401,8 @@ end
 -- if an invasion plan is not certified, factions will instead look at nearby bases on-level and see if they can contribute to their invasion
 -- skip_aggression: if true, bypass aggression checks (base wanted to invade the same target as another closer base)
 function contribute_to_other_invasion(smart, skip_aggression)
+    warfare_log.trace("contribute_to_other_invasion: smart=%s skip_aggr=%s",
+        smart:name(), tostring(skip_aggression))
 
     -- disable this feature if manual control is turned on
     if (smart.owning_faction == warfare.actor_faction) and (pda_actor.manual_control) then
@@ -2350,6 +2455,8 @@ function contribute_to_other_invasion(smart, skip_aggression)
                         for sid,_ in pairs(squads) do
                             local squad = sid and alife_object(sid)
                             if (squads_available > 0) and squad_is_commandable(squad) and (squad:get_squad_community() == smart.owning_faction) and (squad.current_action == 1) then
+                                warfare_log.debug("contribute_to_other_invasion: smart=%s squad=%s -> base=%s",
+                                    smart:name(), tostring(squad.id), other:name())
                                 sim_squad_warfare.set_target(squad, other.id)
                                 return  -- limit to one squad per tick
                             end
@@ -2383,6 +2490,7 @@ function process_invasion_defense(smart)
     else
         return
     end
+    warfare_log.trace("process_invasion_defense: smart=%s faction=%s", smart:name(), tostring(smart.owning_faction))
 
     if currently_surge then
         return
@@ -2484,6 +2592,10 @@ function process_invasion_defense(smart)
     end
     -- also treat large groups of incoming enemies (3+) as a dispatched invasion (plan is cleared after departure)
     if is_invasion_target or (num_enemy_squads >= 3) then
+        if not under_attack[smart.id] then
+            warfare_log.info("process_invasion_defense: under_attack smart=%s faction=%s enemies=%s",
+                smart:name(), tostring(defending_faction), tostring(num_enemy_squads))
+        end
         under_attack[smart.id] = true
     else
         under_attack[smart.id] = false
@@ -2573,6 +2685,8 @@ function process_invasion_defense(smart)
                         if squad_is_commandable(squad) and (faction == defending_faction) and (squad.current_action == 1) and (squads_available > 0) then
                             -- send the available squad and re-calculate the power disparity
                             local ally_squad_power = sim_offline_combat.calculate_squad_power(squad)
+                            warfare_log.debug("process_invasion_defense: reinforce smart=%s from %s squad=%s",
+                                smart:name(), other:name(), tostring(squad.id))
                             sim_squad_warfare.set_target(squad, smart.id)
                             squads_available = squads_available - 1
                             power_disparity = power_disparity - ally_squad_power
@@ -2674,6 +2788,7 @@ function update_resources(smart)
     else
         return
     end
+    warfare_log.trace("update_resources: smart=%s faction=%s", smart:name(), tostring(smart.owning_faction))
 
     if (warfare_factions.faction_information and warfare_factions.faction_information[smart.owning_faction]) then
         local global_resources = warfare_factions.faction_information[smart.owning_faction].resource_count
@@ -2685,6 +2800,8 @@ function update_resources(smart)
         smart.resource_count = total_resources + modifier
     else
         smart.resource_count = 0
+        warfare_log.warn("update_resources: missing faction_information smart=%s faction=%s",
+            smart:name(), tostring(smart.owning_faction))
         warfare_factions.update_faction(smart.owning_faction)
     end
 
@@ -2698,6 +2815,7 @@ end
 -- Called at the night-to-day transition to preserve timer progress across night,
 -- and on instant big time jumps to freeze timers.
 function advance_spawn_timers(seconds)
+    warfare_log.debug("advance_spawn_timers: advancing by %s seconds", tostring(seconds))
     for id, timer in pairs(defense_timers) do
         defense_timers[id] = warfare_utils.add_time(timer, seconds)
     end
@@ -2749,6 +2867,8 @@ function spawn_defense(smart)
     end
 
     local squad = utils_obj.create_squad(section, smart:name())
+    warfare_log.info("spawn_defense: spawned squad section=%s smart=%s faction=%s",
+        tostring(section), smart:name(), tostring(smart.owning_faction))
     sim_squad_warfare.set_target(squad, smart.id)
 end
 
@@ -2822,6 +2942,8 @@ function spawn_patrols(smart)
                     }
                 end
 
+                warfare_log.info("spawn_patrols: spawned patrol smart=%s section=%s -> tobj=%s",
+                    smart:name(), tostring(section), tostring(tobj and (tobj.id or tobj:section_name())))
                 sim_squad_warfare.set_target(squad, tobj.id)
                 patrol_squads[smart.id][squad.id] = new_table
                 squad.patrol_table = new_table
@@ -2831,6 +2953,7 @@ function spawn_patrols(smart)
 end
 
 function find_patrol_target(smart,patrol_table,squad)
+    warfare_log.trace("find_patrol_target: smart=%s", smart:name())
 
     local target_squads = {}
     local target_smarts = {}
@@ -2954,6 +3077,7 @@ function process_patrols(smart)
     else
         return
     end
+    warfare_log.trace("process_patrols: smart=%s", smart:name())
 
     if not patrol_squads[smart.id] then
         patrol_squads[smart.id] = {}
@@ -3042,6 +3166,8 @@ function process_patrols(smart)
                                     }
                                 end
 
+                                warfare_log.debug("process_patrols: reassign patrol smart=%s squad=%s -> tobj=%s",
+                                    smart:name(), tostring(squad.id), tostring(tobj and tobj.id))
                                 sim_squad_warfare.set_target(squad, tobj.id)
                                 patrol_squads[smart.id][squad.id] = new_table
                                 squad.patrol_table = new_table
@@ -3076,6 +3202,7 @@ function process_loners(smart)
     else
         return
     end
+    warfare_log.trace("process_loners: smart=%s faction=%s", smart:name(), tostring(smart.owning_faction))
 
     local squads = SIMBOARD.smarts[smart.id].squads                            -- get info of all squads at location
 
@@ -3437,6 +3564,7 @@ function process_ecolog(smart)
     else
         return
     end
+    warfare_log.trace("process_ecolog: smart=%s faction=%s", smart:name(), tostring(smart.owning_faction))
 
     local squads = SIMBOARD.smarts[smart.id].squads                            -- get info of all squads at location
 
@@ -3672,7 +3800,9 @@ end
 function spawn_mutants(smart)
     if (smart.props.base > 0) or (smart.props.resource > 0) or (smart.props.territory > 0) or (smart.props.lair < 1) then
         return
-    elseif not (spawn_mutant_timers[smart.id]) then
+    end
+    warfare_log.trace("spawn_mutants: smart=%s", smart:name())
+    if not (spawn_mutant_timers[smart.id]) then
         local min_respawn = warfare_options.options.monster_min_faction_respawn
         local max_respawn = warfare_options.options.monster_max_faction_respawn
         spawn_mutant_next_update[smart.id] = math.random(min_respawn, max_respawn) * (warfare_options.options.spawn_speed_multiplier or 1)
@@ -3717,6 +3847,8 @@ function spawn_mutants(smart)
                     -- get squad section name
                     local section = squad:section_name()
                     local new_squad = utils_obj.create_squad(section, smart:name())    -- create identical section
+                    warfare_log.info("spawn_mutants: spawned same-section section=%s smart=%s",
+                        tostring(section), smart:name())
                     sim_squad_warfare.set_target(squad, smart.id)
                     -- update squads_by_level so other smarts in the same cycle see accurate count
                     if new_squad and sim_offline_combat.squads_by_level[current_level] then
@@ -3731,6 +3863,8 @@ function spawn_mutants(smart)
         if not spawned then
             local section = faction_expansions.get_spawn_section("monster", rare_chance, current_level)
             local squad = utils_obj.create_squad(section, smart:name())
+            warfare_log.info("spawn_mutants: spawned new mutant section=%s smart=%s",
+                tostring(section), smart:name())
             sim_squad_warfare.set_target(squad, smart.id)
             -- update squads_by_level so other smarts in the same cycle see accurate count
             if squad and sim_offline_combat.squads_by_level[current_level] then
@@ -3755,6 +3889,7 @@ function process_mutants(smart)
     else
         return
     end
+    warfare_log.trace("process_mutants: smart=%s", smart:name())
 
 
     local squads = SIMBOARD.smarts[smart.id].squads
@@ -3822,6 +3957,8 @@ function process_mutants(smart)
                                     if (#targets > 0) then
                                         local target = targets[math.random(#targets)]
                                         local num_targeting = squad_count_targeting(target, "monster")
+                                        warfare_log.debug("process_mutants: cross-level move squad=%s -> target=%s",
+                                            tostring(squad.id), target and target:name() or "?")
                                         sim_squad_warfare.set_target(squad, target.id)
                                     end
                                 end
@@ -3850,6 +3987,8 @@ function process_mutants(smart)
                             if (#targets > 0) then
                                 local target = targets[math.random(#targets)]
                                 local num_targeting = squad_count_targeting(target, "monster")
+                                warfare_log.debug("process_mutants: on-level move squad=%s -> target=%s",
+                                    tostring(squad.id), target and target:name() or "?")
                                 sim_squad_warfare.set_target(squad, target.id)
                             end
                         end
@@ -3885,6 +4024,7 @@ end
 --function smart_terrain.se_smart_terrain.show(self)
 --function update_icon_smart_terrain(smart)
 function smart_terrain.se_smart_terrain:show()
+    warfare_log.trace("se_smart_terrain:show smart=%s", self:name())
     if DEV_DEBUG and (dbg_hud) then
         if (level.map_has_object_spot(self.id,"alife_presentation_smart_default_neutral") == 0) then
             level.map_add_object_spot(self.id, "alife_presentation_smart_default_neutral", self:get_smart_props())
@@ -4301,7 +4441,7 @@ function smart_terrain.se_smart_terrain:show()
 end
 
 function smart_terrain.se_smart_terrain:hide()
-
+    warfare_log.trace("se_smart_terrain:hide smart=%s", self:name())
 
     if (self.warfare_spot) then
         level.map_remove_object_spot(self.id, pda_icons[self.warfare_spot])
@@ -4466,6 +4606,7 @@ end
 -- gets information for the smart terrain hint
 -- visible: optional, defaults to true. When false, hides owning faction (fog-of-war invasion overlays)
 function get_warfare_info(smart, visible)
+    warfare_log.trace("get_warfare_info: smart=%s visible=%s", smart:name(), tostring(visible))
     if visible == nil then visible = true end
 
     local props = get_smart_base_info(smart, visible, true)
@@ -4891,6 +5032,7 @@ function check_owner(smart)
     if not (smart) then
         return
     end
+    warfare_log.trace("check_owner: smart=%s", smart:name())
 
 
     if not (smart.check_owner_timer) then
@@ -4898,6 +5040,7 @@ function check_owner(smart)
     end
 
     if (not SIMBOARD.smarts[smart.id]) then
+        warfare_log.warn("check_owner: smart=%s missing from SIMBOARD", smart:name())
         smart.owning_faction = "none"
         patrol_timers[smart.id] = nil
         return
@@ -4983,6 +5126,8 @@ function check_owner(smart)
     end
 
     if (smart.last_owner ~= smart.owning_faction) then
+        warfare_log.info("check_owner: ownership changed smart=%s %s -> %s",
+            smart:name(), tostring(smart.last_owner), tostring(smart.owning_faction))
         local squads = patrol_squads[smart.id]
 
         if (squads) then
@@ -4993,6 +5138,8 @@ function check_owner(smart)
                     if (squad:get_squad_community() ~= smart.owning_faction) then
                         -- Convert orphaned patrol to random patrol
                         local faction = squad:get_squad_community()
+                        warfare_log.debug("check_owner: convert orphan patrol squad=%s faction=%s smart=%s",
+                            tostring(squad.id), tostring(faction), smart:name())
                         squad.patrol_table = nil
                         squad.patrol_owner = nil
                         patrol_squads[smart.id][squad_id] = nil
@@ -5223,6 +5370,8 @@ end
 
 
 function find_random_patrol_target(smart, faction, sid)
+    warfare_log.trace("find_random_patrol_target: smart=%s faction=%s sid=%s",
+        smart and smart:name() or "?", tostring(faction), tostring(sid))
 
     local smart_level = smart and smart.level_id
     local smartCollection = {}
@@ -5348,25 +5497,32 @@ function find_random_patrol_target(smart, faction, sid)
         if (smart) then
         else
         end
+        warfare_log.debug("find_random_patrol_target: picked target=%s smart=%s faction=%s (from %s candidates)",
+            tostring(target.id), smart and smart:name() or "?", tostring(faction), tostring(#targets))
         return target.id
     end
 
     -- only used for spawning
     if (#backup_targets > 0) then
         local target = backup_targets[math.random(#backup_targets)]
+        warfare_log.debug("find_random_patrol_target: picked backup target=%s smart=%s faction=%s (from %s candidates)",
+            tostring(target.id), smart and smart:name() or "?", tostring(faction), tostring(#backup_targets))
         return target.id
     end
 
 
     if not smart then
+        warfare_log.debug("find_random_patrol_target: no target found, no smart fallback faction=%s", tostring(faction))
         return nil
     end
 
+    warfare_log.debug("find_random_patrol_target: no target found, falling back to smart=%s faction=%s", smart:name(), tostring(faction))
     return smart.id
 end
 
 -- Random patrol counter helpers (O(1) count lookups)
 function set_random_patrol(squad_id, faction)
+    warfare_log.debug("set_random_patrol: squad=%s faction=%s", tostring(squad_id), tostring(faction))
     remove_random_patrol(squad_id)
     random_patrols[squad_id] = faction
     random_patrol_counts[faction] = (random_patrol_counts[faction] or 0) + 1
@@ -5375,6 +5531,7 @@ end
 function remove_random_patrol(squad_id)
     local faction = random_patrols[squad_id]
     if faction then
+        warfare_log.debug("remove_random_patrol: squad=%s faction=%s", tostring(squad_id), tostring(faction))
         local sq = alife_object(squad_id)
         local caller = (debug.traceback("", 2) or "?"):gsub("\n", " | ")
         local npc = sq and sq:npc_count() or -1
@@ -5393,6 +5550,8 @@ function get_random_patrol_count(faction)
 end
 
 function find_targets(smart, faction_override, overflow_squad)
+    warfare_log.trace("find_targets: smart=%s faction_override=%s overflow=%s",
+        smart:name(), tostring(faction_override), tostring(overflow_squad))
 
     local level = smart.level_id
     local faction = smart.owning_faction or "none"
@@ -5600,6 +5759,8 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
     Returns:
         targets: list of bases sorted with closest first
 ]]
+    warfare_log.trace("find_targets_for_overflow: smart=%s faction=%s all_levels=%s",
+        smart:name(), tostring(faction), tostring(search_all_levels))
     local level = smart.level_id
     local targets = {}
     local d = smart.defense_power or 0
@@ -5705,9 +5866,13 @@ function pick_target(smart, squad, targets, override_checks)
 
             if (other and other.owning_faction) then
                 if override_checks then
+                    warfare_log.debug("pick_target: override smart=%s squad=%s -> other=%s",
+                        smart:name(), tostring(squad.id), other:name())
                     sim_squad_warfare.set_target(squad, other.id)
                     break
                 elseif (other.owning_faction == "none") or (is_factions_enemies(faction, other.owning_faction)) or (((other.owning_faction == "stalker") or (other.owning_faction == "ecolog" )) and (other.props.base < 1)) then    -- enable targeting of loner/ecologist-occupied pure resources
+                    warfare_log.debug("pick_target: smart=%s squad=%s -> other=%s faction=%s",
+                        smart:name(), tostring(squad.id), other:name(), tostring(other.owning_faction))
                     sim_squad_warfare.set_target(squad, other.id)
                     break
                 end
@@ -5753,6 +5918,8 @@ function check_unique_npcs(smart)
     else
         return
     end
+    warfare_log.trace("check_unique_npcs: smart=%s faction=%s",
+        smart:name(), tostring(smart.owning_faction))
 
     local sm_name = smart:name()
     local faction = smart.owning_faction
@@ -5807,6 +5974,7 @@ function check_unique_npcs(smart)
 
         while traderCount < maxTraders do
             local squad = utils_obj.create_squad(uniqueSquad:trader_squad(), sm_name)
+            warfare_log.info("check_unique_npcs: spawn trader smart=%s faction=%s", sm_name, faction)
 
             sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
             notify_npc_created(squad.id, sm_name, faction, "trader")
@@ -5815,6 +5983,7 @@ function check_unique_npcs(smart)
 
         while mechanicCount < maxMechanics do
             local squad = utils_obj.create_squad(uniqueSquad:mechanic_squad(), sm_name)
+            warfare_log.info("check_unique_npcs: spawn mechanic smart=%s faction=%s", sm_name, faction)
 
             sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
             notify_npc_created(squad.id, sm_name, faction, "mechanic")
@@ -5823,6 +5992,7 @@ function check_unique_npcs(smart)
 
         while medicCount < maxMedics do
             local squad = utils_obj.create_squad(uniqueSquad:medic_squad(), sm_name)
+            warfare_log.info("check_unique_npcs: spawn medic smart=%s faction=%s", sm_name, faction)
 
             sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
             notify_npc_created(squad.id, sm_name, faction, "medic")
@@ -5831,6 +6001,7 @@ function check_unique_npcs(smart)
 
         while barmanCount < maxBarmen do
             local squad = utils_obj.create_squad(uniqueSquad:barman_squad(), sm_name)
+            warfare_log.info("check_unique_npcs: spawn barman smart=%s faction=%s", sm_name, faction)
 
             sim_squad_warfare.set_target_trader(squad, smart.id, sm_name)
             notify_npc_created(squad.id, sm_name, faction, "barman")
@@ -5845,6 +6016,8 @@ end
 -- Utility functions for external access
 ------------------------------------------------------------
 function notify_npc_created(squad_id, sm_name, faction, npc_type)
+    warfare_log.debug("notify_npc_created: squad=%s smart=%s faction=%s type=%s",
+        tostring(squad_id), tostring(sm_name), tostring(faction), tostring(npc_type))
     CreateTimeEvent("warfare_npc_created", squad_id .. "_" .. npc_type, math.random(1, 3), function()
         local tbl = utils_data.collect_translations("st_warfare_" .. faction .. "_created_", true)
         if not tbl then return true end
@@ -5909,6 +6082,7 @@ end
 -- Callbacks
 ------------------------------------------------------------
 function on_game_start()
+    warfare_log.info("smart_terrain_warfare.on_game_start")
     refresh_strings()
 
     RegisterScriptCallback("on_localization_change",refresh_strings)

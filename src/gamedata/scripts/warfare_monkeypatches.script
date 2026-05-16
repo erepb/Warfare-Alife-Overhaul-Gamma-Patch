@@ -7,6 +7,7 @@ function xr_conditions.has_task_target_anomaly()
 
     local warfare_task = db.actor and load_var(db.actor, "warfare_escort_task_smart")
     if IsWarfare() and warfare_task then
+        warfare_log.trace("has_task_target_anomaly: warfare escort task path, smart=%s", tostring(warfare_task))
         return db.actor and load_var(db.actor, "task_target_anomaly_analyzed") == "not_analyzed"
     end
     return db.actor and load_var(db.actor, "task_target_anomaly") ~= nil
@@ -21,6 +22,7 @@ function xr_effects.setup_task_target_anomaly()
     if IsWarfare() and warfare_task then
         local target_name
         target_name = level.name()
+        warfare_log.debug("setup_task_target_anomaly: warfare escort, level=%s", tostring(target_name))
 
         save_var(db.actor, "task_target_anomaly_level", target_name) -- xQd
         save_var(db.actor, "task_target_anomaly_analyzed", "not_analyzed") -- xQd
@@ -31,10 +33,12 @@ function xr_effects.setup_task_target_anomaly()
         end
 
         if (#targets <= 0) then
+            warfare_log.warn("setup_task_target_anomaly: no anomalies registered in db.anomaly_by_name")
             return
         end
 
         local target_name = targets[math.random(#targets)]
+        warfare_log.debug("setup_task_target_anomaly: picked anomaly=%s of %s", tostring(target_name), tostring(#targets))
         save_var(db.actor, "task_target_anomaly", target_name)
     end
 end
@@ -44,13 +48,16 @@ end
 old_ecolog_companion_task_2_complete_task = dialogs_jupiter.ecolog_companion_task_2_complete_task
 function dialogs_jupiter.ecolog_companion_task_2_complete_task(a, b)
     old_ecolog_companion_task_2_complete_task(a, b)
+    warfare_log.debug("ecolog_companion_task_2_complete_task: invoked")
 
     local tm = task_manager.get_task_manager()
     local task_info = tm.task_info
     if (task_info) then
         if (task_info["sim_default_ecolog_trader_task_1"]) then
+            warfare_log.info("ecolog_companion_task_2: completing sim_default_ecolog_trader_task_1")
             task_manager.get_task_manager():set_task_completed("sim_default_ecolog_trader_task_1")
         elseif (task_info["jup_b6_scientist_tech_task_1"]) then
+            warfare_log.info("ecolog_companion_task_2: completing jup_b6_scientist_tech_task_1")
             task_manager.get_task_manager():set_task_completed("jup_b6_scientist_tech_task_1")
         end
     end
@@ -108,6 +115,7 @@ function dialogs.st_trade_important_documents(a, b, typ, txt)
         return trade_dialog
     end
     npc_name = npc:name()
+    warfare_log.debug("st_trade_important_documents: warfare m_trader path npc=%s typ=%s", tostring(npc_name), tostring(typ))
 
     local str = game.translate_string("st_trade_important_documents_" .. typ .. "_" .. npc_name)
     str = strformat(str, txt)
@@ -336,7 +344,9 @@ function faction_expansions.get_spawn_section(faction, resource, current_level)
     if (resource) then
     else
         resource = 0  -- nil resource count
+        warfare_log.warn("get_spawn_section: nil resource count for faction=%s, defaulting to 0", tostring(faction))
     end
+    warfare_log.trace("get_spawn_section: faction=%s resource=%s level=%s days=%s", tostring(faction), tostring(resource), tostring(current_level), tostring(days_in_zone))
 
     if (faction ~= "monster") then
         if (faction == "stalker") or (faction == "ecolog") then
@@ -426,6 +436,7 @@ function game_relations.calculate_relation_change(faction_from, faction_to, base
     if not _G.WARFARE then
         return game_relations_calculate_relation_change(faction_from, faction_to, base_change)
     end
+    warfare_log.trace("calculate_relation_change: %s vs %s base=%s", tostring(faction_from), tostring(faction_to), tostring(base_change))
 
     --[[
         Right now Vanilla Anomaly does this when warfare enable what makes all factions always lose/gain relations on stalker death:
@@ -538,6 +549,7 @@ function sim_squad_scripted.create_npc(self, spawn_smart, pos, lvid, gvid)
     --utils_data.debug_write("sim_squad_scripted:create_npc")
     local settings_id = self:section_name()
     local spawn_sections = parse_names(ini_sys:r_string_ex(settings_id, "npc") or "")
+    warfare_log.trace("sim_squad_scripted.create_npc: section=%s smart=%s sections=%s", tostring(settings_id), tostring(spawn_smart and spawn_smart:name()), tostring(#spawn_sections))
 
     local base_spawn_position, base_lvi, base_gvi, spawn_vid
     if (spawn_smart) then
@@ -769,6 +781,7 @@ function xr_logic.configure_schemes(npc, ini, ini_filename, stype, section_logic
     --printf("DEBUG: enable_scripts: npc:name()=%s", npc:name())
 
     if not (npc) then
+        warfare_log.err("configure_schemes: NPC IS NIL!")
         abort("configure_schemes: NPC IS NIL!")
         return
     end
@@ -776,11 +789,14 @@ function xr_logic.configure_schemes(npc, ini, ini_filename, stype, section_logic
     local npc_id = npc:id()
     local st = db.storage[npc_id]
     if not (st) then
+        warfare_log.trace("configure_schemes: no db.storage for npc=%s id=%s", tostring(npc:name()), tostring(npc_id))
         return
     end
+    warfare_log.trace("configure_schemes: npc=%s id=%s section_logic=%s ini_filename=%s", tostring(npc:name()), tostring(npc_id), tostring(section_logic), tostring(ini_filename))
 
     -- if some scheme was previously active, deactivate it
     if st.active_section then
+        warfare_log.trace("configure_schemes: deactivating prev scheme=%s on npc=%s", tostring(st.active_scheme), tostring(npc:name()))
         xr_logic.issue_event(npc, st[st.active_scheme], "deactivate", npc)
     end
 
@@ -807,6 +823,7 @@ function xr_logic.configure_schemes(npc, ini, ini_filename, stype, section_logic
     actual_ini = actual_ini or ini
 
     if not (actual_ini) then
+        warfare_log.err("configure_schemes: actual_ini nil for npc=%s actual_ini_filename=%s section_logic=%s", tostring(npc:name()), tostring(actual_ini_filename), tostring(section_logic))
         callstack()
         printe("!ERROR: object '%s' actual_ini=%s actual_ini_filename=%s %s=%s", npc:name(), actual_ini ~= nil, actual_ini_filename, section_logic, actual_ini and actual_ini:section_exist(section_logic))
         return
@@ -836,6 +853,7 @@ function xr_logic.configure_schemes(npc, ini, ini_filename, stype, section_logic
                     -- only true if the npc is a warfare-spawned trader
                     local faction = character_community(npc)
                     trade_ini = trade_names[faction]
+                    warfare_log.debug("configure_schemes: warfare trader npc=%s faction=%s trade_ini=%s", tostring(npc:name()), tostring(faction), tostring(trade_ini))
                 end
             else
                 trade_ini = "items\\trade\\trade_generic.ltx"                -- generic stalkers give generic trade inventory
@@ -877,10 +895,12 @@ function ui_pda_taskboard_tab.trigger_generate_available_tasks(npc_list)
             npc_list_others[#npc_list_others + 1] = npc
         end
     end
+    warfare_log.debug("trigger_generate_available_tasks: traders=%s others=%s", tostring(#npc_list_sim_traders), tostring(#npc_list_others))
 
     old_ui_pda_taskboard_tab_trigger_generate_available_tasks(npc_list_others)
 
     for _,npc in pairs(npc_list_sim_traders) do
+        warfare_log.trace("trigger_generate_available_tasks: generating for warfare trader npc=%s", tostring(npc:name()))
         ui_pda_taskboard_tab.currently_processed_npc_id = npc:id()
         axr_task_manager.generate_available_tasks(npc, false)
         ui_pda_taskboard_tab.currently_processed_npc_id = nil
@@ -916,5 +936,6 @@ function task_objects.CGeneralTask.check_task(self, tm)
         return
     end
 
+    warfare_log.info("CGeneralTask.check_task: task=%s giver dead, marking fail", tostring(self.id))
     self.last_check_task = "fail"
 end

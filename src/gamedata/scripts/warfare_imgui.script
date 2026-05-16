@@ -19,6 +19,7 @@ auto_capture_window_visible = false
 smart_info_window_visible = false
 
 function on_game_start()
+    warfare_log.debug("warfare_imgui.on_game_start: registering ImGui menu and render widgets")
     -- Add warfare menu items to dedicated Warfare group
     ImGui.Groups.Warfare.Widget(function()
         local _

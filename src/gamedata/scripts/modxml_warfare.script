@@ -3,6 +3,7 @@ local ui_options_UIOptions_callback_track = ui_options.UIOptions.Callback_Track
 function ui_options.UIOptions.Callback_Track(self, ctrl, path, opt, v, value)
     ui_options_UIOptions_callback_track(self, ctrl, path, opt, v, value)
     init_settings_map()
+    warfare_log.trace("modxml_warfare.Callback_Track: path=%s opt=%s value=%s", tostring(path), tostring(opt), tostring(value))
     update_ctrl_text(ctrl, ui_options.cc(path, opt), value)
 end
 
@@ -19,6 +20,7 @@ end
 
 local ui_options_UIOptions_on_cancel = ui_options.UIOptions.On_Cancel
 function ui_options.UIOptions.On_Cancel(self)
+    warfare_log.debug("modxml_warfare.On_Cancel: clearing settings_map")
     settings_map = {}
     ui_options_UIOptions_on_cancel(self)
 end
@@ -29,6 +31,7 @@ function init_settings_map()
     if #settings_map > 0 then
         return
     end
+    warfare_log.debug("modxml_warfare.init_settings_map: building MCM display-format map")
 
     -- General settings
     local general = "alife/warfare/general/"
@@ -114,6 +117,7 @@ end
 
 local old_ui_options_init_opt_coder = ui_options.init_opt_coder
 function ui_options.init_opt_coder()
+    warfare_log.debug("modxml_warfare.init_opt_coder: injecting warfare options into MCM tree")
     local alife_options_index = 5
     local alife_general_options_index = 1
     local alife_general_alife_mutant_pop_index = 2
@@ -368,6 +372,7 @@ function ui_mm_faction_select.UINewGame:OnCheckSetStory()
     if (not self.access) then
         return
     end
+    warfare_log.info("modxml_warfare.OnCheckSetStory: story mode selected, clearing survival/azazel")
 
     self.ck_survival:SetCheck(false)
     self.ck_states["ck_survival"] = false
@@ -383,6 +388,7 @@ function ui_mm_faction_select.UINewGame:OnCheckSetWarfare()
     if (not self.access) then
         return
     end
+    warfare_log.info("modxml_warfare.OnCheckSetWarfare: warfare mode selected, clearing survival")
 
     self.ck_survival:SetCheck(false)
     self.ck_states["ck_survival"] = false
@@ -394,16 +400,19 @@ local old_on_game_load = ui_mm_faction_select.on_game_load
 function ui_mm_faction_select.on_game_load(binder)
     local config = axr_main.config
     if not (config) then
+        warfare_log.warn("modxml_warfare.on_game_load: axr_main.config nil")
         return
     end
     local faction = config:r_value("character_creation", "new_game_faction", 3) or ""
     old_on_game_load(binder)
+    warfare_log.debug("modxml_warfare.on_game_load: new_game_faction=%s", tostring(faction))
     if not ui_mm_faction_select.faction_psi_off[faction] then
         return
     end
 
     --WHen this condition is met, original function gives these info to the actor
     if (config:r_value("character_creation", "new_game_story_mode", 1) == true) and (not has_alife_info("story_mode_disabled")) then
+        warfare_log.info("modxml_warfare.on_game_load: psi-off faction=%s story mode active, disabling story-flag infos", tostring(faction))
         local info_to_disable = {
             "yan_labx16_switcher_1_off",
             "yan_labx16_switcher_2_off",
@@ -418,6 +427,7 @@ function ui_mm_faction_select.on_game_load(binder)
     end
 
     local helm_name = "good_psy_helmet"
+    warfare_log.info("modxml_warfare.on_game_load: giving psi-off faction=%s a %s", tostring(faction), tostring(helm_name))
     alife_create_item(helm_name, db.actor)
 end
 
@@ -426,11 +436,13 @@ function ui_mm_faction_select.actor_on_first_update(binder, delta)
     old_actor_on_first_update(binder, delta)
     -- Survival mode
     if (IsSurvivalMode()) then
+        warfare_log.info("modxml_warfare.actor_on_first_update: survival mode init, suppressing zombied/monolith relations")
         game_relations.change_factions_community_num("zombied", 0, -5000)
         game_relations.change_factions_community_num("monolith", 0, -5000)
 
         local faction = character_community(db.actor):sub(7)
         if (ini_sys:section_exist("survival_squad_" .. faction) and ui_mm_faction_select.start_pos) then
+            warfare_log.info("modxml_warfare.actor_on_first_update: spawning survival_squad_%s", tostring(faction))
             local squad = alife_create("survival_squad_" .. faction, ui_mm_faction_select.start_pos[3], ui_mm_faction_select.start_pos[1], ui_mm_faction_select.start_pos[2])
             if (squad) then
                 axr_companions.companion_squads[squad.id] = squad
@@ -445,6 +457,8 @@ function ui_mm_faction_select.actor_on_first_update(binder, delta)
                         se_save_var(se_obj.id, se_obj:name(), "companion_cannot_dismiss", true)
                     end
                 end
+            else
+                warfare_log.warn("modxml_warfare.actor_on_first_update: alife_create survival_squad_%s returned nil", tostring(faction))
             end
         end
     end

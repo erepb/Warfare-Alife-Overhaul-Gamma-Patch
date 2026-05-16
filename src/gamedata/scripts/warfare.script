@@ -115,9 +115,11 @@ dynamic_relations_installed = false
 ignore = {}
 
 function apply_all_out_war()
+    warfare_log.info("apply_all_out_war: setting all faction relations to -4000 (actor_faction=%s)", actor_faction)
     for i, faction in pairs(warfare_factions.factions) do
         for j, faction2 in pairs(warfare_factions.factions) do
             if (faction ~= faction2) then
+                warfare_log.trace("apply_all_out_war: %s vs %s", faction, faction2)
                 game_relations.set_factions_community(faction, faction2, -4000)
 
                 if (dynamic_relations_installed) then
@@ -158,8 +160,10 @@ registered_squads = {
 -- restored as ghosts on the next load.
 function remove_registered_squad(faction, id)
     if not (faction and id) then
+        warfare_log.warn("remove_registered_squad: nil args faction=%s id=%s", faction, id)
         return
     end
+    warfare_log.trace("remove_registered_squad: faction=%s id=%s", faction, id)
     if registered_squads[faction] then
         registered_squads[faction][id] = nil
     end
@@ -176,6 +180,7 @@ end
 -- squad of a different community (wrong bucket).
 function cleanup_ghost_squads()
     warfare_log.tr_begin("warfare/actor_on_first_update")
+    warfare_log.info("cleanup_ghost_squads: scanning registered_squads for ghosts")
     local removed = {}
     for faction, tbl in pairs(registered_squads) do
         for id in pairs(tbl) do
@@ -190,10 +195,12 @@ function cleanup_ghost_squads()
                 reason = "faction_mismatch:" .. actual
             end
             if reason then
+                warfare_log.debug("cleanup_ghost_squads: ghost faction=%s id=%s reason=%s", faction, id, reason)
                 removed[#removed + 1] = { faction = faction, id = id, reason = reason }
             end
         end
     end
+    warfare_log.info("cleanup_ghost_squads: %s ghosts found, purging", #removed)
     for _, e in ipairs(removed) do
         remove_registered_squad(e.faction, e.id)
     end
@@ -201,9 +208,11 @@ end
 
 -- save warfare state
 function save_state(m_data)
+    warfare_log.info("save_state: persisting warfare state")
 
     -- if data doesn't exist, create it.
     if (not m_data.warfare) then
+        warfare_log.debug("save_state: m_data.warfare missing, initializing fresh")
         m_data.warfare = {}
         m_data.warfare.squads = {}
         m_data.warfare.smart_owners = {}
@@ -243,6 +252,7 @@ function save_state(m_data)
         if (squad) then
             -- empty squads and loner/ecolog squads are unmarked
             if (not squad.npc_count or squad:npc_count() == 0) then
+                warfare_log.debug("save_state: dropping empty random_patrol sid=%s", sid)
                 smart_terrain_warfare.remove_random_patrol(sid)
             end
         end
@@ -251,6 +261,7 @@ function save_state(m_data)
     m_data.warfare.random_patrols = smart_terrain_warfare.random_patrols
 
     -- iterate over the faction tables in registered_squads
+    local squad_total = 0
     for faction, tbl in pairs(registered_squads) do
         if not m_data.warfare.squads[faction] then
             m_data.warfare.squads[faction] = {}
@@ -259,6 +270,7 @@ function save_state(m_data)
         -- iterate over the squad ids in the faction table
         for ID, target in pairs(tbl) do
             m_data.warfare.squads[faction][ID] = target
+            squad_total = squad_total + 1
         end
     end
 
@@ -266,6 +278,7 @@ function save_state(m_data)
         m_data.warfare.smart_owners[smart.id] = smart.owning_faction
     end
 
+    warfare_log.info("save_state: persisted %s registered squads", squad_total)
 end
 
 loaded_squads = false
@@ -273,6 +286,7 @@ legacy_save_stagger = false  -- set true when loading a save that has no persist
 
 function load_state(m_data)
     -- if warfare data isn't saved, return early.
+    warfare_log.info("load_state: restoring warfare state (m_data.warfare=%s)", m_data.warfare ~= nil)
 
 
     actor_influence_points = m_data.warfare and m_data.warfare.actor_influence_points or 0
@@ -290,6 +304,9 @@ function load_state(m_data)
     -- Detect legacy save (pre-1.4.5): defense_delay was introduced after 1.4.2.
     -- Old saves have warfare data but no defense_delay key.
     legacy_save_stagger = m_data.warfare ~= nil and m_data.warfare.defense_delay == nil
+    if legacy_save_stagger then
+        warfare_log.warn("load_state: legacy save detected (no defense_delay) - will stagger spawn timers")
+    end
 
     smart_terrain_warfare.defense_timers = m_data.warfare and m_data.warfare.defense_timers or {}
     smart_terrain_warfare.defense_delay = m_data.warfare and m_data.warfare.defense_delay or {}
@@ -308,11 +325,18 @@ function load_state(m_data)
 
     -- Clamp saved mutant timer durations to current option max so setting reductions take effect immediately
     local _max_mutant = warfare_options.options.monster_max_faction_respawn
+    warfare_log.debug("load_state: clamping mutant timers to max=%s", _max_mutant)
     for id, v in pairs(smart_terrain_warfare.spawn_mutant_next_update) do
-        if v > _max_mutant then smart_terrain_warfare.spawn_mutant_next_update[id] = _max_mutant end
+        if v > _max_mutant then
+            warfare_log.trace("load_state: clamp spawn_mutant_next_update[%s] %s->%s", id, v, _max_mutant)
+            smart_terrain_warfare.spawn_mutant_next_update[id] = _max_mutant
+        end
     end
     for id, v in pairs(smart_terrain_warfare.process_mutant_next_update) do
-        if v > _max_mutant then smart_terrain_warfare.process_mutant_next_update[id] = _max_mutant end
+        if v > _max_mutant then
+            warfare_log.trace("load_state: clamp process_mutant_next_update[%s] %s->%s", id, v, _max_mutant)
+            smart_terrain_warfare.process_mutant_next_update[id] = _max_mutant
+        end
     end
     smart_terrain_warfare.loner_timer = m_data.warfare and m_data.warfare.loner_timer or {}
     smart_terrain_warfare.loners_next_update = m_data.warfare and m_data.warfare.loners_next_update or {}
@@ -327,6 +351,7 @@ function load_state(m_data)
     for smart, squads in pairs(m_data.warfare and m_data.warfare.patrol_squads or {}) do
         for squad_id, tbl in pairs(squads) do
             if type(tbl) == "number" then
+                warfare_log.debug("load_state: migrating legacy patrol_squads entry smart=%s squad=%s", smart, squad_id)
                 smart_terrain_warfare.patrol_squads[smart][squad_id] = {
                     target = tbl,
                     arrive_time = nil,
@@ -339,12 +364,15 @@ function load_state(m_data)
 
     warfare_factions.faction_information = m_data.warfare and m_data.warfare.faction_information or {}
 
+    local restored = 0
     for faction, tbl in pairs(m_data.warfare and m_data.warfare.squads or {}) do
         for ID, target in pairs(tbl) do
             registered_squads[faction][ID] = target
             loaded_squads = true
+            restored = restored + 1
         end
     end
+    warfare_log.info("load_state: restored %s registered squads", restored)
 
 
     if (m_data.warfare and m_data.warfare.smart_owners) then
@@ -363,11 +391,12 @@ function load_state(m_data)
 
     -- clear old data.
     m_data.warfare = nil
+    warfare_log.debug("load_state: complete, m_data.warfare cleared")
 end
 
 -- callback for when npcs are created for a squad, done in create_squad for sim_board.
 function squad_on_npc_creation(squad, se_obj, spawn_smart)
-
+    warfare_log.trace("squad_on_npc_creation: squad=%s smart=%s", squad and squad:name(), spawn_smart and spawn_smart:name())
 
     -- Ignore any squads in the ignore list.
     if not (ignore[squad:section_name()]) then
@@ -377,13 +406,18 @@ function squad_on_npc_creation(squad, se_obj, spawn_smart)
             local faction = squad:get_squad_community()
 
             if (registered_squads[faction]) then
+                warfare_log.debug("squad_on_npc_creation: registering squad=%s faction=%s smart=%s", squad:name(), faction, spawn_smart:name())
                 registered_squads[faction][squad.id] = spawn_smart.id
                 squad.assigned_target_id = spawn_smart.id
                 squad.registered_with_warfare = true
                 spawn_smart:on_reach_target(squad)
+            else
+                warfare_log.trace("squad_on_npc_creation: faction %s not in registered_squads table", faction)
             end
         else
         end
+    else
+        warfare_log.trace("squad_on_npc_creation: ignored section=%s", squad:section_name())
     end
 
 end
@@ -402,6 +436,7 @@ function actor_on_update()
 
     if not (IsWarfare()) then
         if (_G.WARFARE) then
+            warfare_log.info("actor_on_update: IsWarfare() returned false, disabling _G.WARFARE")
             _G.WARFARE = false
         end
 
@@ -412,13 +447,16 @@ function actor_on_update()
     local tg = game.get_game_time()
 
     if first_update then
+        warfare_log.info("actor_on_update: first_update path - initializing warfare level data")
         first_update = false
         actor_faction = get_actor_true_community() or alife():actor():community():sub(7)
         --actor_faction = alife_storage_manager.get_state().default_faction
         --printf("!!!! "..alife_storage_manager.get_state().default_faction.." !!!!" )
+        warfare_log.info("actor_on_update: actor_faction=%s", actor_faction)
         give_info("actor_made_wish_for_peace")
 
         if (warfare_options.options.all_out_war) then
+            warfare_log.info("actor_on_update: all_out_war enabled, setting -5000 relations")
             for i, f in pairs(warfare_factions.factions) do
                 for j, f2 in pairs(warfare_factions.factions) do
                     if f ~= f2 then
@@ -428,12 +466,14 @@ function actor_on_update()
             end
         end
 
+        warfare_log.debug("actor_on_update: scanning SIMBOARD.smarts_by_names to populate level_information")
         for name, smart in pairs(SIMBOARD.smarts_by_names) do
             if (not smart.level_id) then
                 smart.level_id = game_graph():vertex(smart.m_game_vertex_id):level_id()
             end
 
             if (not warfare_levels.level_information[smart.level_id]) then
+                warfare_log.trace("actor_on_update: init level_information[%s]", smart.level_id)
                 warfare_levels.level_information[smart.level_id] = {}
                 warfare_levels.level_information[smart.level_id].smarts = {}
                 warfare_levels.level_information[smart.level_id].faction_priority = {}
@@ -488,9 +528,11 @@ function actor_on_update()
     end
 
     if (last_update:diffSec(tg) > 0) then
+        warfare_log.trace("actor_on_update: throttled, awaiting tick")
         return
     end
 
+    warfare_log.trace("actor_on_update: tick fired")
 
     -- Time delta tracking for spawn protection
     if not last_warfare_time then
@@ -506,6 +548,7 @@ function actor_on_update()
 
         -- Big time jump (>1 hour): advance spawn timers to prevent mass spawns
         if time_delta > 3600 then
+            warfare_log.info("actor_on_update: big time jump %s sec - advancing spawn timers", time_delta)
             smart_terrain_warfare.advance_spawn_timers(time_delta)
             warfare_factions.advance_spawn_timers(time_delta)
             instant_big_jump = true
@@ -526,9 +569,13 @@ function actor_on_update()
             local new_is_night = warfare_utils.is_night()
 
             if not new_is_night and night_accumulated > 0 then
+                warfare_log.info("actor_on_update: dawn reached, advancing spawn timers by %s night-sec", night_accumulated)
                 smart_terrain_warfare.advance_spawn_timers(night_accumulated)
                 warfare_factions.advance_spawn_timers(night_accumulated)
                 night_accumulated = 0
+            end
+            if new_is_night ~= was_night_wt then
+                warfare_log.debug("actor_on_update: night state change %s->%s", was_night_wt, new_is_night)
             end
             was_night_wt = new_is_night
         end
@@ -541,8 +588,10 @@ function actor_on_update()
     actor_faction = get_actor_true_community() or alife():actor():community():sub(7)
 
     if (not initialized) then
+        warfare_log.info("actor_on_update: not initialized, running one-shot init")
         if ui_options.get("alife/general/dynamic_relations") then
             dynamic_relations_installed = true
+            warfare_log.info("actor_on_update: dynamic_relations detected")
         end
 
         if (dynamic_relations_installed) then
@@ -568,6 +617,7 @@ function actor_on_update()
         old_surge_cnt = new_surge_cnt
     end
     if (new_surge_cnt > old_surge_cnt) then
+        warfare_log.info("actor_on_update: emission count %s->%s, triggering snap()", old_surge_cnt, new_surge_cnt)
         snap()
     end
     old_surge_cnt = new_surge_cnt
@@ -592,6 +642,7 @@ function actor_on_update()
 end
 
 function initialize()
+    warfare_log.info("initialize: warfare initialized")
 
     -- At this point this just serves to pause everything to ensure squads reach their "waiting at target" state before resource counts etc are calculated.
     initialized = true
@@ -631,6 +682,7 @@ function refresh_pop_cache()
     local new_stalker = get_stalker_pop_factor_value()
     local new_monster = get_monster_pop_factor_value()
     if new_stalker ~= cached_stalker_pop or new_monster ~= cached_monster_pop then
+        warfare_log.debug("refresh_pop_cache: pop factors changed stalker=%s monster=%s (was %s/%s)", new_stalker, new_monster, cached_stalker_pop, cached_monster_pop)
         pop_dirty = true
     end
     cached_stalker_pop = new_stalker
@@ -657,18 +709,22 @@ end
 
 -- for vanilla, probably create a custom simulation.ltx
 function fill_start_position()
+    warfare_log.info("fill_start_position: entry")
 
     if (not IsWarfare()) then
+        warfare_log.info("fill_start_position: IsWarfare=false, skipping")
         return
     end
 
     if (SIMBOARD.start_position_filled) then
+        warfare_log.debug("fill_start_position: SIMBOARD.start_position_filled already set, skipping")
         return
     end
 
     SIMBOARD.start_position_filled = true
 
     if (warfare_options.options.random_starting_locations) then
+        warfare_log.info("fill_start_position: random_starting_locations enabled, deferring")
         return
         --initialize_random_starting_locations()
     end
@@ -686,13 +742,18 @@ function fill_start_position()
     if ene_bonus then
         local config = axr_main.config
         if not (config) then
+            warfare_log.warn("fill_start_position: axr_main.config missing, aborting ene_bonus path")
             return
         end
         actor_faction = config:r_value("character_creation", "new_game_faction", 3)
+        warfare_log.debug("fill_start_position: ene_bonus actor_faction=%s", actor_faction)
     end
 
     ignore = sim_offline_combat.get_ignore_list()
 
+    warfare_log.info("fill_start_position: stalker_pop=%s monster_pop=%s speed_mult=%s mutant_max=%s",
+        stalker_pop_factor, monster_pop_factor, warfare_options.options.spawn_speed_multiplier or 1,
+        warfare_options.options.monster_max_faction_respawn)
 
     -- mutant spawns on new game + stagger mutant spawn timers
     local speed_mult = warfare_options.options.spawn_speed_multiplier or 1
@@ -733,12 +794,14 @@ function fill_start_position()
 
                 local section = faction_expansions.get_spawn_section("monster", rare_chance, smart.level_id)
                 local squad = utils_obj.create_squad(section, smart:name())
+                warfare_log.info("fill_start_position: spawned monster section=%s at smart=%s", section, smart:name())
                 sim_squad_warfare.set_target(squad, smart.id)
 
             end
         end
     end
 
+    warfare_log.info("fill_start_position: lair seeding complete, processing simulation.ltx sections")
     setting_ini:section_for_each(function(section)
         lc = setting_ini:line_count(section)
         local smart_current_pop = 0
@@ -805,6 +868,7 @@ function fill_start_position()
 
                             if smart and squad_spawned and registered_squads[squad:get_squad_community()] and not ignore[squad:section_name()] then
                                 sim_squad_warfare.set_target(squad, smart.id)
+                                warfare_log.info("fill_start_position: spawned squad section=%s faction=%s smart=%s", squad_section, sf, smart:name())
 
                                 -- stagger defense/patrol timers for bases so they don't all fire in sync
                                 if smart.props and smart.props.base > 0 and not smart_terrain_warfare.defense_timers[smart.id] then
@@ -814,6 +878,7 @@ function fill_start_position()
                                         local pat_interval = ff.min_patrol_time * speed_mult
                                         smart_terrain_warfare.defense_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(def_interval * 6)))
                                         smart_terrain_warfare.patrol_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(pat_interval * 6)))
+                                        warfare_log.trace("fill_start_position: stagger base smart=%s faction=%s", smart:name(), sf)
                                     end
                                 end
                             else
@@ -825,13 +890,16 @@ function fill_start_position()
         end
     end)
 
+    warfare_log.info("fill_start_position: complete")
 end
 
 -- force squads to target nearest smarts on new warfare game, on_game_load compatibility
 function fill_start_position_on_load()
     if alife_storage_manager.get_state().warfare_filled_start_position then
+        warfare_log.trace("fill_start_position_on_load: already filled, skipping")
         return
     end
+    warfare_log.info("fill_start_position_on_load: retargeting squads to nearest smarts")
     alife_storage_manager.get_state().warfare_filled_start_position = true
 
     local function get_nearest_smart_id(squad)
@@ -856,6 +924,7 @@ function fill_start_position_on_load()
         end
     end
 
+    local retargeted = 0
     for id, v in pairs(SIMBOARD.squads) do
         local squad = alife_object(id)
         local section = squad and squad:section_name()
@@ -863,9 +932,11 @@ function fill_start_position_on_load()
             local smart_id = get_nearest_smart_id(squad)
             if smart_id then
                 sim_squad_warfare.set_target(squad, smart_id)
+                retargeted = retargeted + 1
             end
         end
     end
+    warfare_log.info("fill_start_position_on_load: retargeted %s squads", retargeted)
 end
 
 -- When loading a legacy save (pre-1.4.5, detected via missing defense_delay),
@@ -874,8 +945,10 @@ end
 function stagger_legacy_spawn_timers()
     if not legacy_save_stagger then return end
     legacy_save_stagger = false
+    warfare_log.info("stagger_legacy_spawn_timers: applying legacy timer stagger")
 
     local speed_mult = warfare_options.options.spawn_speed_multiplier or 1
+    local staggered = 0
 
     for name, smart in pairs(SIMBOARD.smarts_by_names) do
         if not smart.props then
@@ -891,13 +964,16 @@ function stagger_legacy_spawn_timers()
                     local pat_interval = ff.min_patrol_time * speed_mult
                     smart_terrain_warfare.defense_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(def_interval * 6)))
                     smart_terrain_warfare.patrol_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(pat_interval * 6)))
+                    staggered = staggered + 1
                 end
             end
         end
     end
+    warfare_log.info("stagger_legacy_spawn_timers: staggered %s bases", staggered)
 end
 
 function initialize_random_starting_locations()
+    warfare_log.info("initialize_random_starting_locations: entry")
     local bases = {}
     local max_resources = 0
     for _, smart in pairs(SIMBOARD.smarts_by_names) do
@@ -916,6 +992,7 @@ function initialize_random_starting_locations()
     end
 
     local base = bases[math.random(#bases)]
+    warfare_log.info("initialize_random_starting_locations: chosen base=%s for actor faction", base and base:name())
 
     start_pos = {}
     table.insert(start_pos, base.m_level_vertex_id)
@@ -927,6 +1004,7 @@ function initialize_random_starting_locations()
     local used_smarts = {}
 
     actor_faction = alife():actor():community():sub(7)
+    warfare_log.debug("initialize_random_starting_locations: actor_faction=%s", actor_faction)
 
     starting_smarts[actor_faction] = {
         smart = base,
@@ -964,6 +1042,7 @@ function initialize_random_starting_locations()
                     end
 
                     if (safe) then
+                        warfare_log.info("initialize_random_starting_locations: assigned faction=%s to base=%s", f, s:name())
                         starting_smarts[f] = { smart = s, p = gpos, }
                         used_smarts[s.id] = true
                         s.global_position = gpos
@@ -1053,6 +1132,7 @@ function initialize_random_starting_locations()
         end
     end
 
+    warfare_log.info("initialize_random_starting_locations: complete, calling ChangeLevel")
     ChangeLevel(start_pos[3], start_pos[1], start_pos[2], VEC_ZERO)
 
 end
@@ -1085,23 +1165,28 @@ function squad_on_unregister(squad, type_name)
 
     if (squad) then
         local faction = squad:get_squad_community()
+        warfare_log.debug("squad_on_unregister: squad=%s id=%s faction=%s", squad:name(), squad.id, faction)
 
         if (registered_squads[faction]) then
             remove_registered_squad(faction, squad.id)
 
             if (smart_terrain_warfare.random_patrols[squad.id]) then
+                warfare_log.trace("squad_on_unregister: dropping random_patrol id=%s", squad.id)
                 smart_terrain_warfare.remove_random_patrol(squad.id)
             end
 
             if (squad.patrol_owner) then
+                warfare_log.trace("squad_on_unregister: dropping patrol_squads[%s][%s]", squad.patrol_owner, squad.id)
                 smart_terrain_warfare.patrol_squads[squad.patrol_owner][squad.id] = nil
             end
         else
+            warfare_log.trace("squad_on_unregister: faction %s not registered, ignoring", faction)
         end
     end
 end
 
 function on_game_start()
+    warfare_log.info("on_game_start: registering warfare callbacks")
     --_G.WARFARE = false
     warfare_options.update_settings()
 
@@ -1117,6 +1202,7 @@ function on_game_start()
     RegisterScriptCallback("actor_on_first_update", cleanup_ghost_squads)
 
     local function on_game_load()
+        warfare_log.info("on_game_load: priming ignore list and scheduling resetter")
         ignore = sim_offline_combat.get_ignore_list()
         stagger_legacy_spawn_timers()
         CreateTimeEvent(0, "reset_warfare_callbacks", 60, resetter)
@@ -1237,9 +1323,13 @@ end
 
 function snap()
     local mode = warfare_options.options.emission_effect
-    if (not mode) or (mode == "off") then return end
+    if (not mode) or (mode == "off") then
+        warfare_log.debug("snap: emission_effect disabled, returning")
+        return
+    end
 
     local p = warfare_options.options.purge_zone_percentage or 50
+    warfare_log.info("snap: emission purge mode=%s percentage=%s", mode, p)
 
     -- Collect all squad IDs first — modifying registered_squads during pairs() is unsafe
     local to_process = {}
@@ -1248,7 +1338,10 @@ function snap()
             to_process[#to_process + 1] = { id = squad_id, faction = faction }
         end
     end
+    warfare_log.debug("snap: collected %s candidate squads", #to_process)
 
+    local zombified = 0
+    local killed = 0
     for _, entry in ipairs(to_process) do
         local squad = alife_object(entry.id)
         local faction = entry.faction
@@ -1261,6 +1354,7 @@ function snap()
                 if target and target.owning_faction == faction then
                     local t_name = target.name and target:name()
                     if t_name and smart_terrain_warfare.get_protected_base_faction(t_name) == faction then
+                        warfare_log.trace("snap: skip protected base defender squad=%s smart=%s", squad:name(), t_name)
                         goto continue
                     end
                 end
@@ -1281,6 +1375,7 @@ function snap()
                     local section = get_zombied_section(original_section)
                     local new_squad = utils_obj.create_squad(section, smart_name)
                     if new_squad then
+                        warfare_log.trace("snap: zombified squad section=%s->%s smart=%s count=%s", original_section, section, smart_name, original_count)
                         -- Trim zombie squad down to original member count
                         local excess = new_squad:npc_count() - original_count
                         if excess > 0 then
@@ -1300,22 +1395,31 @@ function snap()
                         local patrol_target = smart_terrain_warfare.find_random_patrol_target(smart_obj, "zombied", new_squad.id)
                         if patrol_target then
                             sim_squad_warfare.set_target(new_squad, patrol_target)
+                        else
+                            warfare_log.warn("snap: zombified squad %s has no patrol_target", new_squad:name())
                         end
+                        zombified = zombified + 1
+                    else
+                        warfare_log.warn("snap: failed to spawn zombified replacement section=%s smart=%s", section, smart_name)
                     end
                 end
             else
                 -- Kill mode (or zombify skips zombie/monster squads — just kill them)
+                warfare_log.trace("snap: kill squad=%s faction=%s", squad:name(), faction)
                 sim_squad_warfare.remove_squad(squad)
                 squad:remove_squad()
+                killed = killed + 1
             end
 
             ::continue::
         end
     end
+    warfare_log.info("snap: complete zombified=%s killed=%s", zombified, killed)
 end
 
 function resetter()
     if not (IsWarfare()) then
+        warfare_log.info("resetter: IsWarfare=false, unregistering warfare callbacks")
         _G.WARFARE = false
         UnregisterScriptCallback("fill_start_position", fill_start_position)
         UnregisterScriptCallback("load_state", load_state)

@@ -17,6 +17,7 @@ local clr_w,clr_gr
 
 local SINGLETON = nil
 function get_ui()
+    warfare_log.debug("ui_pda_warfare_tab.get_ui: returning singleton (existed=%s)", tostring(SINGLETON ~= nil))
     SINGLETON = SINGLETON or pda_warfare_tab()
     SINGLETON:Reset()
     return SINGLETON
@@ -25,6 +26,7 @@ end
 -- Constructor.
 class "pda_warfare_tab" (CUIScriptWnd)
 function pda_warfare_tab:__init() super()
+    warfare_log.debug("pda_warfare_tab:__init: constructing")
 
     self.curr_map = false
     
@@ -79,6 +81,7 @@ function pda_warfare_tab:InitControls()
 end
 
 function pda_warfare_tab:Reset()
+    warfare_log.debug("pda_warfare_tab:Reset: rebuilding faction list (curr_map=%s)", tostring(self.curr_map))
     local xml = self.xml
     
     -- Clear XML elements
@@ -334,11 +337,12 @@ end
 
 function pda_warfare_tab:btn_map()
     self.curr_map = not self.curr_map
+    warfare_log.info("pda_warfare_tab:btn_map: toggled curr_map=%s", tostring(self.curr_map))
     if self.curr_map then
         self.btn:TextControl():SetText(game.translate_string("pda_current_level"))
     else
         self.btn:TextControl():SetText(game.translate_string("pda_all_levels"))
     end
-    
+
     self:Reset()
 end

@@ -106,6 +106,7 @@ local m_class = {
 -- Main
 -------------------------------
 local function smart_terrain_on_update(smart)
+    warfare_log.trace("smart_terrain_on_update: smart=%s id=%s", smart.name and smart:name() or "?", smart.id)
 
     empty_table(tbl_smart)
 
@@ -114,6 +115,7 @@ local function smart_terrain_on_update(smart)
     end
 
     if (#tbl_smart == 0) then
+        warfare_log.trace("smart_terrain_on_update: no squads, smart=%s", smart.id)
         return
     end
 
@@ -130,6 +132,7 @@ local function smart_terrain_on_update(smart)
         then
             local community_1 = squad_1:get_squad_community()
             if (community_1 == "monster" and (not can_fight_mutant)) then
+                warfare_log.trace("smart_terrain_on_update: skip monster (can_fight_mutant=off) squad=%s", id_1)
                 return
             end
 
@@ -143,6 +146,7 @@ local function smart_terrain_on_update(smart)
                     local id_t = opponents[id_1]
                     if id_t and squads_by_level[lid_1][id_t] then
                         --squad_1.assigned_target_id = id_t
+                        warfare_log.trace("smart_terrain_on_update: existing opponent squad=%s target=%s", id_1, id_t)
                         in_combat = validate_enemy(sim, lid_1, squad_1, id_1, id_t, community_1)
                         if in_combat then
                             return
@@ -150,10 +154,12 @@ local function smart_terrain_on_update(smart)
                         local sq_t = sim:object(id_t)
                         local _dist_sqr = sq_t and distance_to_xz_sqr(squad_1.position, sq_t.position)
                         if sq_t and _dist_sqr and _dist_sqr > opt_dist then
+                            warfare_log.debug("smart_terrain_on_update: out of range disengage squad=%s target=%s dist_sqr=%s opt_dist=%s", id_1, id_t, _dist_sqr, opt_dist)
                             disengage_combat(id_1, squad_1, id_t, sq_t)
                         end
                     elseif id_t then
                         local sq_t = sim:object(id_t)
+                        warfare_log.debug("smart_terrain_on_update: stale opponent (gone from level) squad=%s target=%s", id_1, id_t)
                         disengage_combat(id_1, squad_1, id_t, sq_t)
                     end
 
@@ -172,8 +178,10 @@ local function smart_terrain_on_update(smart)
 end
 
 local function squad_on_update(squad_1)
+    warfare_log.trace("ocs.squad_on_update: squad=%s", squad_1 and squad_1:name() or "?")
 
     if (squad_1:clsid() ~= clsid.online_offline_group_s) then
+        warfare_log.err("!!! TRYING TO REGISTER NON-SQUAD AS SQUAD: squad=%s", squad_1 and squad_1:name() or "?")
         printe("!!! TRYING TO REGISTER NON-SQUAD AS SQUAD")
         return
     end
@@ -197,6 +205,7 @@ local function squad_on_update(squad_1)
     --c_cnt = 0
 
     if (community_1 == "monster" and (not can_fight_mutant)) then
+        warfare_log.trace("ocs.squad_on_update: skip monster (can_fight_mutant=off) squad=%s", id_1)
         return
     end
 
@@ -212,6 +221,7 @@ local function squad_on_update(squad_1)
             local id_t = opponents[id_1]
             if id_t and squads_by_level[lid_1][id_t] then
                 --squad_1.assigned_target_id = id_t
+                warfare_log.trace("ocs.squad_on_update: existing opponent squad=%s target=%s", id_1, id_t)
                 in_combat = validate_enemy(sim, lid_1, squad_1, id_1, id_t, community_1)
                 if in_combat then
                     return
@@ -219,10 +229,12 @@ local function squad_on_update(squad_1)
                 local sq_t = sim:object(id_t)
                 local _dist_sqr = sq_t and distance_to_xz_sqr(squad_1.position, sq_t.position)
                 if sq_t and _dist_sqr and _dist_sqr > opt_dist then
+                    warfare_log.debug("ocs.squad_on_update: out of range disengage squad=%s target=%s dist_sqr=%s opt_dist=%s", id_1, id_t, _dist_sqr, opt_dist)
                     disengage_combat(id_1, squad_1, id_t, sq_t)
                 end
             elseif id_t then
                 -- Opponent left level, died, or was removed: clear stale combat lock
+                warfare_log.debug("ocs.squad_on_update: stale opponent (left level/died) squad=%s target=%s", id_1, id_t)
                 local sq_t = sim:object(id_t)
                 disengage_combat(id_1, squad_1, id_t, sq_t)
             end
@@ -250,6 +262,7 @@ end
 -- Distance-based combat functions
 -------------------------------
 function calculate_distance_combat_multiplier(pos, community)
+    warfare_log.trace("calculate_distance_combat_multiplier: community=%s", community)
     if not _G.WARFARE then
         return 1.0 -- No modification if warfare is not active
     end
@@ -322,6 +335,7 @@ function calculate_distance_combat_multiplier(pos, community)
         end
     end
 
+    warfare_log.trace("calculate_distance_combat_multiplier: community=%s best=%s", community, best_multiplier)
     return best_multiplier > 0 and best_multiplier or 1.0
 end
 
@@ -339,6 +353,7 @@ local function calculate_squad_distance_combat_multiplier(squad)
 end
 
 local function coordinator()
+    warfare_log.debug("coordinator: tick start old_state=%s warfare=%s", old_state, _G.WARFARE and "on" or "off")
 
     -- Toggle feature
 
@@ -349,8 +364,10 @@ local function coordinator()
         new_state = 1
     else
         if (old_state == 1) then
+            warfare_log.info("coordinator: offline_combat disabled; unregister squad_on_update")
             UnregisterScriptCallback("squad_on_update", squad_on_update)
         elseif (old_state == 2) then
+            warfare_log.info("coordinator: offline_combat disabled; unregister smart_terrain_on_update")
             UnregisterScriptCallback("smart_terrain_on_update", smart_terrain_on_update)
         end
         old_state = 0
@@ -366,6 +383,7 @@ local function coordinator()
                 UnregisterScriptCallback("squad_on_update", squad_on_update)
             end
             old_state = 2
+            warfare_log.info("coordinator: register smart_terrain_on_update (smart-only mode)")
             RegisterScriptCallback("smart_terrain_on_update", smart_terrain_on_update)
 
             -- Full
@@ -374,6 +392,7 @@ local function coordinator()
                 UnregisterScriptCallback("smart_terrain_on_update", smart_terrain_on_update)
             end
             old_state = 1
+            warfare_log.info("coordinator: register squad_on_update (full mode)")
             RegisterScriptCallback("squad_on_update", squad_on_update)
         end
     end
@@ -442,6 +461,7 @@ local function coordinator()
         can_fight_mutant = true
     end
 
+    warfare_log.debug("coordinator: tick done opt_dist=%s can_fight_mutant=%s pop_factor=%s", opt_dist, can_fight_mutant and "y" or "n", pop_factor)
 
     --[[ Debugger
     if warfare_log.enabled() and (not _G.WARFARE) then
@@ -454,18 +474,21 @@ end
 
 function try_coordinator()
     if not last_coordinator_time then
+        warfare_log.debug("try_coordinator: first tick, running coordinator")
         last_coordinator_time = warfare.get_time()
         coordinator()
         return
     end
     local elapsed = warfare.get_time_ref():diffSec(last_coordinator_time)
     if elapsed >= UPDATE_TIME then
+        warfare_log.trace("try_coordinator: firing coordinator elapsed=%s update_time=%s", elapsed, UPDATE_TIME)
         last_coordinator_time = warfare.get_time()
         coordinator()
     end
 end
 
 function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
+    warfare_log.trace("validate_enemy: id_1=%s id_2=%s lid=%s community=%s", id_1, id_2, lid, community_1)
 
     if (id_2 == id_1) then
         return false
@@ -500,6 +523,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
 
                     -- If both are story squads, don't simulate battle
                     if sid_1 and sid_2 then
+                        warfare_log.debug("validate_enemy: both story squads, skip id_1=%s id_2=%s", id_1, id_2)
                         return false
 
                         -- If one is a story squad, kill the other squads incase they have the same target
@@ -510,7 +534,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                         elseif (sid_2 and NOT_SO_SPECIAL[community_2]) then
 
                         elseif sid_1 then
-
+                            warfare_log.debug("validate_enemy: story squad_1=%s kills non-story squad_2=%s (shared target)", id_1, id_2)
                             remove_squad_info(squad_2, id_2, id_1, lid)
                             local se_attacker = get_random_npc(squad_1)
                             local member_ids = {}
@@ -525,7 +549,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                             end
 
                         elseif sid_2 then
-
+                            warfare_log.debug("validate_enemy: story squad_2=%s kills non-story squad_1=%s (shared target)", id_2, id_1)
                             remove_squad_info(squad_1, id_1, id_2, lid)
                             local se_attacker = get_random_npc(squad_2)
                             local member_ids = {}
@@ -556,6 +580,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                         local sm1_name = sm1.name and sm1:name()
                         local original_faction_1 = sm1_name and smart_terrain_warfare.get_protected_base_faction(sm1_name)
                         if sm1_name and original_faction_1 and original_faction_1 == community_1 then
+                            warfare_log.debug("validate_enemy: skip protected mainbase squad_1=%s target=%s faction=%s", id_1, sm1_name, community_1)
                             return false
                         end
                     end
@@ -564,6 +589,7 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                         local sm2_name = sm2.name and sm2:name()
                         local original_faction_2 = sm2_name and smart_terrain_warfare.get_protected_base_faction(sm2_name)
                         if sm2_name and original_faction_2 and original_faction_2 == community_2 then
+                            warfare_log.debug("validate_enemy: skip protected mainbase squad_2=%s target=%s faction=%s", id_2, sm2_name, community_2)
                             return false
                         end
                     end
@@ -581,12 +607,14 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                     end
                     rounds = math.floor(elapsed / ROUND_INTERVAL)
                     if rounds > ROUND_CAP then
+                        warfare_log.warn("!OCS round cap hit: %s vs %s rounds=%s capped=%s elapsed=%s", squad_1:name(), squad_2:name(), rounds, ROUND_CAP, elapsed)
                         rounds = ROUND_CAP
                     end
                 end
                 last_combat_time[id_1] = warfare.get_time()
 
                 -- Simulate battle
+                warfare_log.debug("validate_enemy: engage squad_1=%s squad_2=%s dist_sqr=%s rounds=%s", id_1, id_2, d, rounds)
                 simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2, lid, rounds)
 
                 return true
@@ -607,12 +635,14 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
     --squad 1 = Attacker
     -- squad 2 = Victim
     rounds = rounds or 1
+    warfare_log.debug("simulate_battle: attacker=%s victim=%s community_1=%s community_2=%s rounds=%s", id_1, id_2, community_1, community_2, rounds)
 
     -- Get squad power
     ocs_power[id_1] = calculate_squad_power(squad_1, community_1)
     ocs_power[id_2] = calculate_squad_power(squad_2, community_2)
 
     if not (ocs_power[id_1] > 0 and ocs_power[id_2] > 0) then
+        warfare_log.debug("simulate_battle: zero power, skip attacker=%s pow=%s victim=%s pow=%s", id_1, ocs_power[id_1], id_2, ocs_power[id_2])
         return
     end
 
@@ -628,6 +658,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
         local se_attacker = get_random_npc(squad_1)
         local se_victim = get_random_npc(squad_2)
         if not se_attacker or not se_victim then
+            warfare_log.warn("simulate_battle: missing combatant, disengage attacker_id=%s victim_id=%s round=%s", id_1, id_2, round)
             disengage_combat(id_1, squad_1, id_2, squad_2)
             return
         end
@@ -640,11 +671,13 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 
         -- Cause damage
         ocs_power[id_2] = ocs_power[id_2] - damage
+        warfare_log.trace("simulate_battle: round=%s attacker=%s pow=%s -> victim=%s dmg=%s remaining=%s", round, id_1, ocs_power[id_1], id_2, damage, ocs_power[id_2])
 
         -- Release victim squad if it got rekt
         if (ocs_power[id_2] <= 0) then
 
             -- Post-battle state
+            warfare_log.debug("simulate_battle: VICTORY attacker=%s wiped victim=%s round=%s damage=%s", id_1, id_2, round, damage)
             set_battle_outcome(true, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
 
             -- Release: collect member IDs first to avoid iterator invalidation
@@ -667,9 +700,11 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
         elseif (raw_power - ocs_power[id_2]) > calculate_npc_power(se_victim, community_2, squad_2) then
 
             -- Post-battle state
+            warfare_log.debug("simulate_battle: NPC kill attacker=%s victim_squad=%s victim_npc=%s round=%s damage=%s", id_1, id_2, se_victim.id, round, damage)
             set_battle_outcome(false, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
 
             if squad_2:npc_count() <= 1 then
+                warfare_log.debug("simulate_battle: victim squad depleted after NPC kill, remove squad=%s", id_2)
                 remove_squad_info(squad_2, id_2, id_1, lid)
                 return
             end
@@ -680,6 +715,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
             -- Recalculate victim power for next round since NPC was lost
             ocs_power[id_2] = calculate_squad_power(squad_2, community_2, true)
             if ocs_power[id_2] <= 0 then
+                warfare_log.debug("simulate_battle: victim power exhausted, disengage attacker=%s victim=%s", id_1, id_2)
                 disengage_combat(id_1, squad_1, id_2, squad_2)
                 return
             end
@@ -688,6 +724,7 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
 end
 
 function set_battle_outcome(victory, id_1, id_2, squad_1, squad_2, community_1, community_2, se_attacker, se_victim, damage)
+    warfare_log.debug("set_battle_outcome: victory=%s attacker_squad=%s victim_squad=%s attacker_npc=%s victim_npc=%s damage=%s", victory and "y" or "n", id_1, id_2, se_attacker and se_attacker.id or "?", se_victim and se_victim.id or "?", damage)
 
     -- Affect relations
     game_relations.offline_npc_on_death(se_victim, se_attacker)
@@ -704,6 +741,7 @@ function set_battle_outcome(victory, id_1, id_2, squad_1, squad_2, community_1, 
             local rank_inc = math_ceil(damage / RANK_FRACTION)
             se_attacker:set_rank(se_attacker:rank() + rank_inc)
             ocs_power[id_1] = ocs_power[id_1] + rank_inc
+            warfare_log.trace("set_battle_outcome: attacker_rank_gain attacker=%s gain=%s", se_attacker.id, rank_inc)
         end
 
         -- Record attacker action
@@ -719,12 +757,14 @@ function set_battle_outcome(victory, id_1, id_2, squad_1, squad_2, community_1, 
             local rank_inc = math_random(1, RANK_COMMANDER_GAIN)
             commander:set_rank(commander:rank() + rank_inc)
             ocs_power[id_1] = ocs_power[id_1] + rank_inc
+            warfare_log.trace("set_battle_outcome: commander_rank_gain commander=%s gain=%s", commander.id, rank_inc)
         end
 
     end
 end
 
 function disengage_combat(id_1, squad_1, id_t, sq_t)
+    warfare_log.trace("disengage_combat: id_1=%s id_t=%s", id_1, id_t)
     -- Clear fight lock so both squads resume normal movement toward their targets
     opponents[id_1] = nil
     opponents[id_t] = nil
@@ -737,6 +777,7 @@ function disengage_combat(id_1, squad_1, id_t, sq_t)
 end
 
 function remove_squad_info(squad_2, id_2, id_1, lid)
+    warfare_log.debug("remove_squad_info: squad=%s opponent=%s lid=%s", id_2 or (squad_2 and squad_2.id), id_1, lid)
     if _G.WARFARE then
         sim_squad_warfare.remove_squad(squad_2)
     end
@@ -764,6 +805,7 @@ end
 -- Utilities
 -------------------------------
 function calculate_npc_power(se_obj, community, squad)
+    warfare_log.trace("calculate_npc_power: npc=%s community=%s", se_obj and se_obj.id or "?", community)
     local power, cls = 0, se_obj:clsid()
     if IsMonster(nil, cls) then
         power = math_ceil(m_class[cls] * m_rank_max)
@@ -782,6 +824,7 @@ function calculate_npc_power(se_obj, community, squad)
 end
 
 function calculate_squad_power(squad, community, raw, no_distance)
+    warfare_log.trace("calculate_squad_power: squad=%s community=%s raw=%s no_distance=%s", squad and squad.id or "?", community, raw and "y" or "n", no_distance and "y" or "n")
     -- During active combat, ocs_power tracks live damage/rank state — return it directly.
     -- Outside combat, ocs_power is nil (cleared on disengage), so we always recalculate fresh.
     -- This ensures distance multiplier reflects the squad's current position, not a stale cache.
@@ -814,6 +857,7 @@ function calculate_squad_power(squad, community, raw, no_distance)
 end
 
 function get_random_npc(squad)
+    warfare_log.trace("get_random_npc: squad=%s", squad and squad.id or "?")
     local squad_npcs = {}
     for k in squad:squad_members() do
         local se = k.id and k.id ~= 65535 and alife_object(k.id)
@@ -822,6 +866,7 @@ function get_random_npc(squad)
         end
     end
     if #squad_npcs == 0 then
+        warfare_log.warn("get_random_npc: empty squad=%s", squad and squad.id or "?")
         return nil
     end
     return squad_npcs[math_random(#squad_npcs)]
@@ -832,6 +877,7 @@ function distance_to_xz_sqr(a, b)
 end
 
 function get_num_squads_on_level(lvl, faction, mode)
+    warfare_log.trace("get_num_squads_on_level: lvl=%s faction=%s mode=%s", lvl, faction, mode)
     -- mode: true (active), false (inactive)
     if (squads_by_level[lvl]) then
         local count = 0
@@ -861,6 +907,7 @@ end
 
 -- Combined version: returns active and inactive counts in a single pass
 function get_num_squads_on_level_both(lvl, faction)
+    warfare_log.trace("get_num_squads_on_level_both: lvl=%s faction=%s", lvl, faction)
     if not squads_by_level[lvl] then
         return 0, 0
     end
@@ -897,6 +944,7 @@ function get_stationary_squads()
 end
 
 function init_settings()
+    warfare_log.info("init_settings: loading misc/offline_combat_simulator.ltx")
     ini_ocs = ini_file("misc\\offline_combat_simulator.ltx")
 
     local n = ini_ocs:line_count("story_communities")
@@ -906,6 +954,7 @@ function init_settings()
             story_id_communities[id] = value
         end
     end
+    warfare_log.debug("init_settings: loaded %s story_communities", n)
 
     n = ini_ocs:line_count("ignore_list")
     for i = 0, n - 1 do
@@ -914,6 +963,7 @@ function init_settings()
             ignore_list[id] = true
         end
     end
+    warfare_log.debug("init_settings: loaded %s ignore_list entries", n)
 
     n = ini_ocs:line_count("stationary_squads")
     for i = 0, n - 1 do
@@ -922,28 +972,40 @@ function init_settings()
             stationary_squads[id] = true
         end
     end
+    warfare_log.debug("init_settings: loaded %s stationary_squads", n)
 end
 
 
 -------------------------------
 -- Callbacks
 -------------------------------
+local function _count_keys(t)
+    if not t then return 0 end
+    local n = 0
+    for _ in pairs(t) do n = n + 1 end
+    return n
+end
+
 local function load_state(m_data)
+    warfare_log.info("ocs.load_state: loading task_squads (count=%s)", _count_keys(m_data.offline_task_squads))
     --ocs_power = m_data.offline_power or {}
     task_squads = m_data.offline_task_squads or {}
 end
 
 local function save_state(m_data)
+    warfare_log.info("ocs.save_state: saving task_squads (count=%s)", _count_keys(task_squads))
     --m_data.offline_power = ocs_power
     m_data.offline_task_squads = task_squads
 end
 
 function on_game_start()
+    warfare_log.info("sim_offline_combat.on_game_start")
     if is_empty(ignore_list) or is_empty(health_table) or is_empty(story_id_communities) then
         init_settings()
     end
 
     local function on_game_load()
+        warfare_log.info("sim_offline_combat.on_game_load: registering try_coordinator + save_state")
         RegisterScriptCallback("actor_on_update", try_coordinator)
         RegisterScriptCallback("save_state", save_state)
     end

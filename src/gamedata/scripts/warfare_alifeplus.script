@@ -23,6 +23,7 @@ local function is_lendable(squad)
     local base = get_squad_base(squad)
     if not base then return true end
     if not smart_terrain_warfare.base_can_send(base) then
+        warfare_log.trace("is_lendable: squad=%s NOT lendable (base %s cannot send)", tostring(squad.id), base:name())
         return false
     end
     return true
@@ -30,12 +31,21 @@ end
 
 function is_ap_controlled(squad)
     if not ap_enabled then return false end
+    if not squad then
+        warfare_log.warn("is_ap_controlled: nil squad")
+        return false
+    end
     return ap_core_broker.get_scripted_ids()[squad.id] ~= nil
 end
 
 function log_ap_controlled(squad, caller)
+    if not squad then
+        warfare_log.warn("log_ap_controlled: nil squad (caller=%s)", tostring(caller))
+        return
+    end
     local target_name = squad.scripted_target or "?"
     local pretty = smart_terrain_warfare.translate_smart_name(target_name) or target_name
+    warfare_log.trace("log_ap_controlled: squad=%s caller=%s target=%s", tostring(squad.id), tostring(caller), tostring(pretty))
 end
 
 local function _other_label(record)
@@ -53,8 +63,12 @@ end
 function get_ap_status(squad)
     if not ap_enabled then return nil end
     if not ap_core_broker.get_scripted_ids()[squad.id] then return nil end
+    warfare_log.debug("get_ap_status: squad=%s", tostring(squad.id))
     local record = ap_core_broker.get_record({ squad_id = squad.id, assigned = true })
-    if not record then return game.translate_string("st_wrfr_ap_unknown") end
+    if not record then
+        warfare_log.debug("get_ap_status: no record for squad=%s", tostring(squad.id))
+        return game.translate_string("st_wrfr_ap_unknown")
+    end
 
     local action
     local info = ap_core_const.CONSEQUENCE_INFO[record.consequence]
@@ -92,8 +106,12 @@ function get_ap_status(squad)
 end
 
 function on_game_start()
-    if not has_alifeplus() then return end
+    if not has_alifeplus() then
+        warfare_log.info("warfare_alifeplus: AlifePlus not present, interop disabled")
+        return
+    end
     ap_enabled = true
+    warfare_log.info("warfare_alifeplus: AlifePlus detected, registering owner handler")
 
     ap_core_broker.register_owner("warfare", function(squad)
         if not squad then return false end
@@ -113,6 +131,7 @@ function on_game_start()
             end
         end
         if count > 0 then
+            warfare_log.info("warfare_alifeplus: on_game_load cleared empty-string scripted_target on %s squads", tostring(count))
         end
     end)
 

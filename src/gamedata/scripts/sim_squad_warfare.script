@@ -40,6 +40,7 @@ squad_icons = {
 
 local str_wrfr = {}
 function refresh_strings()
+    warfare_log.info("refresh_strings: reloading translated UI strings")
     str_wrfr[1] = game.translate_string("st_wrfr_sim_1")
     str_wrfr[2] = game.translate_string("st_wrfr_sim_2")
     str_wrfr[3] = game.translate_string("st_wrfr_sim_3")
@@ -66,6 +67,7 @@ function translate_smart_name(name)
 end
 
 function squad_on_update(squad)
+    warfare_log.trace("sqw.squad_on_update: squad=%s", squad and squad:name() or "?")
 
     if not (IsWarfare()) then
         return
@@ -101,6 +103,7 @@ function squad_on_update(squad)
         -- Switching traders to use the community they belong to
         if not (squad.switched_to_trader) then
             squad.switched_to_trader = true
+            warfare_log.debug("sqw.squad_on_update: switch_to_trader squad=%s section=%s", squad.id, squad:section_name())
             for k in squad:squad_members() do
                 local member = db.storage[k.id] and db.storage[k.id].object
                 if (member and member:alive()) then
@@ -127,6 +130,7 @@ function squad_on_update(squad)
         squad.checked_with_warfare = true
 
         if (squad:clsid() ~= clsid.online_offline_group_s) then
+            warfare_log.err("sqw.squad_on_update: !!! TRYING TO REGISTER NON-SQUAD AS SQUAD squad=%s", squad and squad:name() or "?")
             printe("!!! TRYING TO REGISTER NON-SQUAD AS SQUAD")
             return
         end
@@ -134,13 +138,23 @@ function squad_on_update(squad)
         -- See if the squad has an entry in the registered squads table.
         if (warfare.registered_squads[faction] and warfare.registered_squads[faction][squad.id]) then
             squad.registered_with_warfare = true
+            warfare_log.debug("sqw.squad_on_update: registered_with_warfare via existing entry squad=%s faction=%s", squad.id, faction)
         end
     end
 
     squad.global_position = global_position.from(squad)
 
     if not (axr_companions.companion_squads[squad.id]) then
-        if warfare_alifeplus.is_ap_controlled(squad) then
+        local now_ap = warfare_alifeplus.is_ap_controlled(squad)
+        if now_ap ~= squad._wf_was_ap then
+            if now_ap then
+                warfare_log.debug("ap handoff: squad=%s lent to AlifePlus (target=%s)", squad.id, tostring(squad.scripted_target))
+            else
+                warfare_log.debug("ap return: squad=%s returned to warfare control", squad.id)
+            end
+            squad._wf_was_ap = now_ap
+        end
+        if now_ap then
             warfare_alifeplus.log_ap_controlled(squad, "squad_on_update")
             return
         end
@@ -172,6 +186,7 @@ end
 
 -- borrowed from gamemode_azazel.script from the actor_on_before_death function.
 function add_companion_squad(squad)
+    warfare_log.info("add_companion_squad: squad=%s", squad and squad:name() or "nil")
     if (squad) then
         SIMBOARD:assign_squad_to_smart(squad, nil)
         axr_companions.companion_squads[squad.id] = squad
@@ -189,7 +204,7 @@ end
 -- Modified generic_update for warfare. squad.__lock will cause generic_update not to run.
 -- Not using scripted_target / specific_update, and need to avoid the precondition check.
 function squad_warfare_update(squad)
-
+    warfare_log.trace("squad_warfare_update: squad=%s action=%s target=%s", squad and squad.id or "?", squad.current_action, squad.current_target_id)
 
     if (squad.current_action) then
         local se_target = squad.current_target_id and simulation_objects.get_server_entity(squad.current_target_id)
@@ -209,6 +224,7 @@ function squad_warfare_update(squad)
                     if not (game_relations.is_factions_enemies(smartOwner, squad:get_squad_community())) or squad:get_squad_community() == "monster"
                     then
                         if (se_target:am_i_reached(squad)) then
+                            warfare_log.debug("squad_warfare_update: reached friendly/own smart squad=%s target=%s", squad.id, se_target.id)
                             se_target:on_after_reach(squad)
                             squad.current_action = 1
                             squad.arrive_time = warfare.get_time()
@@ -226,6 +242,7 @@ function squad_warfare_update(squad)
                             local original_faction = target_name and smart_terrain_warfare.get_protected_base_faction(target_name)
                             if original_faction and original_faction == smartOwner
                             and warfare_options and warfare_options.options.prevent_mainbase_attacks then
+                                warfare_log.debug("squad_warfare_update: rescue stuck squad at protected mainbase squad=%s target=%s faction=%s", squad.id, target_name, smartOwner)
                                 -- Let the squad "arrive" so warfare processing can redirect it
                                 se_target:on_after_reach(squad)
                                 squad.current_action = 1
@@ -237,6 +254,7 @@ function squad_warfare_update(squad)
                     -- Human factions at enemy terrain: offline combat handles it
                 else
                     if (se_target:am_i_reached(squad)) then
+                        warfare_log.debug("squad_warfare_update: reached non-smart target squad=%s target=%s", squad.id, se_target.id)
                         se_target:on_after_reach(squad)
                         squad.current_action = 1
                         squad.arrive_time = warfare.get_time()
@@ -247,6 +265,7 @@ function squad_warfare_update(squad)
         elseif squad.current_action == 0 and squad.current_target_id and not alife_object(squad.current_target_id) then
             -- Target no longer exists (e.g. destroyed enemy squad, dismissed follow target)
             -- Return squad to its owning smart terrain
+            warfare_log.debug("squad_warfare_update: target gone, return home squad=%s old_target=%s smart=%s", squad.id, squad.current_target_id, squad.smart_id)
             squad.current_target_id = squad.smart_id
             squad.assigned_target_id = squad.smart_id
         end
@@ -256,11 +275,13 @@ end
 
 -- unregister squad with warfare
 function remove_squad(squad)
+    warfare_log.debug("remove_squad: squad=%s", squad and squad:name() or "nil")
 
     if (squad and squad:clsid() == clsid.online_offline_group_s) then
         local f = squad:get_squad_community()
 
         if (warfare.registered_squads[f]) then
+            warfare_log.debug("remove_squad: unregister squad=%s faction=%s", squad.id, f)
             smart_terrain_warfare.remove_random_patrol(squad.id)
             warfare.remove_registered_squad(f, squad.id)
             sim_offline_combat.ocs_power[squad.id] = nil
@@ -273,6 +294,7 @@ function remove_squad(squad)
 end
 
 function squad_on_npc_death(squad, npc, killer)
+    warfare_log.debug("squad_on_npc_death: squad=%s npc=%s killer=%s", squad and squad.id or "?", npc and npc.id or "?", killer and killer.id or "?")
 
     if (squad.registered_with_warfare) then
         if killer and (killer.id == AC_ID) then
@@ -289,6 +311,7 @@ function squad_on_npc_death(squad, npc, killer)
                     goodwill_incr = 0.5 * goodwill_incr        -- less unified faction means less effect on relations
                 end
 
+                warfare_log.debug("squad_on_npc_death: actor-kill reward npc=%s rank=%s money=%s goodwill=%s influence=%s faction=%s", npc.id, rank, money, goodwill_incr, influence, warfare.actor_faction)
                 db.actor:give_money(money)        -- give money
                 xr_effects.inc_faction_goodwill_to_actor(db.actor, nil, { warfare.actor_faction, goodwill_incr })    -- increase goodwill
                 warfare.actor_influence_points = warfare.actor_influence_points + influence
@@ -300,6 +323,7 @@ end
 -- Show warfare icon.
 --function show_squad(squad)
 function sim_squad_scripted.sim_squad_scripted.show(self)
+    warfare_log.trace("show: squad=%s", self and self.id or "?")
 
     if self.show_disabled then
         self:hide()
@@ -455,6 +479,7 @@ end
 -- Hide warfare icon.
 --function hide_squad(squad)
 function sim_squad_scripted.sim_squad_scripted.hide(self)
+    warfare_log.trace("hide: squad=%s", self and self.id or "?")
 
     if not (self.warfare_spot) then
         return
@@ -468,6 +493,7 @@ end
 -- Get the warfare information for the spot hint.
 -- xr_Sanya
 function get_squad_relation(squad_id)
+    warfare_log.trace("get_squad_relation: squad_id=%s", squad_id)
     local squad = squad_id and alife_object(squad_id)
 
     if not squad or not squad.squad_members then
@@ -518,6 +544,7 @@ end
 
 -- Builds squad tooltip info. full_detail adds power, patrol, and target details.
 function get_squad_info(squad, full_detail, show_target)
+    warfare_log.trace("get_squad_info: squad=%s full=%s", squad and squad.id or "?", full_detail and "y" or "n")
     -- show_target: whether to reveal the squad's current target (default: same as full_detail)
     if show_target == nil then show_target = full_detail end
 
@@ -668,10 +695,12 @@ function is_pda_open()
 end
 
 function get_enemy_info(squad)
+    warfare_log.trace("get_enemy_info: squad=%s", squad and squad.id or "?")
     return get_squad_info(squad, warfare.dbg_all_faction_tooltips)
 end
 
 function get_warfare_info(squad)
+    warfare_log.trace("get_warfare_info: squad=%s", squad and squad.id or "?")
     local show_target = warfare.dbg_all_faction_tooltips or squad:get_squad_community() == warfare.actor_faction
     return get_squad_info(squad, true, show_target)
 end
@@ -682,6 +711,7 @@ local RESOURCE_WEIGHT = 1
 -- TODO: have this first look for enemy patrol squads to target.
 -- Used when squads on the way to their target are no longer needed, or when squads of neutral/allied factions are present at a point.
 function find_target(squad)
+    warfare_log.debug("find_target: squad=%s", squad and squad.id or "?")
 
     local lvl = game_graph():vertex(squad.m_game_vertex_id):level_id()
     local info = warfare_levels.level_information[lvl]
@@ -689,6 +719,7 @@ function find_target(squad)
     local found_target = false
 
     if not (offset) then
+        warfare_log.trace("find_target: no offset (global), bail squad=%s", squad.id)
         return
     end
 
@@ -745,16 +776,18 @@ function find_target(squad)
 
         table.sort(targets, target_sort)
 
-
-        return targets[1] and targets[1][1]
+        local pick = targets[1] and targets[1][1]
+        warfare_log.debug("find_target: squad=%s picked=%s candidates=%s", squad.id, pick, #targets)
+        return pick
     end
 
-
+    warfare_log.debug("find_target: no smarts for squad=%s faction=%s lvl=%s", squad.id, faction, lvl)
     return nil
 end
 
 -- Function to help set a squads target; also registers the squad if they are not registered already.
 function set_target(squad, target)
+    warfare_log.trace("set_target: squad=%s target=%s", squad and squad.id or "?", target)
 
     -- added xQd's fix for not being able to dismiss companions
     if not (squad) or axr_companions.companion_squads[squad.id] then
@@ -765,15 +798,18 @@ function set_target(squad, target)
 
     if squad.stay_time then
         -- check if the squad has stay_time initialized(used to check if the squad are targeted by a "capture territory" task, so that the squad won't move resulting in failing of the task)
+        warfare_log.trace("set_target: skip stay_time squad=%s", squad.id)
         return
     end
 
     -- Don't pull squads away while they are engaged in offline combat
     if sim_offline_combat and sim_offline_combat.opponents[squad.id] then
+        warfare_log.trace("set_target: skip engaged-in-combat squad=%s opponent=%s", squad.id, sim_offline_combat.opponents[squad.id])
         return
     end
 
     if (warfare.ignore[squad:section_name()]) then
+        warfare_log.trace("set_target: skip warfare-ignored section squad=%s section=%s", squad.id, squad:section_name())
         return
     end
 
@@ -797,9 +833,11 @@ function set_target(squad, target)
                         end
                     end
                 end
+                warfare_log.warn("set_target: !LAIR-DIAG faction squad sent to pure-lair squad=%s faction=%s target=%s caller=%s", squad.id, sq_faction, obj.name and obj:name() or target, caller)
             end
         end
 
+        warfare_log.debug("set_target: assign squad=%s target=%s clsid=%s", squad.id, target, obj:clsid())
         squad.current_action = 0
         squad.scripted_target = nil
         squad.current_target_id = target
@@ -827,12 +865,15 @@ function set_target(squad, target)
                 SIMBOARD:setup_squad_and_group(se_obj)
             end
         end
+    else
+        warfare_log.trace("set_target: no obj for target=%s squad=%s", target, squad and squad.id or "?")
     end
 
 end
 
 -- Added by xQd. A function exclusively for warfare traders/mechanics squads to help them target the smart terrain they spawned to;
 function set_target_trader(squad, target, target_name)
+    warfare_log.debug("set_target_trader: squad=%s target=%s name=%s", squad and squad.id or "?", target, target_name)
 
     if not (squad) then
         return
@@ -862,6 +903,7 @@ end
 -- Callbacks
 ------------------------------------------------------------
 function on_game_start()
+    warfare_log.info("sim_squad_warfare.on_game_start: register on_localization_change")
     refresh_strings()
 
     RegisterScriptCallback("on_localization_change", refresh_strings)

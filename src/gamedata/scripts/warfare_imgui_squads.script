@@ -99,6 +99,7 @@ end
 
 -- Sort squads by column
 function sort_squads(squads, column, ascending)
+    warfare_log.trace("warfare_imgui_squads.sort_squads: n=%s column=%s asc=%s", tostring(#squads), tostring(column), tostring(ascending))
     table.sort(squads, function(a, b)
         local val_a = get_sortable_value(a, column)
         local val_b = get_sortable_value(b, column)

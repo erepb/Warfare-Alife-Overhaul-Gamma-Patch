@@ -2,8 +2,10 @@
 -- Cyan = planned target, Orange = invasion prepping, Red = under attack (squads advancing)
 
 function on_xml_read()
+	warfare_log.debug("modxml_warfare_patch_map_spots.on_xml_read: registering callback")
 	RegisterScriptCallback("on_xml_read", function(xml_file_name, xml_obj)
 		if string.find(xml_file_name, "map_spots") then
+			warfare_log.info("modxml_warfare_patch_map_spots: injecting tinted map spots into %s", tostring(xml_file_name))
 
 			local factions = {
 				"stalker", "bandit", "csky", "army", "freedom", "dolg",

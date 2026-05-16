@@ -16,24 +16,30 @@
 function npc_on_death_callback(victim, who)
     -- Callback, NPC caused by death
     if not victim then
+        warfare_log.trace("task_manager_warfare.npc_on_death: victim nil")
         return
     end
 
     local tm = task_manager.get_task_manager()
     if not tm then
+        warfare_log.warn("task_manager_warfare.npc_on_death: task_manager unavailable")
         return
     end
+    warfare_log.trace("task_manager_warfare.npc_on_death: victim=%s killer=%s", tostring(victim:id()), tostring(who and who:id()))
 
     for tid, task in pairs(tm.task_info) do
         if task and task.t then
             if task.task_giver_id == victim:id() then
                 if not who or who:id() ~= AC_ID then
+                    warfare_log.info("task_manager_warfare: cancelling task=%s, giver=%s died (killer=%s)", tostring(tid), tostring(victim:id()), tostring(who and who:id()))
                     tm:set_task_cancelled(tid)
                     local icon = task:get_icon_name()
                     local caption = game.translate_string("general_update_task")
                     local task_name = game.translate_string(task.current_title)
                     local text = strformat(game.translate_string("st_wrfr_task_cancellation"), task_name, victim:character_name())
                     db.actor:give_game_news(caption, text, icon, 0, 3000)
+                else
+                    warfare_log.debug("task_manager_warfare: task=%s giver killed by actor; not cancelling", tostring(tid))
                 end
             end
         end
@@ -41,5 +47,6 @@ function npc_on_death_callback(victim, who)
 end
 
 function on_game_start()
+    warfare_log.debug("task_manager_warfare.on_game_start: registering npc_on_death_callback")
     RegisterScriptCallback("npc_on_death_callback", npc_on_death_callback)
 end

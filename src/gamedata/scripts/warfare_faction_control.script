@@ -5,6 +5,7 @@ player_heli_spot = nil
 
 local str_wrfr = {}
 function refresh_strings()
+    warfare_log.debug("warfare_faction_control.refresh_strings: reloading localized strings")
     str_wrfr[1] = game.translate_string("st_wrfr_cap_point")
     str_wrfr[2] = game.translate_string("st_wrfr_buy_novice_squad")
     str_wrfr[3] = game.translate_string("st_wrfr_buy_adv_squad")
@@ -54,11 +55,13 @@ local function map_spot_menu_add_property(ui,id,lvl)
 
     local obj = alife_object(id)
     if not (obj) then
+        warfare_log.trace("map_spot_menu_add_property: alife_object(%s) nil, skipping", tostring(id))
         return
     end
-    
-    local selectedObject = pda_flagger.get_selected_object()    
-    
+    warfare_log.trace("map_spot_menu_add_property: id=%s name=%s lvl=%s", tostring(id), tostring(obj:name()), tostring(lvl))
+
+    local selectedObject = pda_flagger.get_selected_object()
+
     if (obj:clsid() == clsid.smart_terrain) then
         local f = obj.owning_faction or "none"
             
@@ -211,77 +214,94 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
     local obj = alife_object(id)
     if not (obj) then
+        warfare_log.warn("map_spot_menu_property_clicked: alife_object(%s) nil, prop=%s", tostring(id), tostring(prop))
         return
     end
-    
+    warfare_log.debug("map_spot_menu_property_clicked: id=%s name=%s prop=%s", tostring(id), tostring(obj:name()), tostring(prop))
+
     local selectedObject = pda_flagger.get_selected_object()
-    
+
     if (prop == str_wrfr[1]) then
+        warfare_log.info("faction_control: manual capture requested for smart=%s", tostring(obj:name()))
         smart_terrain_warfare.manual_point = { obj.id, game.get_game_time(), }
-        return    
+        return
     elseif (prop == str_wrfr[6]) then
         local faction = obj.owning_faction
-        local af = warfare.actor_faction        
+        local af = warfare.actor_faction
+        warfare_log.info("faction_control: declare war: actor=%s vs target=%s", tostring(af), tostring(faction))
         game_relations.change_faction_relations(faction, af, -4000, true)
         return
     elseif (prop == str_wrfr[7]) then
+        warfare_log.info("faction_control: possess_squad_leader on squad=%s", tostring(obj:name()))
         possess_squad_leader(obj)
         return
     elseif (prop == str_wrfr[2]) then
 
         local f = obj.owning_faction or "none"
-        
+
         local section = faction_expansions.get_faction_squad(obj.owning_faction, "novice")
+        warfare_log.info("faction_control: buy novice squad faction=%s section=%s smart=%s", tostring(f), tostring(section), tostring(obj:name()))
 
         local squad = utils_obj.create_squad(section, obj:name())
 
         if (squad) then
-            sim_squad_warfare.set_target(squad, obj.id)        
-            db.actor:give_money(-1 * (warfare_options.options.novice_squad_price))        
+            sim_squad_warfare.set_target(squad, obj.id)
+            db.actor:give_money(-1 * (warfare_options.options.novice_squad_price))
+        else
+            warfare_log.warn("faction_control: failed to create novice squad section=%s", tostring(section))
         end
-        
-        
+
+
         return
     elseif (prop == str_wrfr[3]) then
         local f = obj.owning_faction or "none"
         local section = faction_expansions.get_faction_squad(f, "advanced")
+        warfare_log.info("faction_control: buy advanced squad faction=%s section=%s smart=%s", tostring(f), tostring(section), tostring(obj:name()))
         local squad = utils_obj.create_squad(section, obj:name())
         if (squad) then
-            db.actor:give_money(-1 * (warfare_options.options.advanced_squad_price))    
-            sim_squad_warfare.set_target(squad, obj.id)        
+            db.actor:give_money(-1 * (warfare_options.options.advanced_squad_price))
+            sim_squad_warfare.set_target(squad, obj.id)
+        else
+            warfare_log.warn("faction_control: failed to create advanced squad section=%s", tostring(section))
         end
 
         return
     elseif (prop == str_wrfr[4]) then
         local f = obj.owning_faction or "none"
         local section = faction_expansions.get_faction_squad(f, "veteran")
+        warfare_log.info("faction_control: buy veteran squad faction=%s section=%s smart=%s", tostring(f), tostring(section), tostring(obj:name()))
         local squad = utils_obj.create_squad(section, obj:name())
         if (squad) then
-            db.actor:give_money(-1 * (warfare_options.options.veteran_squad_price))    
-            sim_squad_warfare.set_target(squad, obj.id)        
+            db.actor:give_money(-1 * (warfare_options.options.veteran_squad_price))
+            sim_squad_warfare.set_target(squad, obj.id)
+        else
+            warfare_log.warn("faction_control: failed to create veteran squad section=%s", tostring(section))
         end
 
         return
     elseif (prop == str_wrfr[18] or prop == str_wrfr[17]) then
+        warfare_log.info("faction_control: send heli to target=%s name=%s", tostring(obj.id), tostring(obj:name()))
         if (player_heli) then
             local se_obj = alife_object(player_heli)
-            
+
             if (se_obj) then
                 se_obj.current_action = 1
-                heli_alife_warfare.set_target(se_obj, obj.id)                
+                heli_alife_warfare.set_target(se_obj, obj.id)
 
                 local text = strformat(str_wrfr[39], warfare_names.get_name(obj))
                 news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
             else
+                warfare_log.warn("faction_control: player_heli=%s but alife_object returned nil; clearing", tostring(player_heli))
                 player_heli = nil
             end
         end
 
         return
     elseif (prop == str_wrfr[19]) then
+        warfare_log.info("faction_control: remove heli requested player_heli=%s", tostring(player_heli))
         if (player_heli) then
             local heli = alife_object(player_heli)
-            
+
             if (heli) then
                 safe_release_manager.release(heli)
                 local text = str_wrfr[37]
@@ -290,9 +310,10 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
         end
 
         return
-    elseif (prop == str_wrfr[5]) then        
+    elseif (prop == str_wrfr[5]) then
         local charge_fee = true
-    
+        warfare_log.info("faction_control: buy heli requested")
+
         if (player_heli) then
             local o = alife_object(player_heli)
 
@@ -301,9 +322,11 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                 local playerLevel = get_player_level_id()
 
                 if (heliLevel ~= playerLevel) then
+                    warfare_log.debug("faction_control: existing heli on diff level (heli=%s actor=%s), recycling without charge", tostring(heliLevel), tostring(playerLevel))
                     safe_release_manager.release(o)
                     charge_fee = false
                 else
+                    warfare_log.debug("faction_control: heli already spawned on actor level, refusing")
                     local text = str_wrfr[38]
                     news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                     return
@@ -313,7 +336,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
         local nearestSmart = SIMBOARD.smarts[smart_terrain.nearest_to_actor_smart.id].smrt
         local actor = alife():actor()
-        
+
         if nearestSmart ~= nil then
             local pos = vector():set(actor.position.x - 600, actor.position.y + 200, actor.position.z - 600)
             local se_obj = heli_alife_warfare.create_heli_weak(warfare.actor_faction, 0, nearestSmart, pos)
@@ -325,19 +348,26 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                 heli_alife_warfare.set_target(se_obj, 0)
                 player_heli = se_obj.id
-            
+                warfare_log.info("faction_control: heli spawned id=%s faction=%s charged=%s", tostring(se_obj.id), tostring(warfare.actor_faction), tostring(charge_fee))
+
                 local text = str_wrfr[20]
                 news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
+            else
+                warfare_log.warn("faction_control: heli spawn returned nil")
             end
+        else
+            warfare_log.warn("faction_control: buy heli: nearest_to_actor_smart unavailable")
         end
 
         return
     end
     
     if (selectedObject) then
+        warfare_log.debug("faction_control: selectedObject=%s clsid_match=%s target_obj=%s", tostring(selectedObject:name()), tostring(selectedObject:clsid()), tostring(obj:name()))
         if (selectedObject:clsid() == clsid.online_offline_group_s) then
             if (obj.id == AC_ID) then
-                if (prop == str_wrfr[8]) then    
+                if (prop == str_wrfr[8]) then
+                    warfare_log.info("faction_control: follow actor: squad=%s", tostring(selectedObject:name()))
                     sim_squad_warfare.add_companion_squad(selectedObject)
                     sim_squad_warfare.set_target(selectedObject, obj.id)
                     return
@@ -688,23 +718,29 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 end
 
 function on_game_start()
+    warfare_log.debug("warfare_faction_control.on_game_start")
     local function on_game_load()
         if alife_storage_manager.get_state().enable_warfare_mode then
+            warfare_log.info("faction_control: warfare enabled, registering map spot menu callbacks")
             RegisterScriptCallback("map_spot_menu_add_property",map_spot_menu_add_property)
             RegisterScriptCallback("map_spot_menu_property_clicked",map_spot_menu_property_clicked)
+        else
+            warfare_log.debug("faction_control: warfare not enabled, skipping map spot callbacks")
         end
     end
     RegisterScriptCallback("on_game_load", on_game_load)
     RegisterScriptCallback("on_localization_change",refresh_strings)
-    
+
     refresh_strings()
 end
 
 -- slightly modified from gamemode_azazel.script
 function possess_squad_leader(squad)
+    warfare_log.info("possess_squad_leader: squad=%s", tostring(squad and squad:name()))
 
     local commander = squad:commander_id()
     local se_obj = commander and alife_object(commander)
+    warfare_log.debug("possess_squad_leader: commander_id=%s", tostring(commander))
 
     axr_companions.remove_all_from_actor_squad()
 
@@ -827,11 +863,12 @@ function possess_squad_leader(squad)
     db.actor.bleeding = 0
     db.actor.radiation = 0
     
-    if (level_name == level.name()) then 
+    if (level_name == level.name()) then
+        warfare_log.debug("possess_squad_leader: same level teleport to %s", tostring(level_name))
         -- give bolt
         local bolt_first = random_choice("bolt","bolt_bullet")
         alife_create_item(bolt_first, db.actor)
-        
+
         hide_hud_all()
         db.actor:set_actor_position(se_obj.position)
         --level.disable_input()
@@ -840,8 +877,9 @@ function possess_squad_leader(squad)
         level.add_pp_effector("deimos1.ppe", 210410, false)
         safe_release_manager.release(se_obj)
     else
+        warfare_log.debug("possess_squad_leader: cross-level teleport target=%s current=%s", tostring(level_name), tostring(level.name()))
         alife_storage_manager.get_state().bolt_first = random_choice("bolt","bolt_bullet") -- give bolt
-        
+
         local pos = se_obj.position
         local lvid = se_obj.m_level_vertex_id
         local gvid = se_obj.m_game_vertex_id

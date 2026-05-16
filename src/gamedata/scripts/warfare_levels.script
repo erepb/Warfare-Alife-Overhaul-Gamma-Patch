@@ -34,12 +34,12 @@
 	level_information[level].first_update = true
 
 ]]
-printd = warfare.printd
 
 level_timers = {}
 level_information = {}
 
 function update()
+	warfare_log.trace("warfare_levels.update: tick start")
 	for i,lvl in pairs(level_targets.active_levels) do
 		update_level(lvl)
 	end
@@ -47,6 +47,7 @@ end
 
 -- setup the faction table within level_information[level_id]["faction_stats"] and add one to the faction count
 function setup_faction_table(lvl, faction)
+	warfare_log.trace("setup_faction_table: lvl=%s faction=%s", tostring(lvl), tostring(faction))
 	if (faction ~= "none") then
 		level_information[lvl].faction_count = level_information[lvl].faction_count + 1
 	end
@@ -64,7 +65,6 @@ end
 
 -- will be used by factions to determine whether or not they should find a new level to target
 function faction_enemy_present(lvl, faction)
-    printd(0)
 	if (faction == "none") then
 		return 0, {}
 	end
@@ -81,18 +81,17 @@ function faction_enemy_present(lvl, faction)
 		end
 	end
 
-    printd(1)
-	
+	warfare_log.trace("faction_enemy_present: lvl=%s faction=%s enemy_count=%s", tostring(lvl), tostring(faction), tostring(enemyCount))
 	return enemyCount, enemies
 end
 
 -- Updates information for the specified level.
 function update_level(lvl)
 	if (not level_timers[lvl] or game.get_game_time():diffSec(level_timers[lvl]) >= (level_information[lvl].next_update*60)) then
-        printd(0)
+		warfare_log.trace("update_level: lvl=%s entering update branch", tostring(lvl))
 
-		level_timers[lvl] = game.get_game_time() 
-		
+		level_timers[lvl] = game.get_game_time()
+
 		level_information[lvl].next_update = math.random(5, 20)
 		
 		--printf("--- updating " .. game.translate_string(alife():level_name(lvl)) .. " ---")
@@ -136,15 +135,14 @@ function update_level(lvl)
 		
 		-- avoid calculating new targets at the first update. when saving, save old targets so they persist.
 		if level_information[lvl].first_update then
-			--printf("--- first update for " .. alife():level_name(lvl) .. " ---")
-			level_information[lvl].first_update = false	
-			
+			warfare_log.info("update_level: lvl=%s first update, deferring target calculation", tostring(lvl))
+			level_information[lvl].first_update = false
+
 			-- Second update should happen RIGHT after first update, or some bases get stuck not finding targets for a while
 			level_information[lvl].next_update = 0
 
-            
-            printd(1)
-			return
+
+        			return
 		end
 		
 		for f,tbl in pairs(level_information[lvl].faction_stats) do
@@ -169,7 +167,7 @@ function update_level(lvl)
 		-- Users can flag lab smarts as bases if they want to have the labs target surface levels.
 		if (level_information[lvl].base_count > 0) then
 			for f,tbl in pairs(level_information[lvl].faction_stats) do
-				if f ~= "none" then		
+				if f ~= "none" then
 					-- If the faction has no enemies on the current level and there are no empty bases, find a target level.
 					if not (level_information[lvl].faction_stats[f].faction_war or level_information[lvl].faction_stats["none"].base_count > 0) then
                         local aggression = warfare_options.options.factions[f].expansion_aggression
@@ -178,10 +176,11 @@ function update_level(lvl)
 							if (math.random(0, 100) < aggression) then
 								local target = get_level_target(lvl, f)
 								level_information[lvl].faction_stats[f].target_level = target
-							
+
 								if target then
-									--printf("f: " .. f .. " t: " .. target)
-									--printf("--- " .. game.translate_string(f) .. " is targeting " .. game.translate_string(alife():level_name(target)) .. " ---")
+									warfare_log.debug("update_level: lvl=%s faction=%s assigned target_level=%s", tostring(lvl), tostring(f), tostring(target))
+								else
+									warfare_log.trace("update_level: lvl=%s faction=%s aggression roll passed but no target found", tostring(lvl), tostring(f))
 								end
 							end
 						end
@@ -211,7 +210,6 @@ function update_level(lvl)
 		end
 	end
 
-    printd(2)
 end
 
 -- This function will also take into consideration calculated hostility.
@@ -240,11 +238,11 @@ TODO: assign point values based on the following criteria; smart terrains should
 ]]
 
 function get_level_target(lvl, faction)
-    printd(0)
+	warfare_log.trace("get_level_target: lvl=%s faction=%s", tostring(lvl), tostring(faction))
 	local links = level_targets.level_links[lvl]
 	local levels = level_targets.active_levels
 	local dists = {}
-	
+
 	local a = level_targets.level_offsets[lvl]
 	
 	for i,lvl2 in pairs(levels) do
@@ -294,7 +292,6 @@ function get_level_target(lvl, faction)
 		--printf(game.translate_string(alife():level_name(t[1])) .. " - dist: " .. t[2] .. " priority: " .. t[3] .. " dist/priority: " .. t[4])
 	end
     
-    printd(1)
 		
 	-- Return highest priority level target.
 	return dists[1] and dists[1][1]
