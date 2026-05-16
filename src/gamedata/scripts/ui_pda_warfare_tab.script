@@ -174,7 +174,6 @@ function pda_warfare_tab:Reset()
     local faction_by_power = {}
     local search_tbl = self.curr_map and self.faction_smarts_lvl or self.faction_smarts
     for fac,num in pairs(search_tbl) do
-        warfare_log.debug("faction_by_power | %s - %s", fac, num)
         table.insert(faction_by_power, {fac, num})
     end
     
@@ -285,8 +284,6 @@ function pda_warfare_tab:Reset()
             give_info("warfare_actor_faction_domination")
         end
         
-        warfare_log.debug("tot_smarts: %s - tot_smarts_lvl: %s", self.tot_smarts, self.tot_smarts_lvl)
-        warfare_log.debug("%s | str_squads: %s - str_smarts: %s - str_territory: %s - rate: %s", f, str_squads, str_smarts, game.translate_string(str_territory), rate)
     end
 end
 

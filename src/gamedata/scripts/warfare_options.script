@@ -225,7 +225,6 @@ function update_settings()
     end
     axr_main.config:save()
 
-    warfare_log.info("end setup")
 end
 
 ENABLE_MUTANT_OFFLINE_COMBAT = true
@@ -260,7 +259,6 @@ function override_functions()
 end
 
 function get_random_start_location()
-    warfare_log.debug("get_random_start_location")
 
     start_table = {}
     local loc_ini = ini_file("plugins\\new_game_start_locations.ltx")
@@ -278,7 +276,6 @@ function get_random_start_location()
 
     start_location = start_table[math.random(#start_table)]
 
-    warfare_log.debug("get_random_start_location")
 
     return start_location
 end

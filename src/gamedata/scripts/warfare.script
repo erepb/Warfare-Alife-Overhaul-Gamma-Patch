@@ -197,18 +197,10 @@ function cleanup_ghost_squads()
     for _, e in ipairs(removed) do
         remove_registered_squad(e.faction, e.id)
     end
-    if #removed > 0 then
-        warfare_log.warn("[regsq_cleanup] removed %s ghost entries after load", tostring(#removed))
-        for _, e in ipairs(removed) do
-            warfare_log.warn("[regsq_cleanup]   faction=%s id=%s reason=%s",
-                tostring(e.faction), tostring(e.id), tostring(e.reason))
-        end
-    end
 end
 
 -- save warfare state
 function save_state(m_data)
-    warfare_log.debug("save_state")
 
     -- if data doesn't exist, create it.
     if (not m_data.warfare) then
@@ -274,15 +266,12 @@ function save_state(m_data)
         m_data.warfare.smart_owners[smart.id] = smart.owning_faction
     end
 
-    warfare_log.debug("Warfare state saved")
-    warfare_log.debug("save_state")
 end
 
 loaded_squads = false
 legacy_save_stagger = false  -- set true when loading a save that has no persisted defense/patrol timers
 
 function load_state(m_data)
-    warfare_log.debug("load_state")
     -- if warfare data isn't saved, return early.
 
 
@@ -373,34 +362,27 @@ function load_state(m_data)
 
 
     -- clear old data.
-    warfare_log.debug("Finished loading Warfare state. Clearing old data")
     m_data.warfare = nil
-    warfare_log.debug("load_state")
 end
 
 -- callback for when npcs are created for a squad, done in create_squad for sim_board.
 function squad_on_npc_creation(squad, se_obj, spawn_smart)
-    warfare_log.debug("--- squad_on_npc_creation ---")
 
-    warfare_log.debug(squad:name())
 
     -- Ignore any squads in the ignore list.
     if not (ignore[squad:section_name()]) then
         if (not squad.registered_with_warfare) then
-            warfare_log.debug("!!! registering " .. squad:section_name() .. " with warfare")
 
             -- get the squads faction
             local faction = squad:get_squad_community()
 
             if (registered_squads[faction]) then
-                warfare_log.debug("--- registering squad " .. squad:section_name() .. " for " .. faction .. " with target: " .. spawn_smart:name() .. " ---")
                 registered_squads[faction][squad.id] = spawn_smart.id
                 squad.assigned_target_id = spawn_smart.id
                 squad.registered_with_warfare = true
                 spawn_smart:on_reach_target(squad)
             end
         else
-            warfare_log.debug("--- Already registered squad ---")
         end
     end
 
@@ -506,11 +488,9 @@ function actor_on_update()
     end
 
     if (last_update:diffSec(tg) > 0) then
-        warfare_log.debug("actor_on_update")
         return
     end
 
-    warfare_log.debug("actor_on_update")
 
     -- Time delta tracking for spawn protection
     if not last_warfare_time then
@@ -526,7 +506,6 @@ function actor_on_update()
 
         -- Big time jump (>1 hour): advance spawn timers to prevent mass spawns
         if time_delta > 3600 then
-            warfare_log.debug("big time jump: advancing spawn timers by %s seconds", time_delta)
             smart_terrain_warfare.advance_spawn_timers(time_delta)
             warfare_factions.advance_spawn_timers(time_delta)
             instant_big_jump = true
@@ -610,11 +589,9 @@ function actor_on_update()
     end
     --]]
 
-    warfare_log.debug("actor_on_update")
 end
 
 function initialize()
-    warfare_log.debug("--- initializing warfare ---")
 
     -- At this point this just serves to pause everything to ensure squads reach their "waiting at target" state before resource counts etc are calculated.
     initialized = true
@@ -682,7 +659,6 @@ end
 function fill_start_position()
 
     if (not IsWarfare()) then
-        warfare_log.debug("not warfare")
         return
     end
 
@@ -693,7 +669,6 @@ function fill_start_position()
     SIMBOARD.start_position_filled = true
 
     if (warfare_options.options.random_starting_locations) then
-        warfare_log.debug("Warfare | Random starting locations")
         return
         --initialize_random_starting_locations()
     end
@@ -760,7 +735,6 @@ function fill_start_position()
                 local squad = utils_obj.create_squad(section, smart:name())
                 sim_squad_warfare.set_target(squad, smart.id)
 
-                warfare_log.debug("spawning initial mutants %s on terrain %s", section, smart:name())
             end
         end
     end
@@ -801,7 +775,6 @@ function fill_start_position()
                             -- reduce the starting amount of squads from actor's faction and factions neutral to actor's faction and spawn more squads from factions that are enemies with actor's faction(optional)
                             if (ene_bonus and actor_faction) then
                                 if (string.find(squad_section, actor_faction) or not warfare.is_squad_section_enemy_of_faction(squad_section, actor_faction)) then
-                                    warfare_log.debug("actor's faction is %s", actor_faction)
                                     if (count >= 1) then
                                         if (math.random() < 0.5) then
                                             count = count - 1
@@ -824,17 +797,14 @@ function fill_start_position()
                             if smart and (common or string.find(squad_section, "sim_squad_")) and (not is_squad_monster[faction]) and (smart_current_pop < round_idp(math.max(1, smart.max_population * stalker_pop_factor))) then
                                 squad = SIMBOARD:create_squad(smart, squad_section)                -- common squads can't go over user-set cap
                                 squad_spawned = true
-                                warfare_log.debug("spawned %s on %s - pop cap is %s and squad count is %s", squad_section, smart:name(), round_idp(math.max(1,smart.max_population * stalker_pop_factor)), smart_current_pop + 1)
                                 smart_current_pop = smart_current_pop + 1
                             elseif ignore[squad_section] or (not string.find(squad_section, "sim_squad_")) then
                                 squad = SIMBOARD:create_squad(smart, squad_section)                -- always make story squads
                                 squad_spawned = true
-                                warfare_log.debug("%s is a unique squad - spawned on %s",squad_section, smart:name())
                             end
 
                             if smart and squad_spawned and registered_squads[squad:get_squad_community()] and not ignore[squad:section_name()] then
                                 sim_squad_warfare.set_target(squad, smart.id)
-                                warfare_log.debug("Warfare Registered Squad | smart=%s, squad=%s", tostring(smart:name()), tostring(squad:name()))
 
                                 -- stagger defense/patrol timers for bases so they don't all fire in sync
                                 if smart.props and smart.props.base > 0 and not smart_terrain_warfare.defense_timers[smart.id] then
@@ -847,7 +817,6 @@ function fill_start_position()
                                     end
                                 end
                             else
-                                warfare_log.debug("Warfare Ignored Squad | smart=%s, squad=%s", tostring(smart:name()), tostring(squad:name()))
                             end
                         end
                     end
@@ -894,7 +863,6 @@ function fill_start_position_on_load()
             local smart_id = get_nearest_smart_id(squad)
             if smart_id then
                 sim_squad_warfare.set_target(squad, smart_id)
-                warfare_log.debug("fill_start_position_on_load - squad: %s - target: %s",section,smart_id)
             end
         end
     end
@@ -933,7 +901,6 @@ function initialize_random_starting_locations()
     local bases = {}
     local max_resources = 0
     for _, smart in pairs(SIMBOARD.smarts_by_names) do
-        warfare_log.debug("initialize_random_starting_locations - smart name: %s", smart:name())
 
         if not (smart.props) then
             simulation_objects.get_props(smart)
@@ -966,7 +933,6 @@ function initialize_random_starting_locations()
         p = global_position.from(base)
     }
 
-    warfare_log.debug(actor_faction)
     used_smarts[base.id] = true
     local resources = math.random(max_resources) --warfare_factions.faction_information[actor_faction].resource_count
     local section = faction_expansions.get_spawn_section(actor_faction, resources, max_resources)
@@ -1121,26 +1087,21 @@ function squad_on_unregister(squad, type_name)
         local faction = squad:get_squad_community()
 
         if (registered_squads[faction]) then
-            warfare_log.debug("unregistering squad: " .. faction .. " with number of members: " .. squad:npc_count())
             remove_registered_squad(faction, squad.id)
 
             if (smart_terrain_warfare.random_patrols[squad.id]) then
-                warfare_log.debug("unregistering random patrol: " .. faction .. " with number of members: " .. squad:npc_count())
                 smart_terrain_warfare.remove_random_patrol(squad.id)
             end
 
             if (squad.patrol_owner) then
-                warfare_log.debug("unregistering patrol owning squad: " .. faction .. " with number of members: " .. squad:npc_count())
                 smart_terrain_warfare.patrol_squads[squad.patrol_owner][squad.id] = nil
             end
         else
-            warfare_log.debug("WTF? no squads registered for " .. faction)
         end
     end
 end
 
 function on_game_start()
-    warfare_log.debug("on_game_start")
     --_G.WARFARE = false
     warfare_options.update_settings()
 
@@ -1154,7 +1115,6 @@ function on_game_start()
     RegisterScriptCallback("squad_on_npc_death", sim_squad_warfare.squad_on_npc_death)
     RegisterScriptCallback("server_entity_on_unregister", squad_on_unregister)
     RegisterScriptCallback("actor_on_first_update", cleanup_ghost_squads)
-    warfare_log.debug("on_game_start")
 
     local function on_game_load()
         ignore = sim_offline_combat.get_ignore_list()
@@ -1341,7 +1301,6 @@ function snap()
                         if patrol_target then
                             sim_squad_warfare.set_target(new_squad, patrol_target)
                         end
-                        warfare_log.debug("emission zombified %s squad at %s (%s -> %s members)", faction, smart_name, tostring(original_count), tostring(new_squad:npc_count()))
                     end
                 end
             else
@@ -1367,7 +1326,6 @@ function resetter()
         UnregisterScriptCallback("squad_on_npc_death", sim_squad_warfare.squad_on_npc_death)
         UnregisterScriptCallback("server_entity_on_unregister", squad_on_unregister)
         UnregisterScriptCallback("actor_on_first_update", cleanup_ghost_squads)
-        warfare_log.debug("~ Warfare is not loaded, unregistered warfare callbacks")
     end
     return true
 end
