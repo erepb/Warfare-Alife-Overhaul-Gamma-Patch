@@ -540,6 +540,42 @@ end
 
 
 
+-- One-shot per-smart init. Idempotent via smart.first_update guard. Called
+-- from smart_terrain_on_update when the alife scheduler ticks the smart, and
+-- eagerly from warfare.actor_on_update's first_update branch over every smart
+-- in SIMBOARD so that warfare_levels/warfare_factions aggregation sees fully
+-- populated owning_faction state regardless of where the alife scheduler is in
+-- its tick batch (mtALife is on by default; the scheduler runs in parallel on
+-- the seqParallel worker and ticks only m_objects_per_update per frame, so on
+-- the first actor_on_update most smarts would otherwise have nil owning_faction
+-- and get skipped, collapsing fi.base_count to 0 and triggering a spurious
+-- emergency_resurrection_spawn).
+function bootstrap_smart(smart)
+    if smart.first_update then return end
+    smart.first_update = true
+
+    if not smart.level_id then
+        smart.level_id = game_graph():vertex(smart.m_game_vertex_id):level_id()
+    end
+
+    if (smart.max_population == 0) then
+        smart.max_population = 1
+    end
+    smart.default_max_population = smart.max_population
+
+    if (smart_owners[smart.id]) then
+        smart.owning_faction = smart_owners[smart.id]
+        smart.last_owner = smart_owners[smart.id]
+    else
+        smart.owning_faction = "none"
+        smart.last_owner = "none"
+    end
+
+    set_max_population(smart)
+    smart.global_position = global_position.from(smart)
+    night_activity_allowed[smart.id] = 0
+end
+
 --------------------------------------------------
 -- MAIN FUNCTION LOOP - EVERYTHING HAPPENS HERE --
 --------------------------------------------------
@@ -560,30 +596,12 @@ function smart_terrain_on_update(smart)
     end
 
     if not (smart.first_update) then
-        smart.first_update = true
         warfare_log.debug("smart_terrain_on_update: first update smart=%s", smart:name())
-
-        -- hackish and will result in the squatting squads, but meh.
-        if (smart.max_population == 0) then
-            smart.max_population = 1
-        end
-
-        smart.default_max_population = smart.max_population
-
-        if (smart_owners[smart.id]) then
-            smart.owning_faction = smart_owners[smart.id]
-            smart.last_owner = smart_owners[smart.id]
+        bootstrap_smart(smart)
+        if smart_owners[smart.id] then
             warfare_log.debug("smart_terrain_on_update: restored owner smart=%s faction=%s",
                 smart:name(), smart_owners[smart.id])
-        else
-            smart.owning_faction = "none"
-            smart.last_owner = "none"
         end
-
-        set_max_population(smart)
-
-        smart.global_position = global_position.from(smart)
-        night_activity_allowed[smart.id] = 0    -- initialize
     end
 
     check_owner(smart)

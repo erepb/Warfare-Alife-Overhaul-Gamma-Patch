@@ -117,18 +117,26 @@ function update_level(lvl)
 					setup_faction_table(lvl, smart.owning_faction)
 				end
 				
+				-- smart.defense_power is set by check_owner (runs lazily from
+				-- smart_terrain_on_update on the alife scheduler's batch). It
+				-- can be nil here for smarts that warfare bootstrapped eagerly
+				-- but the scheduler hasn't ticked yet. Match the existing
+				-- `or 0` idiom used at smart_terrain_warfare.script:5584/5672/5792.
+				-- total_power is purely diagnostic (warfare_factions logs it but
+				-- no decision reads it), so a one-tick underestimate is fine.
+				local dp = smart.defense_power or 0
 				if (smart.props.base > 0) then
 					level_information[lvl].faction_stats[smart.owning_faction].base_count = level_information[lvl].faction_stats[smart.owning_faction].base_count + 1
-					level_information[lvl].faction_stats[smart.owning_faction].total_power = level_information[lvl].faction_stats[smart.owning_faction].total_power + smart.defense_power
+					level_information[lvl].faction_stats[smart.owning_faction].total_power = level_information[lvl].faction_stats[smart.owning_faction].total_power + dp
 				elseif (smart.props.territory > 0) then
 					level_information[lvl].faction_stats[smart.owning_faction].territory_count = level_information[lvl].faction_stats[smart.owning_faction].territory_count + 1
-					level_information[lvl].faction_stats[smart.owning_faction].total_power = level_information[lvl].faction_stats[smart.owning_faction].total_power + smart.defense_power
+					level_information[lvl].faction_stats[smart.owning_faction].total_power = level_information[lvl].faction_stats[smart.owning_faction].total_power + dp
 				end
-				
+
 				if (smart.props.resource > 0) then
 					--printf("adding one to resource for " .. alife():level_name(lvl))
 					level_information[lvl].faction_stats[smart.owning_faction].resource_count = level_information[lvl].faction_stats[smart.owning_faction].resource_count + 1
-					level_information[lvl].faction_stats[smart.owning_faction].total_power = level_information[lvl].faction_stats[smart.owning_faction].total_power + smart.defense_power
+					level_information[lvl].faction_stats[smart.owning_faction].total_power = level_information[lvl].faction_stats[smart.owning_faction].total_power + dp
 				end
 			end
 		end

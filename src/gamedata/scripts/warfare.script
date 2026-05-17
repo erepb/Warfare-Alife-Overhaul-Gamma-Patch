@@ -173,14 +173,17 @@ function remove_registered_squad(faction, id)
     end
 end
 
--- One-shot cleanup to purge ghost entries from poisoned saves. Runs at
--- actor_on_first_update when alife is fully populated, so alife_object(id) is
--- authoritative. Removes entries whose id does not resolve to a squad in this
--- faction's bucket: missing alife object, non-squad clsid (recycled id), or
--- squad of a different community (wrong bucket).
-function cleanup_ghost_squads()
+function actor_on_first_update()
     warfare_log.tr_begin("warfare/actor_on_first_update")
-    warfare_log.info("cleanup_ghost_squads: scanning registered_squads for ghosts")
+    if not (IsWarfare()) then
+        if (_G.WARFARE) then
+            warfare_log.info("actor_on_first_update: IsWarfare() returned false, disabling _G.WARFARE")
+            _G.WARFARE = false
+        end
+        return
+    end
+
+    warfare_log.info("actor_on_first_update: scanning registered_squads for ghosts")
     local removed = {}
     for faction, tbl in pairs(registered_squads) do
         for id in pairs(tbl) do
@@ -195,15 +198,99 @@ function cleanup_ghost_squads()
                 reason = "faction_mismatch:" .. actual
             end
             if reason then
-                warfare_log.debug("cleanup_ghost_squads: ghost faction=%s id=%s reason=%s", faction, id, reason)
+                warfare_log.debug("actor_on_first_update: ghost faction=%s id=%s reason=%s", faction, id, reason)
                 removed[#removed + 1] = { faction = faction, id = id, reason = reason }
             end
         end
     end
-    warfare_log.info("cleanup_ghost_squads: %s ghosts found, purging", #removed)
+    warfare_log.info("actor_on_first_update: %s ghosts found, purging", #removed)
     for _, e in ipairs(removed) do
         remove_registered_squad(e.faction, e.id)
     end
+
+    warfare_log.info("actor_on_first_update: initializing warfare level data")
+    actor_faction = get_actor_true_community() or alife():actor():community():sub(7)
+    warfare_log.info("actor_on_first_update: actor_faction=%s", actor_faction)
+    give_info("actor_made_wish_for_peace")
+
+    if (warfare_options.options.all_out_war) then
+        warfare_log.info("actor_on_first_update: all_out_war enabled, setting -5000 relations")
+        for i, f in pairs(warfare_factions.factions) do
+            for j, f2 in pairs(warfare_factions.factions) do
+                if f ~= f2 then
+                    game_relations.set_factions_community_num(f, f2, -5000)
+                end
+            end
+        end
+    end
+
+    warfare_log.debug("actor_on_first_update: scanning SIMBOARD.smarts_by_names to populate level_information")
+    local bootstrapped = 0
+    for name, smart in pairs(SIMBOARD.smarts_by_names) do
+        -- Eagerly bootstrap before the alife scheduler gets to it, so the
+        -- warfare_levels/warfare_factions aggregation below sees populated
+        -- owning_faction state. Otherwise smart_terrain_on_update fires per
+        -- smart on the seqParallel worker in batches and most owning_faction
+        -- reads return nil, collapsing fi.base_count to 0 and triggering a
+        -- spurious emergency_resurrection_spawn.
+        if not smart.first_update then
+            smart_terrain_warfare.bootstrap_smart(smart)
+            bootstrapped = bootstrapped + 1
+        end
+
+        if (not smart.level_id) then
+            smart.level_id = game_graph():vertex(smart.m_game_vertex_id):level_id()
+        end
+
+        if (not warfare_levels.level_information[smart.level_id]) then
+            warfare_log.trace("actor_on_first_update: init level_information[%s]", smart.level_id)
+            warfare_levels.level_information[smart.level_id] = {}
+            warfare_levels.level_information[smart.level_id].smarts = {}
+            warfare_levels.level_information[smart.level_id].faction_priority = {}
+            warfare_levels.level_information[smart.level_id].base_count = 0
+            warfare_levels.level_information[smart.level_id].resource_count = 0
+            warfare_levels.level_information[smart.level_id].territory_count = 0
+            warfare_levels.level_information[smart.level_id].lair_count = 0
+            warfare_levels.level_information[smart.level_id].first_update = true
+        end
+
+        if (smart.props) then
+            table.insert(warfare_levels.level_information[smart.level_id].smarts, smart.id)
+
+            if smart.props then
+
+                -- Count the total number of smart terrain types in the level; will be used in level analysis
+                if smart.props.base > 0 then
+                    warfare_levels.level_information[smart.level_id].base_count = warfare_levels.level_information[smart.level_id].base_count + 1
+                    base_count = base_count + 1
+                elseif smart.props.territory > 0 then
+                    warfare_levels.level_information[smart.level_id].territory_count = warfare_levels.level_information[smart.level_id].territory_count + 1
+                end
+
+                if smart.props.resource > 0 then
+                    warfare_levels.level_information[smart.level_id].resource_count = warfare_levels.level_information[smart.level_id].resource_count + 1
+                    resource_count = resource_count + smart.props.resource
+                end
+
+                if smart.props.lair > 0 then
+                    warfare_levels.level_information[smart.level_id].lair_count = warfare_levels.level_information[smart.level_id].lair_count + 1
+                end
+
+                -- Cycle through factions
+                for i, f in pairs(warfare_factions.factions) do
+                    -- check if smart is flagged for faction
+                    if smart.props[f] and smart.props[f] > 0 then
+                        if not warfare_levels.level_information[smart.level_id].faction_priority[f] then
+                            warfare_levels.level_information[smart.level_id].faction_priority[f] = 0
+                        end
+
+                        warfare_levels.level_information[smart.level_id].faction_priority[f] = warfare_levels.level_information[smart.level_id]["faction_priority"][f] + smart.props[f]
+                    end
+                end
+            end
+        end
+    end
+    warfare_log.info("actor_on_first_update: bootstrapped %s smarts before level/faction aggregation", tostring(bootstrapped))
 end
 
 -- save warfare state
@@ -425,7 +512,6 @@ end
 -- last update time
 local last_update
 
-local first_update = true
 local new_surge = true
 local old_surge_cnt
 
@@ -434,93 +520,12 @@ function actor_on_update()
     warfare_log.tr_begin("warfare/actor_on_update")
     warfare_log.debug("actor_on_update")
 
-    if not (IsWarfare()) then
-        if (_G.WARFARE) then
-            warfare_log.info("actor_on_update: IsWarfare() returned false, disabling _G.WARFARE")
-            _G.WARFARE = false
-        end
-
+    if not _G.WARFARE then
         return
     end
 
     -- get the current game time
     local tg = game.get_game_time()
-
-    if first_update then
-        warfare_log.info("actor_on_update: first_update path - initializing warfare level data")
-        first_update = false
-        actor_faction = get_actor_true_community() or alife():actor():community():sub(7)
-        --actor_faction = alife_storage_manager.get_state().default_faction
-        --printf("!!!! "..alife_storage_manager.get_state().default_faction.." !!!!" )
-        warfare_log.info("actor_on_update: actor_faction=%s", actor_faction)
-        give_info("actor_made_wish_for_peace")
-
-        if (warfare_options.options.all_out_war) then
-            warfare_log.info("actor_on_update: all_out_war enabled, setting -5000 relations")
-            for i, f in pairs(warfare_factions.factions) do
-                for j, f2 in pairs(warfare_factions.factions) do
-                    if f ~= f2 then
-                        game_relations.set_factions_community_num(f, f2, -5000)
-                    end
-                end
-            end
-        end
-
-        warfare_log.debug("actor_on_update: scanning SIMBOARD.smarts_by_names to populate level_information")
-        for name, smart in pairs(SIMBOARD.smarts_by_names) do
-            if (not smart.level_id) then
-                smart.level_id = game_graph():vertex(smart.m_game_vertex_id):level_id()
-            end
-
-            if (not warfare_levels.level_information[smart.level_id]) then
-                warfare_log.trace("actor_on_update: init level_information[%s]", smart.level_id)
-                warfare_levels.level_information[smart.level_id] = {}
-                warfare_levels.level_information[smart.level_id].smarts = {}
-                warfare_levels.level_information[smart.level_id].faction_priority = {}
-                warfare_levels.level_information[smart.level_id].base_count = 0
-                warfare_levels.level_information[smart.level_id].resource_count = 0
-                warfare_levels.level_information[smart.level_id].territory_count = 0
-                warfare_levels.level_information[smart.level_id].lair_count = 0
-                warfare_levels.level_information[smart.level_id].first_update = true
-            end
-
-            if (smart.props) then
-                table.insert(warfare_levels.level_information[smart.level_id].smarts, smart.id)
-
-                if smart.props then
-
-                    -- Count the total number of smart terrain types in the level; will be used in level analysis
-                    if smart.props.base > 0 then
-                        warfare_levels.level_information[smart.level_id].base_count = warfare_levels.level_information[smart.level_id].base_count + 1
-                        base_count = base_count + 1
-                    elseif smart.props.territory > 0 then
-                        warfare_levels.level_information[smart.level_id].territory_count = warfare_levels.level_information[smart.level_id].territory_count + 1
-                    end
-
-                    if smart.props.resource > 0 then
-                        warfare_levels.level_information[smart.level_id].resource_count = warfare_levels.level_information[smart.level_id].resource_count + 1
-                        resource_count = resource_count + smart.props.resource
-                    end
-
-                    if smart.props.lair > 0 then
-                        warfare_levels.level_information[smart.level_id].lair_count = warfare_levels.level_information[smart.level_id].lair_count + 1
-                    end
-
-                    -- Cycle through factions
-                    for i, f in pairs(warfare_factions.factions) do
-                        -- check if smart is flagged for faction
-                        if smart.props[f] and smart.props[f] > 0 then
-                            if not warfare_levels.level_information[smart.level_id].faction_priority[f] then
-                                warfare_levels.level_information[smart.level_id].faction_priority[f] = 0
-                            end
-
-                            warfare_levels.level_information[smart.level_id].faction_priority[f] = warfare_levels.level_information[smart.level_id]["faction_priority"][f] + smart.props[f]
-                        end
-                    end
-                end
-            end
-        end
-    end
 
     -- if last update time doesn't exist, set it.
     if (not last_update) then
@@ -1199,7 +1204,7 @@ function on_game_start()
     RegisterScriptCallback("save_state", save_state)
     RegisterScriptCallback("squad_on_npc_death", sim_squad_warfare.squad_on_npc_death)
     RegisterScriptCallback("server_entity_on_unregister", squad_on_unregister)
-    RegisterScriptCallback("actor_on_first_update", cleanup_ghost_squads)
+    RegisterScriptCallback("actor_on_first_update", actor_on_first_update)
 
     local function on_game_load()
         warfare_log.info("on_game_load: priming ignore list and scheduling resetter")
@@ -1429,7 +1434,7 @@ function resetter()
         UnregisterScriptCallback("save_state", save_state)
         UnregisterScriptCallback("squad_on_npc_death", sim_squad_warfare.squad_on_npc_death)
         UnregisterScriptCallback("server_entity_on_unregister", squad_on_unregister)
-        UnregisterScriptCallback("actor_on_first_update", cleanup_ghost_squads)
+        UnregisterScriptCallback("actor_on_first_update", actor_on_first_update)
     end
     return true
 end
