@@ -1,8 +1,7 @@
 ## What's Changed
 
 ### Features
-- Add Alife Plus support
+- New configurable logging infrastructure with MCM-exposed verbosity levels
 
 ### Bug Fixes
-- Fix nil squad crash in sim_squad_warfare
-- Temporary GAMMA-specific simboard smart-squad info desync fix
+- Fix busyhands stuck state caused by uninitialized warfare structures on first actor update
