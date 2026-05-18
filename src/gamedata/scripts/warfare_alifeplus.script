@@ -1,5 +1,3 @@
-print_dbg = warfare.print_dbg
-
 local ap_enabled = false
 
 local function has_alifeplus()
@@ -20,13 +18,13 @@ local function is_lendable(squad)
     if squad.patrol_table then return true end
     if smart_terrain_warfare.random_patrols[squad.id] then return true end
     if squad.current_action ~= 1 then
-        print_dbg("[AP] not_lendable | %s (id=%s) reason=moving action=%s", squad:name(), squad.id, squad.current_action)
+        warfare_log.debug("[AP] not_lendable | %s (id=%s) reason=moving action=%s", squad:name(), squad.id, squad.current_action)
         return false
     end
     local base = get_squad_base(squad)
     if not base then return true end
     if not smart_terrain_warfare.base_can_send(base) then
-        print_dbg("[AP] not_lendable | %s (id=%s) reason=base_cant_spare base=%s", squad:name(), squad.id, base:name())
+        warfare_log.debug("[AP] not_lendable | %s (id=%s) reason=base_cant_spare base=%s", squad:name(), squad.id, base:name())
         return false
     end
     return true
@@ -40,7 +38,7 @@ end
 function log_ap_controlled(squad, caller)
     local target_name = squad.scripted_target or "?"
     local pretty = smart_terrain_warfare.translate_smart_name(target_name) or target_name
-    print_dbg("[AP] %s | %s (id=%s) -> %s", caller, squad:name(), squad.id, pretty)
+    warfare_log.debug("[AP] %s | %s (id=%s) -> %s", caller, squad:name(), squad.id, pretty)
 end
 
 local function _other_label(record)
@@ -118,9 +116,9 @@ function on_game_start()
             end
         end
         if count > 0 then
-            printf("[WARFARE] AP migration: cleared stale scripted_target on %s squads", count)
+            warfare_log.info("AP migration: cleared stale scripted_target on %s squads", count)
         end
     end)
 
-    printf("[WARFARE] AlifePlus detected, cooperative lending enabled")
+    warfare_log.info("AlifePlus detected, cooperative lending enabled")
 end

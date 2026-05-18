@@ -79,7 +79,6 @@ function update_settings()
     options.actor_support_goodwill_base = ui_options.get("alife/warfare/general/actor_support_goodwill_base")        -- receive faction goodwill on kills as flat amount
     options.actor_support_goodwill_weight = ui_options.get("alife/warfare/general/actor_support_goodwill_weight")        -- receive faction goodwill on kills as a multiplier of rank
     options.actor_influence_weight = ui_options.get("alife/warfare/general/actor_influence_weight")
-    options.debug_logging = ui_options.get("alife/warfare/general/debug_logging")
     options.monster_min_faction_respawn = ui_options.get("alife/warfare/general/monster_min_faction_respawn")
     options.monster_max_faction_respawn = ui_options.get("alife/warfare/general/monster_max_faction_respawn")
     options.monster_max_squads_per_level = ui_options.get("alife/warfare/general/monster_max_squads_per_level")
@@ -226,7 +225,7 @@ function update_settings()
     end
     axr_main.config:save()
 
-    printf("end setup")
+    warfare_log.info("end setup")
 end
 
 ENABLE_MUTANT_OFFLINE_COMBAT = true
@@ -261,7 +260,7 @@ function override_functions()
 end
 
 function get_random_start_location()
-    warfare.printd(0, "get_random_start_location")
+    warfare_log.debug("get_random_start_location")
 
     start_table = {}
     local loc_ini = ini_file("plugins\\new_game_start_locations.ltx")
@@ -279,7 +278,7 @@ function get_random_start_location()
 
     start_location = start_table[math.random(#start_table)]
 
-    warfare.printd(1, "get_random_start_location")
+    warfare_log.debug("get_random_start_location")
 
     return start_location
 end

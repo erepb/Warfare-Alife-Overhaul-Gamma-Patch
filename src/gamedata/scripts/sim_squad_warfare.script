@@ -17,8 +17,6 @@
 
 
 
-print_dbg = warfare.print_dbg
-printd = warfare.printd
 dbg_map_hud = false
 
 squad_icons = {
@@ -68,7 +66,7 @@ function translate_smart_name(name)
 end
 
 function squad_on_update(squad)
-    printd(0, "squad_on_update: " .. squad:name())
+    warfare_log.debug("squad_on_update: " .. squad:name())
 
     if not (IsWarfare()) then
         return
@@ -77,7 +75,7 @@ function squad_on_update(squad)
     local faction = squad:get_squad_community()
 
     if warfare.ignore[squad:section_name()] then
-        printd(1, squad:name())
+        warfare_log.debug(squad:name())
 
         --[[
         if not (squad.switched_to_trader) then
@@ -124,7 +122,7 @@ function squad_on_update(squad)
     if not (squad.registered_with_warfare) then
         -- Only check once, checking multiple times would be redundant.
         if (squad.checked_with_warfare) then
-            printd(2, squad:name())
+            warfare_log.debug(squad:name())
             return
         end
 
@@ -138,7 +136,7 @@ function squad_on_update(squad)
 
         -- See if the squad has an entry in the registered squads table.
         if (warfare.registered_squads[faction] and warfare.registered_squads[faction][squad.id]) then
-            print_dbg("--- registering " .. squad:section_name() .. " with warfare")
+            warfare_log.debug("--- registering " .. squad:section_name() .. " with warfare")
             squad.registered_with_warfare = true
         end
     end
@@ -164,7 +162,7 @@ function squad_on_update(squad)
         squad_warfare_update(squad)
     end
 
-    printd(3, squad:name())
+    warfare_log.debug(squad:name())
 end
 
 function update_global_position(squad)
@@ -196,7 +194,7 @@ end
 -- Modified generic_update for warfare. squad.__lock will cause generic_update not to run.
 -- Not using scripted_target / specific_update, and need to avoid the precondition check.
 function squad_warfare_update(squad)
-    printd(0, "squad_warfare_update: " .. squad:name())
+    warfare_log.debug("squad_warfare_update: " .. squad:name())
 
 
     if (squad.current_action) then
@@ -260,12 +258,12 @@ function squad_warfare_update(squad)
         end
     end
 
-    printd(1, squad:name())
+    warfare_log.debug(squad:name())
 end
 
 -- unregister squad with warfare
 function remove_squad(squad)
-    printd(0, squad:name())
+    warfare_log.debug(squad:name())
 
     if (squad and squad:clsid() == clsid.online_offline_group_s) then
         local f = squad:get_squad_community()
@@ -280,11 +278,11 @@ function remove_squad(squad)
         end
     end
 
-    printd(1, squad:name())
+    warfare_log.debug(squad:name())
 end
 
 function squad_on_npc_death(squad, npc, killer)
-    printd(0, "squad_on_npc_death: " .. squad:name())
+    warfare_log.debug("squad_on_npc_death: " .. squad:name())
 
     if (squad.registered_with_warfare) then
         if killer and (killer.id == AC_ID) then
@@ -304,21 +302,21 @@ function squad_on_npc_death(squad, npc, killer)
                 db.actor:give_money(money)        -- give money
                 xr_effects.inc_faction_goodwill_to_actor(db.actor, nil, { warfare.actor_faction, goodwill_incr })    -- increase goodwill
                 warfare.actor_influence_points = warfare.actor_influence_points + influence
-                print_dbg("money=%s, influence=%s, final influence=%s", money, influence, warfare.actor_influence_points)
+                warfare_log.debug("money=%s, influence=%s, final influence=%s", money, influence, warfare.actor_influence_points)
             end
         end
     end
-    printd(1, squad:name())
+    warfare_log.debug(squad:name())
 end
 
 -- Show warfare icon.
 --function show_squad(squad)
 function sim_squad_scripted.sim_squad_scripted.show(self)
-    printd(0, self:name() .. " registered: " .. tostring(self.registered_with_warfare))
+    warfare_log.debug(self:name() .. " registered: " .. tostring(self.registered_with_warfare))
 
     if self.show_disabled then
         self:hide()
-        printd(1, self:name())
+        warfare_log.debug(self:name())
         return
     end
 
@@ -330,7 +328,7 @@ function sim_squad_scripted.sim_squad_scripted.show(self)
             (level.map_has_object_spot(self:commander_id(), "ui_pda2_barman_location") ~= 0) or
             (level.map_has_object_spot(self:commander_id(), "ui_pda2_medic_location") ~= 0) then
         self.show_disabled = true
-        printd(2, self:name())
+        warfare_log.debug(self:name())
         return
     end
 
@@ -467,23 +465,23 @@ function sim_squad_scripted.sim_squad_scripted.show(self)
         end
     end
 
-    printd(3, self:name())
+    warfare_log.debug(self:name())
 end
 
 -- Hide warfare icon.
 --function hide_squad(squad)
 function sim_squad_scripted.sim_squad_scripted.hide(self)
-    printd(0, self:name())
+    warfare_log.debug(self:name())
 
     if not (self.warfare_spot) then
-        printd(1, self:name())
+        warfare_log.debug(self:name())
         return
     end
 
     level.map_remove_object_spot(self.id, self.warfare_spot)
     self.warfare_spot = nil
 
-    printd(2, self:name())
+    warfare_log.debug(self:name())
 end
 
 -- Get the warfare information for the spot hint.
@@ -497,7 +495,7 @@ function get_squad_relation(squad_id)
 
     ----av661194
     if (squad == nil) then
-        print_dbg("No such squad %s in board", tostring(squad_id))
+        warfare_log.debug("No such squad %s in board", tostring(squad_id))
     end
     if (is_squad_monster[squad.player_id]) then
         return str_wrfr[17]
@@ -542,7 +540,7 @@ end
 function get_squad_info(squad, full_detail, show_target)
     -- show_target: whether to reveal the squad's current target (default: same as full_detail)
     if show_target == nil then show_target = full_detail end
-    printd(0, squad:name())
+    warfare_log.debug(squad:name())
 
     local section = squad:section_name()
     local name = ui_warfare_options_hints.get_name(section) or warfare_names.faction_names[squad.player_id]
@@ -561,7 +559,7 @@ function get_squad_info(squad, full_detail, show_target)
     if (commanderName and IsStalker(commander)) then
         props = props .. " \\n" .. strformat(str_wrfr[1], commanderName) .. " \\n"
 
-        if (warfare_options.options.debug_logging) then
+        if warfare_log.enabled() then
             props = props .. " \\n" .. name .. " \\n"
         end
     end
@@ -569,7 +567,7 @@ function get_squad_info(squad, full_detail, show_target)
     props = props .. " \\n" .. faction .. " (" .. relation .. ")"
     props = props .. " \\n" .. npc_count .. " " .. str_wrfr[2] .. " \\n"
 
-    if (warfare_options.options.debug_logging) then
+    if warfare_log.enabled() then
         props = props .. " \\n" .. str_wrfr[3] .. ": " .. section .. " \\n"
         props = props .. " \\n" .. str_wrfr[4] .. ": " .. squad.id .. " \\n"
     end
@@ -675,7 +673,7 @@ function get_squad_info(squad, full_detail, show_target)
         end
     end
 
-    printd(1, squad:name())
+    warfare_log.debug(squad:name())
 
     return props
 end
@@ -706,7 +704,7 @@ local RESOURCE_WEIGHT = 1
 -- TODO: have this first look for enemy patrol squads to target.
 -- Used when squads on the way to their target are no longer needed, or when squads of neutral/allied factions are present at a point.
 function find_target(squad)
-    printd(0, squad:name())
+    warfare_log.debug(squad:name())
 
     local lvl = game_graph():vertex(squad.m_game_vertex_id):level_id()
     local info = warfare_levels.level_information[lvl]
@@ -770,12 +768,12 @@ function find_target(squad)
 
         table.sort(targets, target_sort)
 
-        printd(1, squad:name())
+        warfare_log.debug(squad:name())
 
         return targets[1] and targets[1][1]
     end
 
-    printd(2, squad:name())
+    warfare_log.debug(squad:name())
 
     return nil
 end
@@ -789,11 +787,11 @@ function set_target(squad, target)
         return
     end
 
-    printd(0, squad:name())
+    warfare_log.debug(squad:name())
 
     if squad.stay_time then
         -- check if the squad has stay_time initialized(used to check if the squad are targeted by a "capture territory" task, so that the squad won't move resulting in failing of the task)
-        print_dbg("squad %s is from capture territory task, ignore it's target", squad:name())
+        warfare_log.debug("squad %s is from capture territory task, ignore it's target", squad:name())
         return
     end
 
@@ -858,12 +856,12 @@ function set_target(squad, target)
         end
     end
 
-    printd(1, squad:name())
+    warfare_log.debug(squad:name())
 end
 
 -- Added by xQd. A function exclusively for warfare traders/mechanics squads to help them target the smart terrain they spawned to;
 function set_target_trader(squad, target, target_name)
-    printd(0, squad:name())
+    warfare_log.debug(squad:name())
 
     if not (squad) then
         return
@@ -886,7 +884,7 @@ function set_target_trader(squad, target, target_name)
             end
         end
     end
-    printd(1, squad:name())
+    warfare_log.debug(squad:name())
 end
 
 

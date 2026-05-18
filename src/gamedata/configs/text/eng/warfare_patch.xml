@@ -282,4 +282,31 @@
 	<string id="ui_mm_lst_zombify">
 		<text>Zombify</text>
 	</string>
+	<string id="ui_mm_alife_warfare_general_log_level">
+		<text>Log level</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_log_level_desc">
+		<text>Verbosity of the Warfare log file (warfare.log). ERROR and WARN also mirror to default log. OFF disables all warfare logging. Default: WARN.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_enable_busyhands_tracer">
+		<text>Enable busyhands tracer</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_enable_busyhands_tracer_desc">
+		<text>When enabled, writes per-entrypoint trace files to warfare_trace/ on every engine call. After a crash, the last line of the matching trace file points at the engine call that died. Off in normal play (file I/O overhead). Requires a game restart to take effect.</text>
+	</string>
+	<string id="ui_mm_lst_error">
+		<text>Error</text>
+	</string>
+	<string id="ui_mm_lst_warn">
+		<text>Warn</text>
+	</string>
+	<string id="ui_mm_lst_info">
+		<text>Info</text>
+	</string>
+	<string id="ui_mm_lst_debug">
+		<text>Debug</text>
+	</string>
+	<string id="ui_mm_lst_trace">
+		<text>Trace</text>
+	</string>
 </string_table>

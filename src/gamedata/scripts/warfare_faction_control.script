@@ -1,8 +1,5 @@
 -- Take controls over your squads and smarts from the PDA
 
-print_dbg = warfare.print_dbg
-printd = warfare.printd
-
 player_heli = nil
 player_heli_spot = nil
 
@@ -54,11 +51,9 @@ function translate_smart_name(name)
 end
 
 local function map_spot_menu_add_property(ui,id,lvl)
-    printd(0)
 
     local obj = alife_object(id)
     if not (obj) then
-        printd(1)
         return
     end
     
@@ -210,15 +205,12 @@ local function map_spot_menu_add_property(ui,id,lvl)
         end
     end
     
-    printd(2)
 end
 
 local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
-    printd(0)
 
     local obj = alife_object(id)
     if not (obj) then
-        printd(1)
         return
     end
     
@@ -236,7 +228,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
         possess_squad_leader(obj)
         return
     elseif (prop == str_wrfr[2]) then
-        warfare.printd(0, str_wrfr[2])
+        warfare_log.debug(str_wrfr[2])
 
         local f = obj.owning_faction or "none"
         
@@ -249,7 +241,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
             db.actor:give_money(-1 * (warfare_options.options.novice_squad_price))        
         end
         
-        warfare.printd(1, str_wrfr[2])
+        warfare_log.debug(str_wrfr[2])
         
         return
     elseif (prop == str_wrfr[3]) then
@@ -425,7 +417,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                                 local text = strformat(str_wrfr[24], smartName)                
                                 news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                                 
-                                printd(2)
                                 return
                             end
                         end
@@ -446,7 +437,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         end
                     end
                     
-                    printd(3)
                     return
                 end
             elseif (obj:clsid() == clsid.online_offline_group_s) then    
@@ -471,7 +461,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                                     local smartName = translate_smart_name(selectedObject:name()) or selectedObject:name()    
                                     local text = strformat(str_wrfr[26], smartName, commanderName)
                                     news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
-                                    printd(2)
                                     return
                                 end
                             end
@@ -479,7 +468,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                         return
                     elseif (prop == str_wrfr[16]) then
-                        print_dbg("!!! SEND ALL SQUADS !!!")
+                        warfare_log.debug("!!! SEND ALL SQUADS !!!")
                         local squads = SIMBOARD.smarts[selectedObject.id].squads
                                             
                         for sid,_ in pairs(squads) do
@@ -498,7 +487,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                             end
                         end
                         
-                        printd(3)
                         return
                     end
                 else
@@ -517,13 +505,12 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                                     local smartName = translate_smart_name(selectedObject:name()) or selectedObject:name()    
                                     local text = strformat(str_wrfr[28], smartName, commanderName)
                                     news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
-                                    printd(2)
                                     return
                                 end
                             end
                         end
                     elseif (prop == str_wrfr[13]) then
-                        print_dbg("!!! SEND ALL SQUADS !!!")
+                        warfare_log.debug("!!! SEND ALL SQUADS !!!")
                         local squads = SIMBOARD.smarts[selectedObject.id].squads
                                             
                         for sid,_ in pairs(squads) do
@@ -542,7 +529,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                             end
                         end
                         
-                        printd(3)
                         return
                     end
                 end
@@ -588,7 +574,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                         return
                     elseif (prop == str_wrfr[16]) then
-                        print_dbg("!!! SEND ALL SQUADS !!!")
+                        warfare_log.debug("!!! SEND ALL SQUADS !!!")
                         local squads = SIMBOARD.smarts[selectedObject.id].squads
                                             
                         for sid,_ in pairs(squads) do
@@ -606,7 +592,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         local text = strformat(str_wrfr[32], smartName, targetName)
                         news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                         
-                        printd(3)
                         return
                     end        
                 else                        
@@ -644,7 +629,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                                 if (squad) then
                                     if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                        print_dbg("sending " .. squad:name() .. " to " .. obj:name())
+                                        warfare_log.debug("sending " .. squad:name() .. " to " .. obj:name())
                                         sim_squad_warfare.set_target(squad, selectedObject.id)
                                     end
                                 end
@@ -682,7 +667,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                         return
                     elseif (prop == str_wrfr[13]) then
-                        print_dbg("!!! SEND ALL SQUADS !!!")
+                        warfare_log.debug("!!! SEND ALL SQUADS !!!")
                         local squads = SIMBOARD.smarts[selectedObject.id].squads
                                             
                         for sid,_ in pairs(squads) do
@@ -690,7 +675,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                             if (squad) then
                                 if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                    print_dbg("sending " .. squad:name() .. " to " .. obj:name())
+                                    warfare_log.debug("sending " .. squad:name() .. " to " .. obj:name())
                                     sim_squad_warfare.set_target(squad, obj.id)
                                 end
                             end
@@ -701,7 +686,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         local text = strformat(str_wrfr[36], smartName, targetName)
                         news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                         
-                        printd(4)
                         return
                     end
                 end
@@ -709,7 +693,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
         end
     end
     
-    printd(2)
 end
 
 function on_game_start()

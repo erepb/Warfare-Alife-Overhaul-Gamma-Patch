@@ -234,4 +234,31 @@
     <string id="ui_mm_lst_zombify">
         <text>Зобмирование</text>
     </string>
+    <string id="ui_mm_alife_warfare_general_log_level">
+        <text>Уровень логов</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_log_level_desc">
+        <text>Детализация логов Warfare мода(warfare.log). ERROR и WARN также дублируются в стандартный лог. OFF выключает логирование. По умолчанию: WARN.</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_enable_busyhands_tracer">
+        <text>Логировать busyhands</text>
+    </string>
+    <string id="ui_mm_alife_warfare_general_enable_busyhands_tracer_desc">
+        <text>Когда включено, логирует вызовы в движок в warfare_trace/ папку. После того как скрипт падает последняя запись в логах покажет какой вызов упал. Выключено по умолчанию. Требуется перезапуск игры.</text>
+    </string>
+    <string id="ui_mm_lst_error">
+        <text>Error</text>
+    </string>
+    <string id="ui_mm_lst_warn">
+        <text>Warn</text>
+    </string>
+    <string id="ui_mm_lst_info">
+        <text>Info</text>
+    </string>
+    <string id="ui_mm_lst_debug">
+        <text>Debug</text>
+    </string>
+    <string id="ui_mm_lst_trace">
+        <text>Trace</text>
+    </string>
 </string_table>

@@ -10,7 +10,7 @@ local AUTO_CAPTURE_WINDOW_TITLE = "Warfare - Auto Capture"
 local SMART_INFO_WINDOW_TITLE = "Warfare - Smart Info"
 
 if ImGui.Groups == nil then
-    printf("script _imgui_groups.script not loaded, disabling warfare_imgui.script")
+    warfare_log.warn("script _imgui_groups.script not loaded, disabling warfare_imgui.script")
     return
 end
 

@@ -1,0 +1,610 @@
+--- warfare_log: unified Warfare logging + busyhands crash tracer.
+---
+--- Main logger (always on):
+---   warfare_log.err / warn / info / debug / trace (fmt, ...)
+---   string.format-style; output to $logs$/warfare.log, gated by MCM
+---   "log_level" (OFF/ERROR/WARN/INFO/DEBUG/TRACE). ERROR and WARN also
+---   mirror to xray_engine.log via printf.
+---
+--- Busyhands tracer (restart-required; for diagnosing engine-side crashes
+--- from invalid Lua calls):
+---   warfare_log.tr_begin(tag) / tr(fmt, ...) / tr_end()
+---   Per-tag trace files in $logs$/warfare_trace/. Buffered and flushed
+---   every TRACE_FLUSH_INTERVAL_SEC so the last line before a crash points
+---   at the engine call that died.
+---
+---   When enabled, RegisterScriptCallback / UnregisterScriptCallback /
+---   CreateTimeEvent / AddUniqueCall are monkeypatched at module load so
+---   warfare callbacks auto-wrap with entry_point (tag = "<file>/<event>")
+---   and non-warfare callbacks get entry_point_skip (clears the tag).
+---   on_game_start additionally hijacks engine globals (alife*, level.*,
+---   game.*) so every such call writes a trace line scoped to the active
+---   tag. When disabled, none of this wrapping is installed — zero overhead.
+---
+--- entry_point(tag, fn) is exposed for callers that want a custom tag
+--- instead of the auto-derived "<file>/<event>" form.
+
+-- Capture stdlib references we shadow later. `function debug(...)` below puts a
+-- function named `debug` into this module's env, which would otherwise hide the
+-- `debug` library and break `debug.getinfo` lookups in _caller_warfare_file.
+local _debug = debug
+
+local LEVEL = { OFF = 0, ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4, TRACE = 5 }
+local LEVEL_NAME = { [1] = "ERROR", [2] = "WARN", [3] = "INFO", [4] = "DEBUG", [5] = "TRACE" }
+local LEVEL_FROM_NAME = { OFF = 0, ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4, TRACE = 5 }
+
+local LOGFILE = "warfare.log"
+local TRACE_SUBDIR = "warfare_trace"
+local TRACE_SUFFIX = ".log"
+local FLUSH_INTERVAL_SEC = 30
+local TRACE_FLUSH_INTERVAL_SEC = 1
+
+local _current_level = LEVEL.WARN
+local _busyhands_enabled = false
+local _handle = nil
+local _current_tag = nil
+local _in_tr = false
+local _hijacks_installed = false
+local _trace_dir_ensured = false
+-- Run-length dedup for warfare.log. Consecutive identical (level, msg) pairs
+-- at INFO/DEBUG/TRACE get coalesced into one line with a "(×N)" suffix on
+-- emit. WARN/ERROR bypass dedup so they're never delayed behind a buffered
+-- line.
+local _dedup_prev_msg = nil
+local _dedup_prev_lvl = nil
+local _dedup_count    = 0
+-- Per-tag in-memory buffers, flushed to disk on a ~1Hz timer. Synchronous
+-- per-tr() flushing would floor FPS at trace volumes — buffering trades up
+-- to TRACE_FLUSH_INTERVAL_SEC of pre-crash trace tail for ~1000x fewer file
+-- ops.
+local _trace_buffers = {}
+
+local function _logs_path()
+    return getFS():update_path("$logs$", "")
+end
+
+local function _log_path()
+    return _logs_path() .. LOGFILE
+end
+
+local function _sanitize_tag(tag)
+    return (tostring(tag or "default")):gsub("[^%w_%-]", "_")
+end
+
+local function _trace_dir_path()
+    return _logs_path() .. TRACE_SUBDIR
+end
+
+local function _trace_path(tag)
+    return _trace_dir_path() .. "\\" .. _sanitize_tag(tag) .. TRACE_SUFFIX
+end
+
+local function _ensure_trace_dir()
+    if _trace_dir_ensured then return end
+    _trace_dir_ensured = true
+    pcall(lfs.mkdir, _trace_dir_path())
+end
+
+local function _timestamp()
+    return os.date("%Y-%m-%d %H:%M:%S")
+end
+
+local function _format(fmt, ...)
+    local n = select("#", ...)
+    if type(fmt) == "string" and n > 0 and fmt:find("%%") then
+        local ok, s = pcall(string.format, fmt, ...)
+        if ok then return s end
+    end
+    if n == 0 then return tostring(fmt) end
+    local parts = { tostring(fmt) }
+    local args = { ... }
+    for i = 1, n do parts[#parts + 1] = tostring(args[i]) end
+    return table.concat(parts, " ")
+end
+
+local function _ensure_open()
+    if _handle then return _handle end
+    _handle = io.open(_log_path(), "a")
+    if _handle then
+        _handle:write(string.format("[%s][INFO][WARFARE] === Session started ===\n", _timestamp()))
+    end
+    return _handle
+end
+
+local function _emit_to_log(lvl, msg)
+    local line = string.format("[%s][%s][WARFARE] %s",
+        _timestamp(), LEVEL_NAME[lvl] or "?", msg)
+    if lvl <= LEVEL.WARN then
+        printf("%s", line)
+    end
+    local f = _ensure_open()
+    if f then
+        f:write(line, "\n")
+        if lvl <= LEVEL.ERROR then
+            f:flush()
+        end
+    end
+end
+
+-- Called before any WARN/ERROR so urgent lines never sit behind a buffered
+-- INFO/DEBUG/TRACE run.
+local function _flush_dedup()
+    if _dedup_count == 0 then return end
+    local out = _dedup_prev_msg
+    if _dedup_count > 1 then
+        out = out .. "  (×" .. tostring(_dedup_count) .. ")"
+    end
+    _emit_to_log(_dedup_prev_lvl, out)
+    _dedup_prev_msg = nil
+    _dedup_prev_lvl = nil
+    _dedup_count    = 0
+end
+
+local function _flush()
+    _flush_dedup()
+    if _handle then _handle:flush() end
+end
+
+local function _close()
+    _flush_dedup()
+    if not _handle then return end
+    _handle:flush()
+    _handle:close()
+    _handle = nil
+end
+
+local function _periodic_flush()
+    _flush()
+    ResetTimeEvent(0, "warfare_log_flush", FLUSH_INTERVAL_SEC)
+    return false
+end
+
+local function _write(lvl, fmt, ...)
+    local want_log = (_current_level ~= LEVEL.OFF) and (lvl <= _current_level)
+    local trace_buf = (_busyhands_enabled and _current_tag and not _in_tr)
+        and _trace_buffers[_current_tag] or nil
+    if not want_log and not trace_buf then return end
+
+    local msg = _format(fmt, ...)
+
+    if trace_buf then
+        trace_buf.lines[#trace_buf.lines + 1] = "[WL] " .. (LEVEL_NAME[lvl] or "?") .. " " .. msg
+    end
+
+    if not want_log then return end
+
+    if lvl <= LEVEL.WARN then
+        _flush_dedup()
+        _emit_to_log(lvl, msg)
+        return
+    end
+
+    if lvl == _dedup_prev_lvl and msg == _dedup_prev_msg then
+        _dedup_count = _dedup_count + 1
+        return
+    end
+
+    _flush_dedup()
+    _dedup_prev_msg = msg
+    _dedup_prev_lvl = lvl
+    _dedup_count    = 1
+end
+
+function err(fmt, ...)   _write(LEVEL.ERROR, fmt, ...) end
+function warn(fmt, ...)  _write(LEVEL.WARN,  fmt, ...) end
+function info(fmt, ...)  _write(LEVEL.INFO,  fmt, ...) end
+function debug(fmt, ...) _write(LEVEL.DEBUG, fmt, ...) end
+function trace(fmt, ...) _write(LEVEL.TRACE, fmt, ...) end
+
+function enabled()
+    return _current_level >= LEVEL.DEBUG
+end
+
+function get_level_name()
+    if _current_level == LEVEL.OFF then return "OFF" end
+    return LEVEL_NAME[_current_level] or "?"
+end
+
+function flush()
+    _flush()
+end
+
+function tr_begin(tag)
+    if _in_tr or not _busyhands_enabled then return end
+    _in_tr = true
+    _ensure_trace_dir()
+    local sanitized = _sanitize_tag(tag)
+    -- A previous invocation of the same entrypoint may have left unflushed
+    -- lines in the buffer (the periodic trace-flush runs at ~1Hz from
+    -- ProcessEventQueue; if two ticks of the same callback fire within that
+    -- window, the second tr_begin would silently discard the first's tail
+    -- when it replaces the buffer object). Flush the leftovers to disk first
+    -- so the file accurately reflects what the previous tick did.
+    local prev = _trace_buffers[sanitized]
+    if prev and #prev.lines > 0 then
+        local path = _trace_path(sanitized)
+        local mode = prev.ever_flushed and "a" or "w"
+        local f = io.open(path, mode)
+        if f then
+            for _, line in ipairs(prev.lines) do f:write(line, "\n") end
+            f:close()
+        end
+    end
+    _current_tag = sanitized
+    _trace_buffers[_current_tag] = {
+        lines = { string.format("[%s] === trace begin: %s ===", _timestamp(), _current_tag) },
+        ever_flushed = false,
+        done = false,
+    }
+    _in_tr = false
+end
+
+function tr(fmt, ...)
+    if _in_tr or not _busyhands_enabled or not _current_tag then return end
+    _in_tr = true
+    local buf = _trace_buffers[_current_tag]
+    if buf then
+        local lines = buf.lines
+        lines[#lines + 1] = string.format("[%s] %s", _timestamp(), _format(fmt, ...))
+    end
+    _in_tr = false
+end
+
+function tr_end()
+    if _in_tr or not _busyhands_enabled or not _current_tag then return end
+    _in_tr = true
+    local buf = _trace_buffers[_current_tag]
+    if buf then
+        local lines = buf.lines
+        lines[#lines + 1] = string.format("[%s] === trace end: %s ===", _timestamp(), _current_tag)
+        buf.done = true
+    end
+    _current_tag = nil
+    _in_tr = false
+end
+
+local function _flush_trace_buffers()
+    if not _busyhands_enabled then return end
+    for tag, buf in pairs(_trace_buffers) do
+        if #buf.lines > 0 then
+            local mode = buf.ever_flushed and "a" or "w"
+            local f = io.open(_trace_path(tag), mode)
+            if f then
+                f:write(table.concat(buf.lines, "\n"), "\n")
+                f:close()
+                buf.lines = {}
+                buf.ever_flushed = true
+            end
+        end
+        if buf.done then
+            _trace_buffers[tag] = nil
+        end
+    end
+end
+
+local function _trace_periodic_flush()
+    _flush_trace_buffers()
+    ResetTimeEvent(0, "warfare_log_trace_flush", TRACE_FLUSH_INTERVAL_SEC)
+    return false
+end
+
+-- Memoized by fn reference so Register/Unregister pairs see the same wrapper.
+-- First tag passed wins; later calls with the same fn reuse the cached wrapper.
+local _wrapper_cache = {}
+
+-- Tags listed here bypass wrapping entirely — entry_point returns the bare
+-- fn so RAX-WD's `debug.getinfo(info.func, "S")` sees the real function's
+-- linedefined / short_src instead of our wrapper closure's. Callers that
+-- want tracing for these must invoke warfare_log.tr_begin(tag) themselves
+-- at the top of the function body.
+local _ENTRY_POINT_BYPASS = {
+    ["warfare/actor_on_update"]       = true,
+    ["warfare/actor_on_first_update"] = true,
+}
+
+function entry_point(tag, fn)
+    if type(fn) ~= "function" then return fn end
+    if _ENTRY_POINT_BYPASS[tag] then return fn end
+    local cached = _wrapper_cache[fn]
+    if cached then return cached end
+    -- fn's return is captured to a single local so tr_end can run before we
+    -- return. RSC callbacks return nothing, CTE/AUC use only the first
+    -- return value (see _g.script ProcessEventQueue), so single-value forward
+    -- is correct. If fn errors, tr_end is skipped — _per_frame_tag_clear
+    -- catches the leftover at end-of-tick.
+    local wrapper = function(...)
+        tr_begin(tag)
+        local r = fn(...)
+        tr_end()
+        return r
+    end
+    _wrapper_cache[fn] = wrapper
+    return wrapper
+end
+
+-- Defensive tag-clear for non-warfare callbacks. The warfare wrapper itself
+-- calls tr_end, so in the common case _current_tag is already nil here —
+-- but bypass entrypoints (actor_on_update et al.) call tr_begin without a
+-- matching tr_end, and errored warfare callbacks skip their epilogue. Lua's
+-- single-threaded model guarantees a non-warfare callback is by definition
+-- outside any warfare scope, so this clear is always correct.
+function entry_point_skip(fn)
+    if type(fn) ~= "function" then return fn end
+    local cached = _wrapper_cache[fn]
+    if cached then return cached end
+    local wrapper = function(...)
+        _current_tag = nil
+        return fn(...)
+    end
+    _wrapper_cache[fn] = wrapper
+    return wrapper
+end
+
+-- userdata/table/function get a type placeholder rather than tostring —
+-- "<type>: 0xADDR" is expensive to format and useless to read in a hot loop.
+local function _safe_str(v)
+    local t = type(v)
+    if t == "string" then
+        if #v > 40 then return '"' .. v:sub(1, 40) .. '..."' end
+        return '"' .. v .. '"'
+    elseif t == "userdata" then
+        return "<ud>"
+    elseif t == "table" then
+        return "<tbl>"
+    elseif t == "function" then
+        return "<fn>"
+    end
+    return tostring(v)
+end
+
+local function _format_args(...)
+    local n = select("#", ...)
+    if n == 0 then return "()" end
+    local parts = {}
+    local lim = n
+    if lim > 4 then lim = 4 end
+    for i = 1, lim do parts[i] = _safe_str((select(i, ...))) end
+    if n > 4 then parts[#parts + 1] = "..." end
+    return "(" .. table.concat(parts, ", ") .. ")"
+end
+
+-- Engine-hijack traces only need "which Lua line was about to call in, with
+-- what args" — skips the timestamp for cost, that's what tr_begin/tr_end
+-- bookends are for.
+local function _push_trace_with_caller(label, ...)
+    if _in_tr or not _busyhands_enabled or not _current_tag then return end
+    _in_tr = true
+    local info = _debug.getinfo(3, "Sl")
+    local src = (info and info.short_src) or "?"
+    src = src:match("([^/\\]+)$") or src
+    local line = (info and info.currentline) or "?"
+    local buf = _trace_buffers[_current_tag]
+    if buf then
+        buf.lines[#buf.lines + 1] = label .. _format_args(...) .. "  " .. src .. ":" .. tostring(line)
+    end
+    _in_tr = false
+end
+
+local function _wrap_global(name)
+    local orig = _G[name]
+    if type(orig) ~= "function" then return end
+    _G[name] = function(...)
+        _push_trace_with_caller(name, ...)
+        return orig(...)
+    end
+end
+
+local function _wrap_table_fn(tbl, key, label)
+    local orig = tbl[key]
+    if type(orig) ~= "function" then return end
+    tbl[key] = function(...)
+        _push_trace_with_caller(label, ...)
+        return orig(...)
+    end
+end
+
+local function _wrap_all_in(tbl, label_prefix)
+    if type(tbl) ~= "table" and type(tbl) ~= "userdata" then return end
+    pcall(function()
+        for k, v in pairs(tbl) do
+            if type(v) == "function" then
+                _wrap_table_fn(tbl, k, label_prefix .. k)
+            end
+        end
+    end)
+end
+
+-- Wrapping io / os / string / getFS would either recurse or depend on the
+-- _in_tr guard, so the allowlist is explicit rather than "everything global".
+local function _install_hijacks()
+    if _hijacks_installed then return end
+    _hijacks_installed = true
+
+    for _, name in ipairs({
+        "alife", "alife_object", "alife_create", "alife_release",
+        "vector", "ini_file",
+        "RegisterScriptCallback", "UnregisterScriptCallback",
+        "CreateTimeEvent", "AddUniqueCall",
+    }) do _wrap_global(name) end
+
+    if type(safe_release_manager) == "table" then
+        _wrap_table_fn(safe_release_manager, "release", "safe_release_manager.release")
+    end
+    if type(alife_storage_manager) == "table" then
+        _wrap_table_fn(alife_storage_manager, "get_state", "alife_storage_manager.get_state")
+    end
+
+    _wrap_all_in(level, "level.")
+    _wrap_all_in(game,  "game.")
+end
+
+-- Caller is a warfare script if its basename contains "warfare", with two
+-- manual exceptions:
+--   * "warfare_log" — this file; its callbacks are infra and would recurse.
+--   * "sim_offline_combat" — part of warfare but lacks "warfare" in filename.
+local _WARFARE_EXTRA   = { sim_offline_combat = true }
+local _WARFARE_EXCLUDE = { warfare_log        = true }
+
+local _reg_hijacks_installed = false
+
+-- Stack depth 3: this fn, the hijacking wrapper, the actual caller.
+-- Source format varies: "@C:/path/file.script" or "file.scriptc".
+local function _caller_warfare_file()
+    local info = _debug.getinfo(3, "S")
+    if not info then return nil end
+    local source = info.source or ""
+    local fname = source:match("([^/\\]+)$") or ""
+    fname = (fname:gsub("^@", "")):gsub("%.script[c]?$", "")
+    if _WARFARE_EXCLUDE[fname] then return nil end
+    if _WARFARE_EXTRA[fname]   then return fname end
+    if fname:find("warfare", 1, true) then return fname end
+    return nil
+end
+
+local function _install_registration_hijacks()
+    if _reg_hijacks_installed then return end
+    _reg_hijacks_installed = true
+
+    local orig_RSC  = _G.RegisterScriptCallback
+    local orig_URSC = _G.UnregisterScriptCallback
+    local orig_CTE  = _G.CreateTimeEvent
+    local orig_AUC  = _G.AddUniqueCall
+
+    -- Warfare callers get entry_point (tr_begin/tr_end bracketing); non-
+    -- warfare callers get entry_point_skip (defensive tag-clear for cases
+    -- where a previous warfare callback errored or a bypass entrypoint
+    -- didn't tr_end). Scoping by callback identity rather than caller
+    -- filename means warfare code transitively calling into shared helpers
+    -- (e.g. dynamic_news_helper) still traces — the tag stays set through
+    -- the whole warfare callback chain.
+    if type(orig_RSC) == "function" then
+        _G.RegisterScriptCallback = function(event_name, fn)
+            if type(fn) == "function" then
+                local fname = _caller_warfare_file()
+                if fname then
+                    fn = entry_point(fname .. "/" .. tostring(event_name), fn)
+                else
+                    fn = entry_point_skip(fn)
+                end
+            end
+            return orig_RSC(event_name, fn)
+        end
+    end
+
+    if type(orig_URSC) == "function" then
+        _G.UnregisterScriptCallback = function(event_name, fn)
+            if type(fn) == "function" then
+                local fname = _caller_warfare_file()
+                if fname then
+                    fn = entry_point(fname .. "/" .. tostring(event_name), fn)
+                else
+                    fn = entry_point_skip(fn)
+                end
+            end
+            return orig_URSC(event_name, fn)
+        end
+    end
+
+    if type(orig_CTE) == "function" then
+        _G.CreateTimeEvent = function(obj_id, event_id, delay, fn, ...)
+            if type(fn) == "function" then
+                local fname = _caller_warfare_file()
+                if fname then
+                    fn = entry_point(fname .. "/" .. tostring(event_id), fn)
+                else
+                    fn = entry_point_skip(fn)
+                end
+            end
+            return orig_CTE(obj_id, event_id, delay, fn, ...)
+        end
+    end
+
+    if type(orig_AUC) == "function" then
+        _G.AddUniqueCall = function(fn)
+            if type(fn) == "function" then
+                local fname = _caller_warfare_file()
+                if fname then
+                    fn = entry_point(fname .. "/AddUniqueCall", fn)
+                else
+                    fn = entry_point_skip(fn)
+                end
+            end
+            return orig_AUC(fn)
+        end
+    end
+end
+
+local function _read_settings()
+    local lvl = ui_options.get("alife/warfare/general/log_level")
+    if type(lvl) == "string" then
+        _current_level = LEVEL_FROM_NAME[lvl:upper()] or LEVEL.WARN
+    else
+        _current_level = LEVEL.WARN
+    end
+    -- _busyhands_enabled is intentionally NOT re-read here — see module-load
+    -- block at the end of the file for why it's restart-required.
+end
+
+-- Catches state that slipped past tr_end: warfare callbacks that errored
+-- before their epilogue ran, bypass entrypoints (actor_on_update,
+-- actor_on_first_update) that call tr_begin without a matching tr_end,
+-- and engine paths outside RSC/CTE/AUC (object binders, scheme handlers,
+-- _g.script utilities) that bypass wrapping entirely. AUC fires once per
+-- actor tick AFTER all RSC callbacks, so this is the latest safe hook.
+local function _per_frame_tag_clear()
+    if _busyhands_enabled then
+        local saved = _current_tag
+        for tag, buf in pairs(_trace_buffers) do
+            if buf and not buf.done then
+                _current_tag = tag
+                tr_end()
+            end
+        end
+        _current_tag = saved
+    end
+    _current_tag = nil
+    return false  -- keep firing every frame
+end
+
+-- CreateTimeEvent with actor_id=0 silently drops if the actor doesn't exist
+-- yet — deferred to on_game_load / actor_on_first_update (whichever fires
+-- first; idempotency guard handles the second call).
+local _timers_started = false
+local function _start_periodic_timers()
+    if _timers_started then return end
+    _timers_started = true
+    CreateTimeEvent(0, "warfare_log_flush", FLUSH_INTERVAL_SEC, _periodic_flush)
+    if _busyhands_enabled then
+        CreateTimeEvent(0, "warfare_log_trace_flush", TRACE_FLUSH_INTERVAL_SEC, _trace_periodic_flush)
+        AddUniqueCall(_per_frame_tag_clear)
+    end
+end
+
+function on_game_start()
+    _read_settings()
+    -- Engine-global hijacks defer to here because level / game tables only
+    -- populate after script load. Registration hijacks went in at module load.
+    if _busyhands_enabled then _install_hijacks() end
+    RegisterScriptCallback("on_option_change", _read_settings)
+    RegisterScriptCallback("save_state", _flush)
+    RegisterScriptCallback("on_before_level_changing", _flush)
+    RegisterScriptCallback("actor_on_net_destroy", _close)
+    -- Belt and suspenders: whichever fires first wins; the second is a no-op.
+    RegisterScriptCallback("on_game_load",          _start_periodic_timers)
+    RegisterScriptCallback("actor_on_first_update", _start_periodic_timers)
+end
+
+-- Busyhands is restart-required: registration hijacks must be in place before
+-- any other warfare script registers its on_game_start callbacks, and engine
+-- globals can't be cleanly unwrapped once wrapped. Reading ui_options.get
+-- here works because axr_main loads first alphabetically and initializes its
+-- config; pcall covers the option-not-yet-stored case (fresh install).
+local function _read_busyhands_flag()
+    local ok, v = pcall(ui_options.get, "alife/warfare/general/enable_busyhands_tracer")
+    return ok and v == true
+end
+_busyhands_enabled = _read_busyhands_flag()
+
+if _busyhands_enabled then
+    _install_registration_hijacks()
+end
