@@ -210,6 +210,15 @@ local function map_spot_menu_add_property(ui,id,lvl)
     
 end
 
+-- Manual command wrapper. An explicit PDA order may interrupt AlifePlus: release the
+-- squad from AP first (no-op when not AP-controlled or AP absent) so AP stops reasserting
+-- its target, then assign the warfare target.
+local function issue_order(squad, target)
+    warfare_alifeplus.reclaim_from_ap(squad)
+    if squad then squad.stay_time = nil end
+    sim_squad_warfare.set_target(squad, target)
+end
+
 local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
     local obj = alife_object(id)
@@ -245,7 +254,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
         local squad = utils_obj.create_squad(section, obj:name())
 
         if (squad) then
-            sim_squad_warfare.set_target(squad, obj.id)
+            issue_order(squad, obj.id)
             db.actor:give_money(-1 * (warfare_options.options.novice_squad_price))
         else
             warfare_log.warn("faction_control: failed to create novice squad section=%s", tostring(section))
@@ -260,7 +269,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
         local squad = utils_obj.create_squad(section, obj:name())
         if (squad) then
             db.actor:give_money(-1 * (warfare_options.options.advanced_squad_price))
-            sim_squad_warfare.set_target(squad, obj.id)
+            issue_order(squad, obj.id)
         else
             warfare_log.warn("faction_control: failed to create advanced squad section=%s", tostring(section))
         end
@@ -273,7 +282,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
         local squad = utils_obj.create_squad(section, obj:name())
         if (squad) then
             db.actor:give_money(-1 * (warfare_options.options.veteran_squad_price))
-            sim_squad_warfare.set_target(squad, obj.id)
+            issue_order(squad, obj.id)
         else
             warfare_log.warn("faction_control: failed to create veteran squad section=%s", tostring(section))
         end
@@ -369,7 +378,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                 if (prop == str_wrfr[8]) then
                     warfare_log.info("faction_control: follow actor: squad=%s", tostring(selectedObject:name()))
                     sim_squad_warfare.add_companion_squad(selectedObject)
-                    sim_squad_warfare.set_target(selectedObject, obj.id)
+                    issue_order(selectedObject, obj.id)
                     return
                 end
             elseif (obj:clsid() == clsid.online_offline_group_s) then
@@ -384,7 +393,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         local targetName = warfare_names.get_name(obj)
                         local text = strformat(str_wrfr[22], squadName, targetName)
 
-                        sim_squad_warfare.set_target(selectedObject, obj.id)
+                        issue_order(selectedObject, obj.id)
                         news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                         return
                     end
@@ -394,7 +403,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         local targetName = warfare_names.get_name(obj)
                         local text = strformat(str_wrfr[23], squadName, targetName)
 
-                        sim_squad_warfare.set_target(selectedObject, obj.id)                    
+                        issue_order(selectedObject, obj.id)                    
                         news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                         return
                     end
@@ -411,7 +420,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         local smartName = warfare_names.get_name(obj)
                         local text = strformat(str_wrfr[22], squadName, smartName)
 
-                        sim_squad_warfare.set_target(selectedObject, obj.id)                
+                        issue_order(selectedObject, obj.id)                
                         news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                         return
                     end
@@ -421,7 +430,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         local smartName = warfare_names.get_name(obj)
                         local text = strformat(str_wrfr[21], squadName, smartName)
 
-                        sim_squad_warfare.set_target(selectedObject, obj.id)                    
+                        issue_order(selectedObject, obj.id)                    
                         news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
                         return
                     end
@@ -439,7 +448,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                         if (squad) then
                             if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                --sim_squad_warfare.set_target(squad, obj.id)    
+                                --issue_order(squad, obj.id)    
                                 sim_squad_warfare.add_companion_squad(squad)
                                 local smartName = translate_smart_name(selectedObject:name()) or selectedObject:name()
                                 local text = strformat(str_wrfr[24], smartName)                
@@ -457,7 +466,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                         if (squad) then
                             if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                sim_squad_warfare.set_target(squad, obj.id)
+                                issue_order(squad, obj.id)
                                 local smartName = translate_smart_name(selectedObject:name()) or selectedObject:name()
                                 local text = strformat(str_wrfr[25], smartName)            
                                 news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
@@ -482,7 +491,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                             if (squad) then
                                 if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                    sim_squad_warfare.set_target(squad, obj.id)
+                                    issue_order(squad, obj.id)
                                     local commanderID = obj:commander_id()
                                     local commander = commanderID and alife_object(commanderID)
                                     local commanderName = commander and commander.character_name and commander:character_name()    
@@ -503,7 +512,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                             if (squad) then
                                 if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                    sim_squad_warfare.set_target(squad, obj.id)
+                                    issue_order(squad, obj.id)
                                     local commanderID = obj:commander_id()
                                     local commander = commanderID and alife_object(commanderID)
                                     local commanderName = commander and commander.character_name and commander:character_name()    
@@ -525,7 +534,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                             if (squad) then
                                 if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                    sim_squad_warfare.set_target(squad, obj.id)
+                                    issue_order(squad, obj.id)
                                     local commanderID = obj:commander_id()
                                     local commander = commanderID and alife_object(commanderID)
                                     local commanderName = commander and commander.character_name and commander:character_name()    
@@ -544,7 +553,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                             if (squad) then
                                 if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                    sim_squad_warfare.set_target(squad, obj.id)
+                                    issue_order(squad, obj.id)
                                     local commanderID = obj:commander_id()
                                     local commander = commanderID and alife_object(commanderID)
                                     local commanderName = commander and commander.character_name and commander:character_name()    
@@ -591,7 +600,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         end
                         
                         local s = available[math.random(#available)]                        
-                        sim_squad_warfare.set_target(s, obj.id)
+                        issue_order(s, obj.id)
                         
                         local smartName = translate_smart_name(selectedObject:name()) or selectedObject:name()    
                         local targetName = translate_smart_name(obj:name()) or obj:name()
@@ -607,7 +616,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                             if (squad) then
                                 if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                    sim_squad_warfare.set_target(squad, obj.id)
+                                    issue_order(squad, obj.id)
                                 end
                             end
                         end
@@ -636,7 +645,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                             end
                             
                             local s = available[math.random(#available)]                        
-                            sim_squad_warfare.set_target(s, selectedObject.id)
+                            issue_order(s, selectedObject.id)
                         
                             local smartName = translate_smart_name(selectedObject:name()) or selectedObject:name()    
                             local targetName = translate_smart_name(obj:name()) or obj:name()
@@ -654,7 +663,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                                 if (squad) then
                                     if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                        sim_squad_warfare.set_target(squad, selectedObject.id)
+                                        issue_order(squad, selectedObject.id)
                                     end
                                 end
                             end
@@ -683,7 +692,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                         end
                         
                         local s = available[math.random(#available)]                        
-                        sim_squad_warfare.set_target(s, obj.id)
+                        issue_order(s, obj.id)
                         
                         local smartName = translate_smart_name(selectedObject:name()) or selectedObject:name()    
                         local targetName = translate_smart_name(obj:name()) or obj:name()
@@ -698,7 +707,7 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
 
                             if (squad) then
                                 if (squad.registered_with_warfare and squad.current_action == 1 and squad:get_squad_community() == warfare.actor_faction) then
-                                    sim_squad_warfare.set_target(squad, obj.id)
+                                    issue_order(squad, obj.id)
                                 end
                             end
                         end

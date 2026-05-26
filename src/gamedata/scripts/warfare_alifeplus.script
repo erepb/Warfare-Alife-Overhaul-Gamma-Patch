@@ -48,6 +48,23 @@ function log_ap_controlled(squad, caller)
     warfare_log.trace("log_ap_controlled: squad=%s caller=%s target=%s", tostring(squad.id), tostring(caller), tostring(pretty))
 end
 
+-- Release a squad from AlifePlus scripted control so warfare can take it over.
+-- Inert when AlifePlus is absent (is_ap_controlled returns false). Returns true if a
+-- release was actually performed.
+function reclaim_from_ap(squad)
+    if not is_ap_controlled(squad) then
+        warfare_log.debug("reclaim_from_ap: squad=%s not AP-controlled, nothing to reclaim", tostring(squad and squad.id))
+        return false
+    end
+    if type(ap_core_broker.release_squad) ~= "function" then
+        warfare_log.warn("reclaim_from_ap: AlifePlus present but release_squad unavailable; cannot reclaim squad=%s", tostring(squad.id))
+        return false
+    end
+    local ok = ap_core_broker.release_squad(squad.id)
+    warfare_log.info("reclaim_from_ap: squad=%s released from AlifePlus control (result=%s)", tostring(squad.id), tostring(ok))
+    return ok
+end
+
 local function _other_label(record)
     local who = record.other_name
     if not who or who == "" then who = record.other_species_display end
