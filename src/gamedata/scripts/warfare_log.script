@@ -114,7 +114,7 @@ end
 local function _emit_to_log(lvl, msg)
     local line = string.format("[%s][%s][WARFARE] %s",
         _timestamp(), LEVEL_NAME[lvl] or "?", msg)
-    if lvl <= LEVEL.WARN then
+    if lvl <= LEVEL.INFO then
         printf("%s", line)
     end
     local f = _ensure_open()
