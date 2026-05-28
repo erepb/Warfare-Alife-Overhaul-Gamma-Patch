@@ -2962,9 +2962,9 @@ function spawn_patrols(smart)
 
                 warfare_log.info("spawn_patrols: spawned patrol smart=%s section=%s -> tobj=%s",
                     smart:name(), tostring(section), tostring(tobj and (tobj.id or tobj:section_name())))
-                sim_squad_warfare.set_target(squad, tobj.id)
                 patrol_squads[smart.id][squad.id] = new_table
                 squad.patrol_table = new_table
+                sim_squad_warfare.set_target(squad, tobj.id)
             end
         end
     end
