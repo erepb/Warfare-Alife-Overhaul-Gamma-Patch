@@ -879,32 +879,22 @@ global_position.from = function(object_or_position, level_id)
     return vector():set(p.x + offset[1], p.y + offset[2], p.z + offset[3])
 end
 
-local old_ui_pda_taskboard_tab_trigger_generate_available_tasks = ui_pda_taskboard_tab.trigger_generate_available_tasks
-function ui_pda_taskboard_tab.trigger_generate_available_tasks(npc_list)
-    if not IsWarfare() then
-        old_ui_pda_taskboard_tab_trigger_generate_available_tasks(npc_list)
-        return
+-- Warfare special NPCs (trader/mechanic/medic/barman) spawn from vanilla "sim_default_*" squad
+-- sections, so task UIs that classify a giver by section-name substring (e.g. PDA Taskboard)
+-- misread them as roaming sim stalkers and generate simulation_task_* instead of the real
+-- trader_task_*/mechanic_task_* their dialog offers -- producing tasks that can't be turned in.
+-- Force the non-sim path for them at the chokepoint so every caller (PDA, dialogs) matches the
+-- giver's own turn-in logic. generate_ongoing_tasks is already warfare-aware, so this closes the
+-- one remaining asymmetry. Guarded by is_warfare_trader so non-warfare sim traders are untouched.
+-- This patch can be removed once the fix lands in the modded exes (base axr_task_manager.script
+-- given the same warfare-aware treatment as generate_ongoing_tasks).
+local old_axr_generate_available_tasks = axr_task_manager.generate_available_tasks
+function axr_task_manager.generate_available_tasks(npc, is_sim)
+    if is_sim and IsWarfare() and warfare.is_warfare_trader(npc) then
+        warfare_log.trace("generate_available_tasks: forcing non-sim for warfare trader npc=%s", tostring(npc:name()))
+        is_sim = false
     end
-
-    local npc_list_sim_traders = {} -- contains traders, barmans, medics, mechanics
-    local npc_list_others = {}
-    for _,npc in pairs(npc_list) do
-        if warfare.is_warfare_trader(npc) then
-            npc_list_sim_traders[#npc_list_sim_traders + 1] = npc
-        else
-            npc_list_others[#npc_list_others + 1] = npc
-        end
-    end
-    warfare_log.debug("trigger_generate_available_tasks: traders=%s others=%s", tostring(#npc_list_sim_traders), tostring(#npc_list_others))
-
-    old_ui_pda_taskboard_tab_trigger_generate_available_tasks(npc_list_others)
-
-    for _,npc in pairs(npc_list_sim_traders) do
-        warfare_log.trace("trigger_generate_available_tasks: generating for warfare trader npc=%s", tostring(npc:name()))
-        ui_pda_taskboard_tab.currently_processed_npc_id = npc:id()
-        axr_task_manager.generate_available_tasks(npc, false)
-        ui_pda_taskboard_tab.currently_processed_npc_id = nil
-    end
+    return old_axr_generate_available_tasks(npc, is_sim)
 end
 
 local old_task_objects_cgeneraltask_check_task = task_objects.CGeneralTask.check_task
