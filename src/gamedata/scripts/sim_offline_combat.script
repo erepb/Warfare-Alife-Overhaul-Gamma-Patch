@@ -487,6 +487,29 @@ function try_coordinator()
     end
 end
 
+-- True when the squad's group flag reports online, or any member server object
+-- is already (or in the middle of) switching online. The engine sets m_bOnline
+-- before it net-spawns each member, so a mid-switch member reads online here.
+-- Running the offline death path (on_death/remove_squad) on such a squad desyncs
+-- the alife switch manager and crashes on the next net_spawn ("Object with ID
+-- already exists"). Used to defer offline combat until the switch settles.
+local function squad_is_switching_online(squad)
+    if not squad then
+        return false
+    end
+    if squad.online then
+        return true
+    end
+    local sim = alife()
+    for k in squad:squad_members() do
+        local se = k.id and k.id ~= 65535 and sim:object(k.id)
+        if se and se.online then
+            return true
+        end
+    end
+    return false
+end
+
 function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
     warfare_log.trace("validate_enemy: id_1=%s id_2=%s lid=%s community=%s", id_1, id_2, lid, community_1)
 
@@ -534,32 +557,40 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                         elseif (sid_2 and NOT_SO_SPECIAL[community_2]) then
 
                         elseif sid_1 then
-                            warfare_log.debug("validate_enemy: story squad_1=%s kills non-story squad_2=%s (shared target)", id_1, id_2)
-                            remove_squad_info(squad_2, id_2, id_1, lid)
-                            local se_attacker = get_random_npc(squad_1)
-                            local member_ids = {}
-                            for k in squad_2:squad_members() do
-                                member_ids[#member_ids + 1] = k.id
-                            end
-                            for i = 1, #member_ids do
-                                local victim = alife_object(member_ids[i])
-                                if victim then
-                                    victim:on_death(se_attacker)
+                            if squad_is_switching_online(squad_2) then
+                                warfare_log.debug("validate_enemy: victim squad_2=%s switching online, skip story kill", id_2)
+                            else
+                                warfare_log.debug("validate_enemy: story squad_1=%s kills non-story squad_2=%s (shared target)", id_1, id_2)
+                                remove_squad_info(squad_2, id_2, id_1, lid)
+                                local se_attacker = get_random_npc(squad_1)
+                                local member_ids = {}
+                                for k in squad_2:squad_members() do
+                                    member_ids[#member_ids + 1] = k.id
+                                end
+                                for i = 1, #member_ids do
+                                    local victim = alife_object(member_ids[i])
+                                    if victim then
+                                        victim:on_death(se_attacker)
+                                    end
                                 end
                             end
 
                         elseif sid_2 then
-                            warfare_log.debug("validate_enemy: story squad_2=%s kills non-story squad_1=%s (shared target)", id_2, id_1)
-                            remove_squad_info(squad_1, id_1, id_2, lid)
-                            local se_attacker = get_random_npc(squad_2)
-                            local member_ids = {}
-                            for k in squad_1:squad_members() do
-                                member_ids[#member_ids + 1] = k.id
-                            end
-                            for i = 1, #member_ids do
-                                local victim = alife_object(member_ids[i])
-                                if victim then
-                                    victim:on_death(se_attacker)
+                            if squad_is_switching_online(squad_1) then
+                                warfare_log.debug("validate_enemy: victim squad_1=%s switching online, skip story kill", id_1)
+                            else
+                                warfare_log.debug("validate_enemy: story squad_2=%s kills non-story squad_1=%s (shared target)", id_2, id_1)
+                                remove_squad_info(squad_1, id_1, id_2, lid)
+                                local se_attacker = get_random_npc(squad_2)
+                                local member_ids = {}
+                                for k in squad_1:squad_members() do
+                                    member_ids[#member_ids + 1] = k.id
+                                end
+                                for i = 1, #member_ids do
+                                    local victim = alife_object(member_ids[i])
+                                    if victim then
+                                        victim:on_death(se_attacker)
+                                    end
                                 end
                             end
                         end
@@ -636,6 +667,16 @@ function simulate_battle(id_1, id_2, squad_1, squad_2, community_1, community_2,
     -- squad 2 = Victim
     rounds = rounds or 1
     warfare_log.debug("simulate_battle: attacker=%s victim=%s community_1=%s community_2=%s rounds=%s", id_1, id_2, community_1, community_2, rounds)
+
+    -- Never run the offline death path on a squad the engine is switching online.
+    -- Online state cannot change within this call (no yields), so one check up
+    -- front covers every on_death below. Defer combat so it retries once the
+    -- switch settles, instead of corrupting the switch manager (duplicate net_spawn).
+    if squad_is_switching_online(squad_2) then
+        warfare_log.debug("simulate_battle: victim squad=%s switching online, defer combat", id_2)
+        disengage_combat(id_1, squad_1, id_2, squad_2)
+        return
+    end
 
     -- Get squad power
     ocs_power[id_1] = calculate_squad_power(squad_1, community_1)
