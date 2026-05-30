@@ -5246,10 +5246,18 @@ function calculate_target_density(smart)
 
             if not (smart.global_position) then
                 global_position.from(smart)
+                if not (smart.global_position) then
+                    warfare_log.warn("calculate_target_density: global_position still nil after from() smart=%s name=%s level_id=%s gvid=%s pos=%s",
+                        smart.id, smart:name(), smart.level_id, smart.m_game_vertex_id, smart.position and "ok" or "nil")
+                end
             end
 
             if not (other.global_position) then
                 global_position.from(other)
+                if not (other.global_position) then
+                    warfare_log.warn("calculate_target_density: global_position still nil after from() other=%s name=%s level_id=%s gvid=%s pos=%s",
+                        other.id, other:name(), other_level, other.m_game_vertex_id, other.position and "ok" or "nil")
+                end
             end
 
             local dist = warfare.distance_to_xz_sqr(smart.global_position, other.global_position)
