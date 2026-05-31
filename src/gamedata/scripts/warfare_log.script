@@ -594,6 +594,12 @@ function on_game_start()
     RegisterScriptCallback("actor_on_first_update", _start_periodic_timers)
 end
 
+-- Truncate warfare.log once per game launch.
+pcall(function()
+    local f = io.open(_log_path(), "w")
+    if f then f:close() end
+end)
+
 -- Busyhands is restart-required: registration hijacks must be in place before
 -- any other warfare script registers its on_game_start callbacks, and engine
 -- globals can't be cleanly unwrapped once wrapped. Reading ui_options.get
