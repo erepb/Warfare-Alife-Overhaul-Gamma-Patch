@@ -7,6 +7,9 @@ function on_game_start()
     local orig_get_current_task = sim_sq_script.get_current_task
 
     function sim_sq_script.generic_update(self)
+        if self:npc_count() == 0 then
+            return
+        end
         if self.registered_with_warfare and not axr_companions.companion_squads[self.id] then
             return
         end
