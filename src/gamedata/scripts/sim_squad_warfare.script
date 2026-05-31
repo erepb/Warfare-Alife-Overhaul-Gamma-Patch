@@ -103,7 +103,7 @@ function squad_on_update(squad)
         -- Switching traders to use the community they belong to
         if not (squad.switched_to_trader) then
             squad.switched_to_trader = true
-            warfare_log.debug("sqw.squad_on_update: switch_to_trader squad=%s section=%s", squad.id, squad:section_name())
+            warfare_log.debug("sqw.squad_on_update: set_member_communities squad=%s section=%s", squad.id, squad:section_name())
             for k in squad:squad_members() do
                 local member = db.storage[k.id] and db.storage[k.id].object
                 if (member and member:alive()) then
