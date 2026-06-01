@@ -1,12 +1,8 @@
 ## What's Changed
 
-### Features
-- Restore Preset label for GAMMA
-- Mirror INFO log messages into the main game log
-- Update AlifePlus API integration to 1.6.0
+### Improvements
+- Truncate warfare.log once per game launch
 
 ### Bug Fixes
-- Fix warfare base traders/mechanics offering wrong, un-completable tasks in the PDA Taskboard
-- Fix false-positive warning about lair targeting
-- Fix orders not reaching AlifePlus-controlled squads
-- Fix Russian translation for the balanced preset
+- Fix crash caused by offline-online desync after a simulated time skip or sleep
+- Fix story NPCs not being ignored by warfare in all patch combinations
