@@ -452,14 +452,32 @@ function load_state(m_data)
     warfare_factions.faction_information = m_data.warfare and m_data.warfare.faction_information or {}
 
     local restored = 0
+    local purged = 0
+    local ign = sim_offline_combat.get_ignore_list()
+    local to_purge = {}
     for faction, tbl in pairs(m_data.warfare and m_data.warfare.squads or {}) do
         for ID, target in pairs(tbl) do
-            registered_squads[faction][ID] = target
-            loaded_squads = true
-            restored = restored + 1
+            local se = alife_object(ID)
+            if se and ign[se:section_name()] then
+                -- Don't restore stale registrations of ignore-listed story squads.
+                to_purge[#to_purge + 1] = { faction, ID }
+                purged = purged + 1
+            else
+                registered_squads[faction][ID] = target
+                loaded_squads = true
+                restored = restored + 1
+            end
         end
     end
-    warfare_log.info("load_state: restored %s registered squads", restored)
+    -- Drop the stale entries from the persisted table too,
+    -- so the save is healed permanently rather than re-skipped each load.
+    for i = 1, #to_purge do
+        local fp = to_purge[i]
+        if m_data.warfare.squads[fp[1]] then
+            m_data.warfare.squads[fp[1]][fp[2]] = nil
+        end
+    end
+    warfare_log.info("load_state: restored %s registered squads (purged %s stale ignore-listed)", restored, purged)
 
 
     if (m_data.warfare and m_data.warfare.smart_owners) then

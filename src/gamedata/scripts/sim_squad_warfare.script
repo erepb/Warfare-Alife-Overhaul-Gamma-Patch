@@ -137,8 +137,17 @@ function squad_on_update(squad)
 
         -- See if the squad has an entry in the registered squads table.
         if (warfare.registered_squads[faction] and warfare.registered_squads[faction][squad.id]) then
-            squad.registered_with_warfare = true
-            warfare_log.debug("sqw.squad_on_update: registered_with_warfare via existing entry squad=%s faction=%s", squad.id, faction)
+            if warfare.ignore[squad:section_name()] then
+                -- Stale registration of an ignore-listed story squad. Purge the entry so the
+                -- squad returns to vanilla story control (specific_update re-binds it to
+                -- its target_smart). Re-saved clean on the next save_state.
+                warfare.remove_registered_squad(faction, squad.id)
+                squad.registered_with_warfare = false
+                warfare_log.info("sqw.squad_on_update: purged stale registered entry for ignore-listed squad=%s section=%s", squad.id, squad:section_name())
+            else
+                squad.registered_with_warfare = true
+                warfare_log.debug("sqw.squad_on_update: registered_with_warfare via existing entry squad=%s faction=%s", squad.id, faction)
+            end
         end
     end
 

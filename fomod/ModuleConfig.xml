@@ -92,6 +92,8 @@
                                 If you select this, select also these mods:
                                 ZCP
                                 LTTZ
+
+                                GAMMA includes Dux's Innumerable Characters Kit, so keep the "Dux's Innumerable Characters Kit" option (below) selected unless you have manually disabled Dux.
                             </description>
                             <files>
                                 <folder source="patches\GAMMA Warfare Patch"
@@ -136,15 +138,17 @@
                                 <type name="Optional"/>
                             </typeDescriptor>
                         </plugin>
-                        <plugin name="KVMA">
-                            <!--<designer.metadata.do.not.edit> {"name":"KVMA"}-->
+                        <plugin name="Dux's Innumerable Characters Kit">
+                            <!--<designer.metadata.do.not.edit> {"name":"Dux"}-->
                             <description>
-                                Restores the base mod_offline_combat_simulator_warfare.ltx, overwriting the GAMMA patch version.
+                                Select this if Dux's Innumerable Characters Kit is ENABLED (it is, by default, in GAMMA).
 
-                                Use this if you do not have Dux's Innumerable Characters Kit enabled.
+                                Dux declares the [stationary_squads] section itself. Selecting this suppresses Warfare's own declaration of that section to avoid a duplicate-section error. The ignore_list is unaffected and always applied.
+
+                                Deselect ONLY if you have disabled or removed Dux, so that Warfare declares [stationary_squads] itself.
                             </description>
                             <files>
-                                <folder source="patches\KVMA"
+                                <folder source="patches\Dux Innumerable Characters Kit"
                                         destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
                             </files>
                             <typeDescriptor>
