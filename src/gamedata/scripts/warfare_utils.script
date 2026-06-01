@@ -112,12 +112,6 @@ function is_sunset()
     return h >= 17 and h < 22
 end
 
--- Not night (daylight or sunset): 6AM (06:00) to 10PM (21:59)
-function is_not_night()
-    local h = cached_hour or get_warfare_hour()
-    return h >= 6 and h < 22
-end
-
 -- Night boundaries in seconds from midnight
 local NIGHT_START = 22 * 3600  -- 22:00
 local DAWN        =  6 * 3600  -- 06:00

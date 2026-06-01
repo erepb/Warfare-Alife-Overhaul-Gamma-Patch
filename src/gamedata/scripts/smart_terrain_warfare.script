@@ -1485,124 +1485,6 @@ end
 
 
 
--- WARNING:
--- This function is being phased out for the new behavior functions above
-function process_squads_old(smart)
-    warfare_log.trace("process_squads_old: smart=%s", smart:name())
-    if not (smart.process_squads_time) or (warfare.get_time_ref():diffSec(smart.process_squads_time) >= smart.next_process_squads_time*6) then
-        if not smart.process_squads_time then
-            smart.process_squads_time = warfare.get_time()
-        else
-            smart.process_squads_time = warfare_utils.add_time(smart.process_squads_time, smart.next_process_squads_time*6)
-        end
-        smart.next_process_squads_time = math.random(5, 15)                -- default 1 to 5, made longer to ease script load
-    else
-        return
-    end
-
-    if currently_surge then
-        return
-    end
-
-    -- don't process squads while under attack
-    if under_attack[smart.id] then
-        return
-    end
-
-    set_max_population(smart)
-
-    local squads = SIMBOARD.smarts[smart.id].squads
-
-    for sid,_ in pairs(squads) do
-
-        local squad = sid and alife_object(sid)
-
-        -- don't operate on ignore_list squads or story squads, or squads that are not idle or under AP control
-        if (squad) and (squad.registered_with_warfare) and (not warfare.ignore[squad:section_name()]) and (not sim_offline_combat.stationary_squads[squad:section_name()]) and (squad.current_action == 1) then
-          if warfare_alifeplus.is_ap_controlled(squad) then
-            warfare_alifeplus.log_ap_controlled(squad, "process_squads")
-          else
-            local faction = squad:get_squad_community()
-
-            if (faction ~= "stalker") and (faction ~= "ecolog") then                                    -- only operate on non-loner, non-ecolog squads
-                -- Idle random patrols will get re-tasked
-                if (random_patrols[squad.id]) then
-                    if (math.random(100) <= 20) then                                                    -- 20% chance of moving after a given update
-                        local target = find_random_patrol_target(smart, faction, sid)
-
-                        if (target) then
-                            sim_squad_warfare.set_target(squad, target)
-                        end
-                    end
-                -- Idle patrol squads will get re-tasked
-                elseif (squad.patrol_table) then
-                    local patrol_target = find_patrol_target(smart,nil,squad)
-
-                    if (patrol_target) then
-                        sim_squad_warfare.set_target(squad, patrol_target.id)
-                    end
-                -- Idle overflow and lair-dwelling squads will get re-tasked
-                else
-                    if (smart.props.base > 0 or smart.props.resource > 0 or smart.props.territory > 0) then
-                        local removeSquad = false
-                        local regular_squads,sq_pow,stationary_sq_num = squad_count_detailed(smart, faction)
-                        local isDaylight = warfare_utils.is_not_night()
-
-                        -- do not move away from a loner/ecologist-owned pure resource
-                        if (faction ~= "monster" and faction ~= smart.owning_faction and not is_factions_enemies(faction, smart.owning_faction)) and not ((smart.owning_faction == "stalker" or smart.owning_faction == "ecolog") and (smart.props.resource > 0 and smart.props.base < 1)) then
-                            local targets = find_targets(smart, faction)
-                            pick_target(smart, squad, targets)
-
-                        -- overflow squads can be moved off during daylight hours, or if smart is cleared for night activity (within process_targets)
-                        elseif isDaylight or ( night_activity_allowed[smart.id] and night_activity_allowed[smart.id] == 1 ) then
-                            local invasion_force_size = invasions[smart.id] and invasions[smart.id][2] or 0
-                            local guards = math.max(guard_size, stationary_sq_num)
-                            local max_allowable_size = math.max((invasion_force_size + guards), smart.max_population)                            -- invasion prep allows temporary overflow at a given base
-
-                            if (regular_squads + stationary_sq_num > max_allowable_size) then
-                                removeSquad = true
-                            end
-
-                            -- find target for overflow squad, when manual control is off
-                            if (faction ~= "monster" and removeSquad) and not ((faction == warfare.actor_faction) and (pda_actor.manual_control) and not warfare_options.options.overflow_override) then
-                                local targets = find_targets_for_overflow(smart, faction)
-                                if (#targets > 0) then
-                                    -- linked level target found
-                                    pick_target(smart, squad, targets, true)
-                                break  -- limit to one overflow move per cycle
-                                else
-                                    -- overflow squad with no valid linked level targets
-                                    local new_targets = find_targets_for_overflow(smart, faction, true)                -- find target on any level for overflow squad (third field set to true)
-
-
-                                    -- if no targets anywhere within the Zone could be found, delete the squad (when smart_pop_cap is enabled)
-                                    if (#new_targets < 1) and (not warfare_options.options.disable_smart_pop_cap) then
-                                        sim_squad_warfare.remove_squad(squad)
-                                        squad:remove_squad()
-                                    else
-                                        pick_target(smart, squad, new_targets, true)
-                                        break  -- limit to one overflow move per cycle
-                                    end
-                                end
-                            end
-
-                        end
-                    -- move squads sitting on useless terrains, unless actor manual control enabled. monolith exempt
-                    elseif (faction ~= "monster" and faction ~= "monolith" and faction ~= "zombied") and not ((faction == warfare.actor_faction) and (pda_actor.manual_control)) then
-                        local targets = find_targets_for_overflow(smart, faction)
-                        if (#targets > 0) then
-                            pick_target(smart, squad, targets, true)
-                        else
-                            local new_targets = find_targets_for_overflow(smart, faction, true)
-                            pick_target(smart, squad, new_targets, true)
-                        end
-                    end
-                end
-            end
-          end
-        end
-    end
-end
 
 
 function surge_behavior(smart)
@@ -4598,29 +4480,6 @@ function get_unknown_info(smart)
     return props
 end
 
-function get_neutral_info(smart)
-    local props = get_smart_base_info(smart, true, true)
-
-    local f = false
-    if (smart.target_smarts) then
-        for target,_ in pairs(smart.target_smarts) do
-            if not (f) then
-                f = true
-                props = props .. " \\n" .. clr_b .. " \\n" .. str_wrfr[17] .. " \\n" .. clr_gr
-            end
-
-            local other = alife_object(target)
-
-            if (other) then
-                local otherWarfare = translate_smart_name(other:name()) or other:name()
-                props = props .. "\\n" .. clr_gr .. otherWarfare .. "\\n"
-            end
-        end
-    end
-
-    return props
-end
-
 -- gets information for the smart terrain hint
 -- visible: optional, defaults to true. When false, hides owning faction (fog-of-war invasion overlays)
 function get_warfare_info(smart, visible)
@@ -6076,11 +5935,6 @@ end
 function get_main_base_faction(smart_name)
     local entry = main_base_data[smart_name]
     return entry and entry.faction
-end
-
-function is_protected_base(smart_name)
-    local entry = main_base_data[smart_name]
-    return entry ~= nil and entry.protect
 end
 
 function get_protected_base_faction(smart_name)

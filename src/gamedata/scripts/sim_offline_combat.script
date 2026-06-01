@@ -977,13 +977,6 @@ function get_ignore_list()
     return ignore_list
 end
 
-function get_stationary_squads()
-    if is_empty(stationary_squads) then
-        init_settings()
-    end
-    return stationary_squads
-end
-
 function init_settings()
     warfare_log.info("init_settings: loading misc/offline_combat_simulator.ltx")
     ini_ocs = ini_file("misc\\offline_combat_simulator.ltx")

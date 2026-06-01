@@ -1169,18 +1169,6 @@ function lerp(a, b, f)
     end
 end
 
--- table shuffle function
-function shuffle(t)
-    local rand = math.random
-    local iterations = #t
-    local j
-
-    for i = iterations, 2, -1 do
-        j = rand(i)
-        t[i], t[j] = t[j], t[i]
-    end
-end
-
 function squad_on_unregister(squad, type_name)
     if (type_name ~= "sim_squad_scripted") then
         return
@@ -1243,14 +1231,6 @@ function hash_table_to_array(tbl)
     return r
 end
 
-
--- Requires the priority to be the first element in each table within tbl.
-function sort_priority_table(tbl)
-    table.sort(tbl, function(a, b)
-        return (math.abs(a[1]) < math.abs(b[1]))
-    end)
-    return tbl
-end
 
 function distance_to_xz_sqr(a, b)
     return math.pow(b.x - a.x, 2) + math.pow(b.z - a.z, 2)

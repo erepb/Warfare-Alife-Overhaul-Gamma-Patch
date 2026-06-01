@@ -200,11 +200,6 @@ function enabled()
     return _current_level >= LEVEL.DEBUG
 end
 
-function get_level_name()
-    if _current_level == LEVEL.OFF then return "OFF" end
-    return LEVEL_NAME[_current_level] or "?"
-end
-
 function flush()
     _flush()
 end

@@ -183,16 +183,6 @@ function squad_on_update(squad)
 
 end
 
-function update_global_position(squad)
-    local level_id = game_graph():vertex(squad.m_game_vertex_id):level_id()
-    local offset = level_targets.level_offsets[level_id]
-    local p = squad.position
-
-    if (offset) then
-        squad.global_position = vector():set(p.x + offset[1], p.y + offset[2], p.z + offset[3])
-    end
-end
-
 -- borrowed from gamemode_azazel.script from the actor_on_before_death function.
 function add_companion_squad(squad)
     warfare_log.info("add_companion_squad: squad=%s", squad and squad:name() or "nil")
