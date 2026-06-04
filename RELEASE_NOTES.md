@@ -1,8 +1,11 @@
 ## What's Changed
 
-### Improvements
-- Truncate warfare.log once per game launch
+### Features
+- Rework squad overflow and recall logic for smarter relocation, with a faction HQ fallback
 
 ### Bug Fixes
-- Fix crash caused by offline-online desync after a simulated time skip or sleep
-- Fix story NPCs not being ignored by warfare in all patch combinations
+- Fix squads getting orphaned on foreign-faction smarts they cannot capture
+- Fix displaced squads being sent to attack heavily defended enemy bases
+- Fix Laundromat base not being protected due to an incorrect smart terrain id
+- Fix offline combat simulator ignore list
+- Fix barman invincibility patch overriding the entire barman config file
