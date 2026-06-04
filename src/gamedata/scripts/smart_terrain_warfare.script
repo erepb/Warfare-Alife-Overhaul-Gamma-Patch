@@ -393,6 +393,16 @@ for smart_name, data in pairs(main_base_data) do
     end
 end
 
+-- Reverse index: faction -> { smart_name, ... } of all main bases (HQs).
+-- Used as the last-resort recall destination so a displaced squad always has
+-- somewhere to head. Built once at load time from main_base_data.
+local main_base_by_faction = {}
+for smart_name, data in pairs(main_base_data) do
+    local f = data.faction
+    if not main_base_by_faction[f] then main_base_by_faction[f] = {} end
+    main_base_by_faction[f][#main_base_by_faction[f] + 1] = smart_name
+end
+
 -- Locations are prioritized over regular bases when ecolog/loner are looking for bases.
 local travel_hubs = {
     ["mar_smart_terrain_base"] = 1,  -- Clear Sky Base
@@ -1240,6 +1250,73 @@ function process_base_squads(smart)
 end
 
 
+function recall_squad_to_base(from_smart, squad, avoid_uncapturable, bases, neutral_bases)
+--[[
+    Send a displaced/idle faction squad to where it belongs, in priority order:
+      1. nearest own-faction or empty base on this level
+      2. nearest neutral base on this level (unless avoid_uncapturable)
+      3. overflow search (this + linked levels): own/empty base, else a resource or
+         a territory — enemy bases are excluded
+      4. last resort: the faction's closest own-held or empty main base (HQ), any level
+
+    avoid_uncapturable skips tier 2: it's set when pulling a
+    squad off a smart it cannot capture, so it won't be bounced onto another base it
+    equally cannot take.
+
+    Pass precomputed `bases`/`neutral_bases` to reuse a single find_nearby_bases call
+    across several squads of the same faction at one smart.
+
+    Returns true if a target was set, false if the faction has nowhere to go at all.
+]]
+    local faction = squad:get_squad_community()
+    if not bases then
+        bases, neutral_bases = find_nearby_bases(from_smart, faction, true)
+    end
+
+    if (#bases > 0) then
+        warfare_log.debug("recall_squad_to_base: squad=%s -> base=%s own/empty", squad.id, bases[1][1])
+        sim_squad_warfare.set_target(squad, bases[1][1])
+        return true
+    elseif not avoid_uncapturable and neutral_bases and (#neutral_bases > 0) then
+        warfare_log.debug("recall_squad_to_base: squad=%s -> base=%s neutral", squad.id, neutral_bases[1][1])
+        sim_squad_warfare.set_target(squad, neutral_bases[1][1])
+        return true
+    end
+
+    local targets = find_targets_for_overflow(from_smart, faction)
+    if (targets and #targets > 0) then
+        warfare_log.debug("recall_squad_to_base: squad=%s -> overflow linked-level", squad.id)
+        pick_target(from_smart, squad, targets, true)
+        return true
+    end
+
+    -- Last resort: head for the faction's closest main base that it still holds or that is
+    -- empty (capturable). Every faction has a main base, so a failure here is unexpected
+    local main_bases = get_main_bases(faction)
+    if main_bases then
+        local best, best_dist
+        for i = 1, #main_bases do
+            local other = alife():story_object(main_bases[i])
+            local owner = other and (other.owning_faction or "none")
+            if other and (owner == faction or owner == "none") then
+                local d = fetch_smart_distance(from_smart, other)
+                if (not best_dist) or (d < best_dist) then
+                    best, best_dist = other, d
+                end
+            end
+        end
+        if best then
+            warfare_log.debug("recall_squad_to_base: squad=%s -> main_base=%s last-resort", squad.id, best.id)
+            sim_squad_warfare.set_target(squad, best.id)
+            return true
+        end
+    end
+
+    warfare_log.warn("recall_squad_to_base: no recall target found for squad=%s faction=%s from=%s", squad.id, faction, from_smart.id)
+    return false
+end
+
+
 function process_nonbase_squads(smart, always_recall, keep_one)
 --[[
     Recall non-patrol faction squads from non-base terrains to their nearest bases.
@@ -1291,8 +1368,7 @@ function process_nonbase_squads(smart, always_recall, keep_one)
     end
 
     local squads = SIMBOARD.smarts[smart.id].squads
-    local bases = {}
-    local neutral_bases = {}
+    local bases_cache = {}    -- faction -> { bases, neutral_bases }, reused across squads
 
     -- Count eligible squads first when we need to keep one behind
     local eligible_count = 0
@@ -1322,29 +1398,15 @@ function process_nonbase_squads(smart, always_recall, keep_one)
                     break
                 end
 
-                if not (#bases > 0) then
-                    bases, neutral_bases = find_nearby_bases(smart, faction, true)
+                local cached = bases_cache[faction]
+                if not cached then
+                    local b, nb = find_nearby_bases(smart, faction, true)
+                    cached = { b, nb }
+                    bases_cache[faction] = cached
                 end
-                -- Send squad to nearest base
-                if (#bases > 0) then
-                    warfare_log.debug("process_nonbase_squads: recall smart=%s squad=%s -> ally_base=%s",
-                        smart:name(), tostring(squad.id), tostring(bases[1][1]))
-                    sim_squad_warfare.set_target(squad, bases[1][1])
+                -- avoid_uncapturable=false keeps the night-sweep's neutral-base tier
+                if recall_squad_to_base(smart, squad, false, cached[1], cached[2]) then
                     recalled = recalled + 1
-                elseif (#neutral_bases > 0) then
-                    warfare_log.debug("process_nonbase_squads: recall smart=%s squad=%s -> neutral_base=%s",
-                        smart:name(), tostring(squad.id), tostring(neutral_bases[1][1]))
-                    sim_squad_warfare.set_target(squad, neutral_bases[1][1])
-                    recalled = recalled + 1
-                else
-                    -- No same-level bases found; try linked levels so squads do not get permanently stuck
-                    local targets = find_targets_for_overflow(smart, faction)
-                    if targets and (#targets > 0) then
-                        warfare_log.debug("process_nonbase_squads: recall via overflow smart=%s squad=%s",
-                            smart:name(), tostring(squad.id))
-                        pick_target(smart, squad, targets, true)
-                        recalled = recalled + 1
-                    end
                 end
             end
         end
@@ -5637,6 +5699,11 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
     Used to handle overflow squads on bases that need to be redistributed.
     Searches current level + linked levels by default, or all levels if search_all_levels is true.
 
+    Returns own/empty bases, resources, and (for factions that value them, via
+    territory_priority) pure territories. Enemy-owned bases are never returned (heavily
+    defended — a relocation must not become a suicide attack); lightly-held enemy holdings
+    such as resources/territories are kept but de-prioritized.
+
     Inputs:
         smart: smart terrain with overflow squad(s) to be moved
         faction: owner of `smart`, and faction of the overflow squad
@@ -5690,14 +5757,25 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
                 priority = priority + (other.props.resource * faction_props.resource_priority)
             end
 
+            -- pure territories, scored by the faction's territory_priority (negative for most
+            -- factions, so they stay excluded unless the faction actually values territory)
+            if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1) then
+                priority = priority + (other.props.territory * faction_props.territory_priority)
+            end
+
             -- storyline travel restrictions (Scorcher, Miracle Machine, underground, Monolith south)
             if not is_travel_allowed(level, other_level, faction) then
                 priority = -1000
             end
 
-            -- de-prioritize hostile locations
+            -- enemy bases are heavily defended: never an overflow/recall target.
+            -- lightly-held enemy holdings (resources) are kept, just de-prioritized.
             if is_factions_enemies(faction, other_faction) then
-                priority = priority * 0.2
+                if (other.props.base > 0) then
+                    priority = -1000
+                else
+                    priority = priority * 0.2
+                end
             end
 
             -- neutral factions get de-prioritized
@@ -5709,8 +5787,8 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
                 priority = -100
             end
 
-            -- priority boost for empty resources or bases
-            if (other_faction == "none") and (other.props.resource > 0 or other.props.base > 0) then
+            -- priority boost for empty resources, bases, or territories
+            if (other_faction == "none") and (other.props.resource > 0 or other.props.base > 0 or other.props.territory > 0) then
                 priority = priority * 1.5
             end
 
@@ -5956,6 +6034,10 @@ end
 
 function get_resurrect_bases(faction)
     return resurrect_by_faction[faction]
+end
+
+function get_main_bases(faction)
+    return main_base_by_faction[faction]
 end
 
 ------------------------------------------------------------
