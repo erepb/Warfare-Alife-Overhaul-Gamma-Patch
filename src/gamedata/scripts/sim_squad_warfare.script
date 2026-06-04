@@ -223,11 +223,29 @@ function squad_warfare_update(squad)
                     if not (game_relations.is_factions_enemies(smartOwner, squad:get_squad_community())) or squad:get_squad_community() == "monster"
                     then
                         if (se_target:am_i_reached(squad)) then
-                            warfare_log.debug("squad_warfare_update: reached friendly/own smart squad=%s target=%s", squad.id, se_target.id)
-                            se_target:on_after_reach(squad)
-                            squad.current_action = 1
-                            squad.arrive_time = warfare.get_time()
-                            squad.wait_time = math.random(10, 60)
+                            local community = squad:get_squad_community()
+
+                            -- A non-enemy smart owned by a *different* faction that isn't
+                            -- loner/ecolog can be neither captured nor hijacked. Don't let the
+                            -- squad garrison it (it would get adopted by the foreign smart and
+                            -- orphaned there forever) — redirect it instead.
+                            local can_take = smartOwner == "none" or smartOwner == community
+                                or smartOwner == "stalker" or smartOwner == "ecolog"
+                            local is_patrol = smart_terrain_warfare.random_patrols[squad.id] or squad.patrol_table
+
+                            if not can_take and community ~= "monster" and not is_patrol then
+                                -- avoid_uncapturable=true: pulling the squad off a smart it can't
+                                -- capture, so don't route it onto another base it equally can't take.
+                                -- recall_squad_to_base logs an error if it somehow finds no target;
+                                -- leaving current_action at 0 lets this retry on the next update.
+                                smart_terrain_warfare.recall_squad_to_base(se_target, squad, true)
+                            else
+                                warfare_log.debug("squad_warfare_update: reached friendly/own smart squad=%s target=%s", squad.id, se_target.id)
+                                se_target:on_after_reach(squad)
+                                squad.current_action = 1
+                                squad.arrive_time = warfare.get_time()
+                                squad.wait_time = math.random(10, 60)
+                            end
                         end
                     else
                         local reached = se_target:am_i_reached(squad)
