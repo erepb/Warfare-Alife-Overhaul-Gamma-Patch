@@ -1,7 +1,12 @@
 ;-- Squads listed here are registered with Warfare but cannot be commanded by
 ;-- automatic Warfare functions (the player can still command them). They also
 ;-- still participate in offline combat.
-[stationary_squads]
+;--
+;-- @[section] = DLTX "safe override": creates [stationary_squads] if no other
+;-- file declares it, and merges (unions) with any other declaration instead of
+;-- erroring. This lets Warfare and Dux's Innumerable Characters Kit both declare
+;-- the section without a duplicate-section fatal, and keeps BOTH squad lists.
+@[stationary_squads]
 bar_duty_security_squad_leader_squad
 bar_zastava_2_commander_squad
 yan_bunker_guards_squad

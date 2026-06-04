@@ -92,8 +92,6 @@
                                 If you select this, select also these mods:
                                 ZCP
                                 LTTZ
-
-                                GAMMA includes Dux's Innumerable Characters Kit, so keep the "Dux's Innumerable Characters Kit" option (below) selected unless you have manually disabled Dux.
                             </description>
                             <files>
                                 <folder source="patches\GAMMA Warfare Patch"
@@ -132,23 +130,6 @@
                             </description>
                             <files>
                                 <folder source="patches\Patch for LTTZ Directors Cut"
-                                        destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
-                            </files>
-                            <typeDescriptor>
-                                <type name="Optional"/>
-                            </typeDescriptor>
-                        </plugin>
-                        <plugin name="Dux's Innumerable Characters Kit">
-                            <!--<designer.metadata.do.not.edit> {"name":"Dux"}-->
-                            <description>
-                                Select this if Dux's Innumerable Characters Kit is ENABLED (it is, by default, in GAMMA).
-
-                                Dux declares the [stationary_squads] section itself. Selecting this suppresses Warfare's own declaration of that section to avoid a duplicate-section error. The ignore_list is unaffected and always applied.
-
-                                Deselect ONLY if you have disabled or removed Dux, so that Warfare declares [stationary_squads] itself.
-                            </description>
-                            <files>
-                                <folder source="patches\Dux Innumerable Characters Kit"
                                         destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
                             </files>
                             <typeDescriptor>

@@ -1,5 +1,5 @@
 How to contribute:
-1) Gamma patch should always have mod_offline_combat_simulator_warfare.ltx but `[stationary_squads]` should be always dltx'ed to `![stationary_squads]`
+1) The Warfare patch declares `[stationary_squads]` (in `mod_offline_combat_simulator_warfare_stationary.ltx`), a section that does **not** exist in vanilla `offline_combat_simulator.ltx`. It must always be dltx'ed as `@[stationary_squads]` — the DLTX "safe override" operator. `@` creates the section when no other addon declares it, and merges (unions) with declarations from other addons (e.g. Dux's Innumerable Characters Kit) instead of raising a duplicate-section fatal. Do **not** use `![stationary_squads]`: `!` only overrides a section that already exists and will not create it, so Warfare's stationary squads would silently fail to register whenever no other addon declares the section. (Use `![section]` only for sections that exist in vanilla, e.g. `![offline_health]`.)
 
 2) Commit messages must follow the **Conventional Commits** format, as they are used to automatically bump the version and generate the changelog on release:
 
