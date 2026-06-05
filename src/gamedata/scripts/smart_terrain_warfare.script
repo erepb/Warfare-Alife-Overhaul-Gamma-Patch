@@ -373,6 +373,9 @@ local main_base_data = {
     ["jup_a10_smart_terrain"]        = { faction = "isg",      protect = false, resurrect = true  },
     ["zat_b103_merc_smart"]          = { faction = "isg",      protect = false, resurrect = true  },
     ["val_smart_terrain_1_2"]        = { faction = "isg",      protect = false, resurrect = true },
+    -- New Levels addon (optional; entries are inert if the addon is not installed).
+    ["posug_16"]                     = { faction = "freedom",  protect = false, resurrect = false }, -- Town Yuzhniy: Freedom trader + medic
+    ["posug_36"]                     = { faction = "bandit",   protect = false, resurrect = false }, -- Town Yuzhniy: Bandit trader + bodyguard
 }
 
 -- Reverse index: faction -> { smart_name, ... } for resurrection anchors

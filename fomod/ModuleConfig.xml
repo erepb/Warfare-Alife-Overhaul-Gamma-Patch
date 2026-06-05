@@ -105,7 +105,7 @@
                 </group>
                 <group name="Patches" type="SelectAny">
                     <!--<designer.metadata.do.not.edit> {"name":"Patches"}-->
-                    <plugins order="Ascending">
+                    <plugins order="Explicit">
                         <plugin name="ZCP">
                             <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
                             <description>
@@ -130,6 +130,25 @@
                             </description>
                             <files>
                                 <folder source="patches\Patch for LTTZ Directors Cut"
+                                        destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
+                            </files>
+                            <typeDescriptor>
+                                <type name="Optional"/>
+                            </typeDescriptor>
+                        </plugin>
+                        <plugin name="Alternative New Levels Layout">
+                            <!--<designer.metadata.do.not.edit> {"name":"Alternative New Levels Layout"}-->
+                            <description>
+                                Optional. New Levels is already warfare-ready on its own; this swaps its
+                                default layout for the one from "It's Warfare Time" by LostToTheSzone.
+                                The new maps (Promzone, Grimwood, Town Yuzhniy, Collaider, Bunker A1) get
+                                more faction bases, territories and starting squads, turning them into
+                                fuller battlegrounds.
+
+                                Requires the New Levels addon.
+                            </description>
+                            <files>
+                                <folder source="patches\New Levels Warfare Patch"
                                         destination="" priority="0" alwaysInstall="false" installIfUsable="false"/>
                             </files>
                             <typeDescriptor>
