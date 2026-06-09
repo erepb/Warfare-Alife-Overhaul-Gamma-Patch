@@ -8,13 +8,10 @@
                     <plugins order="Ascending">
                         <plugin name="Warfare ALife Overhaul">
                             <!--<designer.metadata.do.not.edit> {"name":"Warfare ALife Overhaul"}-->
-                            <description>The core files of this addon
+                            <description>
+The core files of this addon.
 
-
-                                NOTE ABOUT PATCHES:
-
-                                If you use any of the patches below, this addon must be loaded AFTER the addons you
-                                selected patches for!
+NOTE ABOUT PATCHES: If you use any of the patches below, this addon must be loaded AFTER the addons you selected patches for!
                             </description>
                             <image path="AlifeOverhaulIcon3.jpg"/>
                             <files>
@@ -33,8 +30,8 @@
                     <plugins order="Ascending">
                         <plugin name="Fast Travel + Warfare mode Fix">
                             <!--<designer.metadata.do.not.edit> {"name":"Fast Travel + Warfare mode Fix"}-->
-                            <description>Fixes Fast Travel feature compatibility with Warfare mode. No more PDA icon
-                                incompatibility.
+                            <description>
+Fixes Fast Travel feature compatibility with Warfare mode. No more PDA icon incompatibility.
                             </description>
                             <files>
                                 <folder source="optionals\Fix for Fast Travel + Warfare" destination="" priority="0"
@@ -46,14 +43,12 @@
                         </plugin>
                         <plugin name="Beard invincible unless player is hostile">
                             <!--<designer.metadata.do.not.edit> {"name":"Beard invincible unless player is hostile"}-->
-                            <description>Beard is an essential NPC for the Living Legend questline.
+                            <description>
+Beard is an essential NPC for the Living Legend questline.
 
-                                Selecting this option makes Beard invincible as long as the player's faction is not
-                                hostile to Free STALKERs. This guarantees his survival if you play Living Legend as a
-                                faction that is neutral to loners.
+Selecting this option makes Beard invincible as long as the player's faction is not hostile to Free STALKERs. This guarantees his survival if you play Living Legend as a faction that is neutral to loners.
 
-                                If using this optional, this addon should be loaded after Trader Overhaul. May have
-                                issues with Beard's inventory if used without Trader Overhaul.
+If using this optional, this addon should be loaded after Trader Overhaul. May have issues with Beard's inventory if used without Trader Overhaul.
                             </description>
                             <files>
                                 <folder source="optionals\Beard Invincible to all except hostile player" destination=""
@@ -65,11 +60,10 @@
                         </plugin>
                         <plugin name="Storymode area map spots restored">
                             <!--<designer.metadata.do.not.edit> {"name":"Storymode area map spots restored"}-->
-                            <description>Restores the story mode pda mapspots.
+                            <description>
+Restores the story mode pda mapspots.
 
-                                If using debug mode, may cause some issues with selecting the Warfare mapspot. Users
-                                will need to un-select the "Areas" filter in the PDA map in order to select the Warfare
-                                mapspot.
+If using debug mode, may cause some issues with selecting the Warfare mapspot. Users will need to un-select the "Areas" filter in the PDA map in order to select the Warfare mapspot.
                             </description>
                             <files>
                                 <folder source="optionals\Restored Map Area Spots" destination="" priority="0"
@@ -87,11 +81,11 @@
                         <plugin name="Gamma Patch">
                             <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
                             <description>
-                                Contains all patches for Gamma modpack compatibility.
+Contains all patches for Gamma modpack compatibility.
 
-                                If you select this, select also these mods:
-                                ZCP
-                                LTTZ
+If you select this, select also these mods:
+ZCP
+LTTZ
                             </description>
                             <files>
                                 <folder source="patches\GAMMA Warfare Patch"
@@ -109,9 +103,9 @@
                         <plugin name="ZCP">
                             <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
                             <description>
-                                Compatibility with ZCP (Needed for Gamma)
+Compatibility with ZCP (needed for Gamma).
 
-                                Prevents it from adjusting size and extra spawning
+Prevents it from adjusting size and extra spawning.
                             </description>
                             <files>
                                 <folder source="patches\ZCP"
@@ -124,9 +118,9 @@
                         <plugin name="LTTZ">
                             <!--<designer.metadata.do.not.edit> {"name":"'Dynamic' addons"}-->
                             <description>
-                                Compatibility with LTTZ (Needed for Gamma)
+Compatibility with LTTZ (needed for Gamma).
 
-                                Adds squads from LTTZ
+Adds squads from LTTZ.
                             </description>
                             <files>
                                 <folder source="patches\Patch for LTTZ Directors Cut"
@@ -139,13 +133,9 @@
                         <plugin name="Alternative New Levels Layout">
                             <!--<designer.metadata.do.not.edit> {"name":"Alternative New Levels Layout"}-->
                             <description>
-                                Optional. New Levels is already warfare-ready on its own; this swaps its
-                                default layout for the one from "It's Warfare Time" by LostToTheSzone.
-                                The new maps (Promzone, Grimwood, Town Yuzhniy, Collaider, Bunker A1) get
-                                more faction bases, territories and starting squads, turning them into
-                                fuller battlegrounds.
+Optional. New Levels is already warfare-ready on its own; this swaps its default layout for the one from "It's Warfare Time" by LostToTheSzone. The new maps (Promzone, Grimwood, Town Yuzhniy, Collaider, Bunker A1) get more faction bases, territories and starting squads, turning them into fuller battlegrounds.
 
-                                Requires the New Levels addon.
+Requires the New Levels addon.
                             </description>
                             <files>
                                 <folder source="patches\New Levels Warfare Patch"
