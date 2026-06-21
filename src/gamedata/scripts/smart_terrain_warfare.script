@@ -4066,7 +4066,7 @@ function smart_terrain.se_smart_terrain:show()
                     if (other) then
                         -- clear target spots recaptured by the player faction, or if this base turned invisible
                         if base_invisible or (actor_faction and other.owning_faction == warfare.actor_faction) then
-                            level.map_remove_object_spot(t, pda_icons[spot])
+                            set_target_circle(t, spot, nil)
                             self.target_spots[t] = nil
                             other.actor_target = nil
                         else
@@ -4074,16 +4074,11 @@ function smart_terrain.se_smart_terrain:show()
                             local faction_key = other.owning_faction or "none"
                             local new_key = get_target_circle_key(t, self.id, actor_faction, faction_key)
                             if new_key then
-                                if spot ~= new_key then
-                                    level.map_remove_object_spot(t, pda_icons[spot])
-                                    level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_warfare_info(other, false))
-                                    self.target_spots[t] = new_key
-                                else
-                                    level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other, false))
-                                end
+                                set_target_circle(t, spot, new_key, get_warfare_info(other, false))
+                                self.target_spots[t] = new_key
                             else
                                 -- no invasion plan for this target, remove spot
-                                level.map_remove_object_spot(t, pda_icons[spot])
+                                set_target_circle(t, spot, nil)
                                 self.target_spots[t] = nil
                                 other.actor_target = nil
                             end
@@ -4158,11 +4153,9 @@ function smart_terrain.se_smart_terrain:show()
                 if (visible) then
                     local info = get_warfare_info(self)
 
-                    -- use red-tinted icon for player's smarts under attack
+                    -- always show the natural faction icon; the under-attack state is shown
+                    -- by a coloured outline reconciled at the end of show()
                     local display_key = faction
-                    if under_attack[self.id] and pda_icons["target_" .. faction] and (faction == warfare.actor_faction or not is_factions_enemies(warfare.actor_faction, faction)) then
-                        display_key = "target_" .. faction
-                    end
 
                     -- if spot already exists, remove it and re-add it to update
                     if (self.warfare_spot) then
@@ -4262,7 +4255,7 @@ function smart_terrain.se_smart_terrain:show()
 
                 if (other) then
                     if (actor_faction and other.owning_faction == warfare.actor_faction) then
-                        level.map_remove_object_spot(t, pda_icons[spot])
+                        set_target_circle(t, spot, nil)
                         self.target_spots[t] = nil
                         other.actor_target = nil
                     else
@@ -4270,15 +4263,10 @@ function smart_terrain.se_smart_terrain:show()
                         local faction_key = other.owning_faction or "none"
                         local new_key = get_target_circle_key(t, self.id, actor_faction, faction_key)
                         if new_key then
-                            if spot ~= new_key then
-                                level.map_remove_object_spot(t, pda_icons[spot])
-                                level.map_add_object_spot(t, pda_icons[new_key] or "circle_target", get_warfare_info(other))
-                                self.target_spots[t] = new_key
-                            else
-                                level.map_change_spot_hint(t, pda_icons[spot], get_warfare_info(other))
-                            end
+                            set_target_circle(t, spot, new_key, get_warfare_info(other))
+                            self.target_spots[t] = new_key
                         else
-                            level.map_remove_object_spot(t, pda_icons[spot])
+                            set_target_circle(t, spot, nil)
                             self.target_spots[t] = nil
                             other.actor_target = nil
                         end
@@ -4327,11 +4315,9 @@ function smart_terrain.se_smart_terrain:show()
             if not (self.actor_target) then
                 local info = get_warfare_info(self)
 
-                -- use red-tinted icon for player's smarts under attack
+                -- always show the natural faction icon; the under-attack state is shown
+                -- by a coloured outline reconciled at the end of show()
                 local display_key = faction
-                if under_attack[self.id] and pda_icons["target_" .. faction] and (faction == warfare.actor_faction or not is_factions_enemies(warfare.actor_faction, faction)) then
-                    display_key = "target_" .. faction
-                end
 
                 -- map spot already exists: hide it or replace it depending on options
                 if (self.warfare_spot) then
@@ -4401,6 +4387,15 @@ function smart_terrain.se_smart_terrain:show()
             end
     --------------------av661194
         end
+
+        -- reconcile this base's own under-attack outline (skipped while it is an attacker's target)
+        local want_overlay = nil
+        if not self.actor_target and self.warfare_spot and self.warfare_spot ~= "none"
+           and under_attack[self.id]
+           and (faction == warfare.actor_faction or not is_factions_enemies(warfare.actor_faction, faction)) then
+            want_overlay = "target_" .. faction
+        end
+        reconcile_self_overlay(self, want_overlay)
     end
 
 end
@@ -4413,6 +4408,10 @@ function smart_terrain.se_smart_terrain:hide()
         self.warfare_spot = nil
     end
 
+    if (self.warfare_overlay) then
+        reconcile_self_overlay(self, nil)
+    end
+
     if (self.dbg_invasion_spot) then
         level.map_remove_object_spot(self.id, pda_icons["invasion_source"])
         self.dbg_invasion_spot = nil
@@ -4423,7 +4422,7 @@ function smart_terrain.se_smart_terrain:hide()
             local other = alife_object(t)
 
             if (other) then
-                level.map_remove_object_spot(t, pda_icons[spot])
+                set_target_circle(t, spot, nil)
                 self.target_spots[t] = nil
                 other.actor_target = nil
                 other:show()
@@ -4528,15 +4527,92 @@ function get_target_circle_key(t, self_id, actor_faction_flag, faction_key)
     return nil
 end
 
--- place a new target circle on other, removing its faction spot first if present
--- visible: passed to get_warfare_info (false = fog mode, hides owner)
+-- target circle keys are "<state>_<faction>"; strip the state prefix to get the
+-- natural faction icon key ("target_stalker" -> "stalker", "planned_none" -> "none")
+local TARGET_STATE_PREFIXES = { "target_", "planned_", "invasion_" }
+function target_faction_key(state_key)
+    if not state_key then return nil end
+    for i = 1, #TARGET_STATE_PREFIXES do
+        local p = TARGET_STATE_PREFIXES[i]
+        if state_key:sub(1, #p) == p then
+            return state_key:sub(#p + 1)
+        end
+    end
+    return state_key
+end
+
+-- the natural faction icon spot for a target state key (drawn on top, location_level 0)
+local function target_icon_spot(state_key)
+    return pda_icons[target_faction_key(state_key)] or "circle_empty"
+end
+
+-- the coloured outline overlay spot for a target state key (drawn behind, location_level -1)
+local function target_outline_spot(state_key)
+    return pda_icons[state_key] or "circle_target"
+end
+
+-- Reconcile a target marker on object `id` from old_key to new_key. A marker is two
+-- stacked spots: the natural faction icon on top + a coloured state outline behind it.
+-- Either key may be nil (nil = no marker). Adds are guarded because AddMapLocation does
+-- not dedup and the icon spot can be shared with the base's own faction icon.
+function set_target_circle(id, old_key, new_key, info)
+    if old_key == new_key then
+        if new_key then
+            level.map_change_spot_hint(id, target_icon_spot(new_key), info)
+        end
+        return
+    end
+
+    local old_icon    = old_key and target_icon_spot(old_key)
+    local new_icon    = new_key and target_icon_spot(new_key)
+    local old_outline = old_key and target_outline_spot(old_key)
+    local new_outline = new_key and target_outline_spot(new_key)
+
+    -- swap the outline (state colour) whenever it changes
+    if old_outline and old_outline ~= new_outline then
+        level.map_remove_object_spot(id, old_outline)
+    end
+    -- drop the icon only if it changes (faction differs) or the marker is going away
+    if old_icon and old_icon ~= new_icon then
+        level.map_remove_object_spot(id, old_icon)
+    end
+
+    if new_key then
+        if level.map_has_object_spot(id, new_icon) == 0 then
+            level.map_add_object_spot(id, new_icon, info)
+        else
+            level.map_change_spot_hint(id, new_icon, info)
+        end
+        if level.map_has_object_spot(id, new_outline) == 0 then
+            level.map_add_object_spot(id, new_outline, "")
+        end
+    end
+end
+
+-- Reconcile a base's own under-attack outline (drawn behind its faction icon).
+-- want_key is "target_<faction>" while the base shows its icon and is under attack, else nil.
+-- Shares the circle_target_<faction> spot type with attacker-placed markers, so ownership is
+-- handed off (not double-managed) via place_target_circle clearing warfare_overlay.
+function reconcile_self_overlay(smart, want_key)
+    if smart.warfare_overlay == want_key then return end
+    if smart.warfare_overlay then
+        level.map_remove_object_spot(smart.id, target_outline_spot(smart.warfare_overlay))
+    end
+    if want_key and level.map_has_object_spot(smart.id, target_outline_spot(want_key)) == 0 then
+        level.map_add_object_spot(smart.id, target_outline_spot(want_key), "")
+    end
+    smart.warfare_overlay = want_key
+end
+
+-- place a new target marker on other (natural icon + coloured outline), claiming display
+-- ownership. visible: passed to get_warfare_info (false = fog mode, hides owner)
 function place_target_circle(self, other, key, visible)
     other.actor_target = true
-    if other.warfare_spot then
-        level.map_remove_object_spot(other.id, pda_icons[other.warfare_spot])
-        other.warfare_spot = nil
-    end
-    level.map_add_object_spot(other.id, pda_icons[key] or "circle_target", get_warfare_info(other, visible))
+    -- the base stops managing its own icon/overlay while it is a target; set_target_circle
+    -- re-adds the icon spot (guarded) so it stays visible under the outline
+    other.warfare_spot = nil
+    reconcile_self_overlay(other, nil)
+    set_target_circle(other.id, nil, key, get_warfare_info(other, visible))
     self.target_spots[other.id] = key
 end
 

@@ -1,53 +1,92 @@
--- DXML script to inject faction-specific tinted circle map spots
--- Cyan = planned target, Orange = invasion prepping, Red = under attack (squads advancing)
+-- DXML script to inject faction-specific colored OUTLINE map spots.
+--
+-- The ring is the faction icon itself rendered through the "hud\font" shader
+-- (hud_font.ps: rgb = vertex colour, a = texture alpha), so it becomes a solid-colour
+-- silhouette of whatever icon is currently loaded -- fully compatible with icon mods,
+-- nothing is pre-baked. It is drawn slightly larger and at location_level=-1 so it
+-- sits behind the untinted icon
+--
+-- Yellow = planned target | Orange = invasion prepping | Red = under attack (squads advancing)
+
+-- icon size is 24 (see circle_<faction>_spot); outline is a touch larger to peek out as a ring
+local OUTLINE_SIZE = 30
 
 function on_xml_read()
 	warfare_log.debug("modxml_warfare_patch_map_spots.on_xml_read: registering callback")
 	RegisterScriptCallback("on_xml_read", function(xml_file_name, xml_obj)
 		if string.find(xml_file_name, "map_spots") then
-			warfare_log.info("modxml_warfare_patch_map_spots: injecting tinted map spots into %s", tostring(xml_file_name))
+			warfare_log.info("modxml_warfare_patch_map_spots: injecting outline map spots into %s", tostring(xml_file_name))
 
 			local factions = {
 				"stalker", "bandit", "csky", "army", "freedom", "dolg",
 				"ecolog", "killer", "monolith", "renegade", "greh", "isg", "zombied",
 			}
 
+			local states = {
+				target   = { 255,  60,  60 },    -- red:    under active attack
+				planned  = { 255, 225,  40 },    -- yellow: planned attack target
+				invasion = { 255, 140,  40 },    -- orange: imminent invasion target
+			}
+
+			-- Resolve each faction's real icon texture by reading its circle_<faction>_spot, so
+			-- the outline always mirrors whatever icon is actually shown. Most factions use the
+			-- ui_mm_faction_<faction> atlas entry (no sub-rect). Factions with no real emblem
+			-- (zombied) resolve to the generic ui\ui_common disc and get the solid ring fallback
+			-- below instead. Falls back to the atlas id when the icon spot isn't present in this
+			-- particular map_spots file.
+			local icon_tex = {}
 			for _, faction in ipairs(factions) do
-				-- Red-tinted icons for smarts under active attack
-				local red_xml = string.format([[
-<circle_target_%s>
-	<level_map spot="circle_target_%s_spot" pointer="quest_pointer"/>
-</circle_target_%s>
-<circle_target_%s_spot x="0" y="0" width="24" height="24" alignment="c" scale="1" scale_min="1" scale_max="1" stretch="1">
-	<texture r="255" g="60" b="60">ui_mm_faction_%s</texture>
-</circle_target_%s_spot>
-				]], faction, faction, faction, faction, faction, faction)
+				local name, rect = "ui_mm_faction_" .. faction, ""
+				local res = xml_obj:query("circle_" .. faction .. "_spot > texture")
+				if res and res[1] then
+					local t = xml_obj:getText(res[1])
+					if t and t ~= "" then name = t end
+					local a = xml_obj:getElementAttr(res[1]) or {}
+					if a.x and a.width then
+						rect = string.format([[ x="%s" y="%s" width="%s" height="%s"]],
+							a.x, a.y or 0, a.width, a.height or a.width)
+					end
+				end
+				-- Some factions (e.g. zombied) have no real emblem and fall back to the generic
+				-- ui\ui_common disc, which is a semi-transparent "ghost" (alpha peaks ~63%): a
+				-- silhouette of it renders as a faint, half-transparent blob. For those, draw a
+				-- dedicated solid ring texture instead (its alpha channel IS the ring shape, full
+				-- frame), giving a clean opaque ring. A mod that supplies a real opaque emblem keeps
+				-- the mirrored silhouette path automatically.
+				local norm = name:lower():gsub("/", "\\")
+				if norm == [[ui\ui_common]] then
+					name = [[ui\ui_warfare_outline_ring]]
+					rect = ""
+				end
+				icon_tex[faction] = { name = name, rect = rect }
+			end
 
-				xml_obj:insertFromXMLString(red_xml)
+			-- one outline spot per (state, faction): the faction silhouette in the state colour,
+			-- enlarged and behind the icon (no pointer -- the natural icon already carries one)
+			for state, clr in pairs(states) do
+				for _, faction in ipairs(factions) do
+					local it = icon_tex[faction]
+					local texture_el = string.format(
+						[[<texture shader="hud\font" r="%s" g="%s" b="%s"%s>%s</texture>]],
+						clr[1], clr[2], clr[3], it.rect, it.name)
 
-				-- Cyan-tinted icons for planned attack targets
-				local cyan_xml = string.format([[
-<circle_planned_%s>
-	<level_map spot="circle_planned_%s_spot" pointer="quest_pointer"/>
-</circle_planned_%s>
-<circle_planned_%s_spot x="0" y="0" width="24" height="24" alignment="c" scale="1" scale_min="1" scale_max="1" stretch="1">
-	<texture r="80" g="200" b="255">ui_mm_faction_%s</texture>
-</circle_planned_%s_spot>
-				]], faction, faction, faction, faction, faction, faction)
+					local outline_xml = string.format([[
+<circle_%s_%s>
+	<level_map spot="circle_%s_%s_spot"/>
+</circle_%s_%s>
+<circle_%s_%s_spot x="0" y="0" width="%s" height="%s" alignment="c" scale="1" scale_min="1" scale_max="1" stretch="1" location_level="-1">
+	%s
+</circle_%s_%s_spot>
+					]],
+						state, faction,
+						state, faction,
+						state, faction,
+						state, faction, OUTLINE_SIZE, OUTLINE_SIZE,
+						texture_el,
+						state, faction)
 
-				xml_obj:insertFromXMLString(cyan_xml)
-
-				-- Orange-tinted icons for imminent invasion targets
-				local orange_xml = string.format([[
-<circle_invasion_%s>
-	<level_map spot="circle_invasion_%s_spot" pointer="quest_pointer"/>
-</circle_invasion_%s>
-<circle_invasion_%s_spot x="0" y="0" width="24" height="24" alignment="c" scale="1" scale_min="1" scale_max="1" stretch="1">
-	<texture r="255" g="140" b="40">ui_mm_faction_%s</texture>
-</circle_invasion_%s_spot>
-				]], faction, faction, faction, faction, faction, faction)
-
-				xml_obj:insertFromXMLString(orange_xml)
+					xml_obj:insertFromXMLString(outline_xml)
+				end
 			end
 		end
 	end)
