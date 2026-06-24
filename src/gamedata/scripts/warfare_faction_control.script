@@ -90,27 +90,34 @@ local function map_spot_menu_add_property(ui,id,lvl)
             end
         elseif (f == warfare.actor_faction) then
             if (obj.props and obj.props.base > 0) then
-                ui:AddItem("----------------")
-                
                 local money = db.actor:money()
-                
+
+                local buy_items = {}
                 if (money > warfare_options.options.novice_squad_price) then
-                    ui:AddItem(str_wrfr[2])
+                    buy_items[#buy_items + 1] = str_wrfr[2]
                 end
-                
+
                 if (money > warfare_options.options.advanced_squad_price) then
-                    ui:AddItem(str_wrfr[3])
+                    buy_items[#buy_items + 1] = str_wrfr[3]
                 end
-                
+
                 if (money > warfare_options.options.veteran_squad_price) then
-                    ui:AddItem(str_wrfr[4])
+                    buy_items[#buy_items + 1] = str_wrfr[4]
                 end
-                
+
                 if (money >= warfare_options.options.heli_price) then
-                    ui:AddItem(str_wrfr[5])
+                    buy_items[#buy_items + 1] = str_wrfr[5]
                 end
-                
-                ui:AddItem("----------------")
+
+                if (#buy_items > 0) then
+                    ui:AddItem("----------------")
+
+                    for i = 1, #buy_items do
+                        ui:AddItem(buy_items[i])
+                    end
+
+                    ui:AddItem("----------------")
+                end
             end
         else
             local enemy = game_relations.is_factions_enemies(f, warfare.actor_faction)
