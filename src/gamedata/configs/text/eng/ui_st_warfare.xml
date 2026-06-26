@@ -301,4 +301,114 @@
 	<string id="st_wrfr_ap_unknown">
 		<text>Unknown activity</text>
 	</string>
+
+	<!-- Player command system (multi-select, control, detachments) -->
+	<string id="st_wrfr_cmd_select">
+		<text>Select</text>
+	</string>
+	<string id="st_wrfr_cmd_deselect">
+		<text>Deselect</text>
+	</string>
+	<string id="st_wrfr_cmd_take">
+		<text>Take Control</text>
+	</string>
+	<string id="st_wrfr_cmd_release">
+		<text>Release Control</text>
+	</string>
+	<string id="st_wrfr_cmd_form">
+		<text>Form Detachment from Selected</text>
+	</string>
+	<string id="st_wrfr_cmd_formed">
+		<text>Detachment %s formed.</text>
+	</string>
+	<string id="st_wrfr_cmd_command_det">
+		<text>Command Detachment: %s</text>
+	</string>
+	<string id="st_wrfr_cmd_add_det">
+		<text>Add Selected to: %s</text>
+	</string>
+	<string id="st_wrfr_cmd_disband_det">
+		<text>Disband: %s</text>
+	</string>
+	<string id="st_wrfr_cmd_attack_sel">
+		<text>Attack (selected)</text>
+	</string>
+	<string id="st_wrfr_cmd_move_sel">
+		<text>Move Here (selected)</text>
+	</string>
+	<string id="st_wrfr_cmd_follow_sel">
+		<text>Follow (selected)</text>
+	</string>
+	<string id="st_wrfr_cmd_attack_all">
+		<text>Attack (all forces)</text>
+	</string>
+	<string id="st_wrfr_cmd_move_all">
+		<text>Move Here (all forces)</text>
+	</string>
+	<string id="st_wrfr_cmd_follow_all">
+		<text>Follow (all forces)</text>
+	</string>
+	<string id="st_wrfr_cmd_followme_sel">
+		<text>Follow Me (selected)</text>
+	</string>
+	<string id="st_wrfr_cmd_notify_quota">
+		<text>Command capacity reached (%s/%s).</text>
+	</string>
+	<string id="st_wrfr_cmd_notify_rank">
+		<text>That squad will not take orders from a %s.</text>
+	</string>
+	<string id="st_wrfr_cmd_notify_elite">
+		<text>Only %s of your squads may be this close to your own rank.</text>
+	</string>
+	<string id="st_wrfr_cmd_ordered">
+		<text>Ordered %s squad(s).</text>
+	</string>
+	<string id="st_wrfr_cmd_controlled">
+		<text>%s is now under your control.</text>
+	</string>
+	<string id="st_wrfr_cmd_released">
+		<text>%s released to AI control.</text>
+	</string>
+	<string id="st_wrfr_cmd_new_det">
+		<text>New Detachment (this squad)</text>
+	</string>
+	<string id="st_wrfr_cmd_add_one_det">
+		<text>Add to: %s</text>
+	</string>
+	<string id="st_wrfr_cmd_remove_det">
+		<text>Remove from: %s</text>
+	</string>
+	<string id="st_wrfr_cmd_send_det">
+		<text>Send %s here</text>
+	</string>
+	<string id="st_wrfr_cmd_attack_det">
+		<text>Attack with %s</text>
+	</string>
+	<string id="st_wrfr_cmd_follow_det">
+		<text>%s: follow</text>
+	</string>
+	<string id="st_wrfr_cmd_max_det">
+		<text>Maximum detachments reached (10).</text>
+	</string>
+	<string id="st_wrfr_cmd_hdr_det">
+		<text>Detachment %s</text>
+	</string>
+	<string id="st_wrfr_cmd_hdr_dets">
+		<text>Detachments</text>
+	</string>
+	<string id="st_wrfr_cmd_hdr_cmd">
+		<text>Order your forces here</text>
+	</string>
+	<string id="st_wrfr_cmd_send_all">
+		<text>Send all from %s</text>
+	</string>
+	<string id="st_wrfr_cmd_take_all">
+		<text>Take all to %s</text>
+	</string>
+	<string id="st_wrfr_cmd_untarget">
+		<text>Remove target</text>
+	</string>
+	<string id="st_wrfr_cmd_untargeted">
+		<text>Removed %s from %s's targets</text>
+	</string>
 </string_table>

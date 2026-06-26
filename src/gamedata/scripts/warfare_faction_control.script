@@ -1,7 +1,6 @@
 -- Take controls over your squads and smarts from the PDA
 
 player_heli = nil
-player_heli_spot = nil
 
 local str_wrfr = {}
 function refresh_strings()
@@ -13,42 +12,87 @@ function refresh_strings()
     str_wrfr[5] = game.translate_string("st_wrfr_buy_heli")
     str_wrfr[6] = game.translate_string("st_wrfr_declare_war")
     str_wrfr[7] = game.translate_string("st_wrfr_possess_leader")
-    str_wrfr[8] = game.translate_string("st_wrfr_follow")
-    str_wrfr[9] = game.translate_string("st_wrfr_attack")
-    str_wrfr[10] = game.translate_string("st_wrfr_target")
-    str_wrfr[11] = game.translate_string("st_wrfr_move_here")
-    str_wrfr[12] = game.translate_string("st_wrfr_send_squad")
-    str_wrfr[13] = game.translate_string("st_wrfr_send_all_squad")
-    str_wrfr[14] = game.translate_string("st_wrfr_take_squad")
-    str_wrfr[15] = game.translate_string("st_wrfr_take_all_squads")
-    str_wrfr[16] = game.translate_string("st_wrfr_attack_with_all")
     str_wrfr[17] = game.translate_string("st_wrfr_send_heli_to_point")
     str_wrfr[18] = game.translate_string("st_wrfr_send_heli_to_squad")
     str_wrfr[19] = game.translate_string("st_wrfr_remove_heli")
     str_wrfr[20] = game.translate_string("st_wrfr_heli_route")
-    str_wrfr[21] = game.translate_string("st_wrfr_order_1")
-    str_wrfr[22] = game.translate_string("st_wrfr_order_2")
-    str_wrfr[23] = game.translate_string("st_wrfr_order_3")
-    str_wrfr[24] = game.translate_string("st_wrfr_order_4")
-    str_wrfr[25] = game.translate_string("st_wrfr_order_5")
-    str_wrfr[26] = game.translate_string("st_wrfr_order_6")
-    str_wrfr[27] = game.translate_string("st_wrfr_order_7")
-    str_wrfr[28] = game.translate_string("st_wrfr_order_8")
-    str_wrfr[29] = game.translate_string("st_wrfr_order_9")
-    str_wrfr[30] = game.translate_string("st_wrfr_order_10")
-    str_wrfr[31] = game.translate_string("st_wrfr_order_11")
-    str_wrfr[32] = game.translate_string("st_wrfr_order_12")
-    str_wrfr[33] = game.translate_string("st_wrfr_order_13")
-    str_wrfr[34] = game.translate_string("st_wrfr_order_14")
-    str_wrfr[35] = game.translate_string("st_wrfr_order_15")
-    str_wrfr[36] = game.translate_string("st_wrfr_order_16")
     str_wrfr[37] = game.translate_string("st_wrfr_heli_removed")
     str_wrfr[38] = game.translate_string("st_wrfr_heli_already_spawned")
     str_wrfr[39] = game.translate_string("st_wrfr_order_17")
+    -- Player command (multi-select, control, detachments)
+    str_wrfr[40] = game.translate_string("st_wrfr_cmd_select")
+    str_wrfr[41] = game.translate_string("st_wrfr_cmd_deselect")
+    str_wrfr[42] = game.translate_string("st_wrfr_cmd_take")
+    str_wrfr[43] = game.translate_string("st_wrfr_cmd_release")
+    str_wrfr[44] = game.translate_string("st_wrfr_cmd_form")
+    str_wrfr[45] = game.translate_string("st_wrfr_cmd_formed")
+    str_wrfr[47] = game.translate_string("st_wrfr_cmd_add_det")
+    str_wrfr[48] = game.translate_string("st_wrfr_cmd_disband_det")
+    str_wrfr[49] = game.translate_string("st_wrfr_cmd_attack_sel")
+    str_wrfr[50] = game.translate_string("st_wrfr_cmd_move_sel")
+    str_wrfr[51] = game.translate_string("st_wrfr_cmd_follow_sel")
+    str_wrfr[55] = game.translate_string("st_wrfr_cmd_followme_sel")
+    str_wrfr[56] = game.translate_string("st_wrfr_cmd_notify_quota")
+    str_wrfr[57] = game.translate_string("st_wrfr_cmd_notify_rank")
+    str_wrfr[58] = game.translate_string("st_wrfr_cmd_ordered")
+    str_wrfr[59] = game.translate_string("st_wrfr_cmd_controlled")
+    str_wrfr[60] = game.translate_string("st_wrfr_cmd_released")
+    str_wrfr[61] = game.translate_string("st_wrfr_cmd_new_det")
+    str_wrfr[62] = game.translate_string("st_wrfr_cmd_add_one_det")
+    str_wrfr[63] = game.translate_string("st_wrfr_cmd_remove_det")
+    str_wrfr[64] = game.translate_string("st_wrfr_cmd_send_det")
+    str_wrfr[65] = game.translate_string("st_wrfr_cmd_attack_det")
+    str_wrfr[66] = game.translate_string("st_wrfr_cmd_follow_det")
+    str_wrfr[67] = game.translate_string("st_wrfr_cmd_max_det")
+    str_wrfr[68] = game.translate_string("st_wrfr_cmd_hdr_det")  -- "Detachment %s" header
+    -- Point (base) selection
+    str_wrfr[71] = game.translate_string("st_wrfr_select_point")     -- "Select Point"
+    str_wrfr[72] = game.translate_string("st_wrfr_unselect_point")   -- "Unselect Point"
+    str_wrfr[73] = game.translate_string("st_wrfr_cmd_send_all")     -- "Send all from %s"
+    str_wrfr[74] = game.translate_string("st_wrfr_cmd_take_all")     -- "Take all to %s"
+    str_wrfr[75] = game.translate_string("st_wrfr_target")           -- "Target" (mark as AI target)
+    str_wrfr[76] = game.translate_string("st_wrfr_cmd_untarget")     -- "Remove target"
+    str_wrfr[77] = game.translate_string("st_wrfr_order_10")         -- "Adding %s to %s's targets"
+    str_wrfr[78] = game.translate_string("st_wrfr_cmd_untargeted")   -- "Removed %s from %s's targets"
+    str_wrfr[80] = game.translate_string("st_wrfr_cmd_notify_elite") -- "only %s squads near your rank"
 end
 
-function translate_smart_name(name)    
+function translate_smart_name(name)
     return (name and game.translate_string("st_" .. name .. "_name") or "")
+end
+
+-- Territory display name, falling back to the raw section name. Defined here (before the menu
+-- builder) so map_spot_menu_add_property can call it -- a local declared later is out of scope.
+local function smart_label(obj)
+    return translate_smart_name(obj:name()) or obj:name()
+end
+
+-- A non-clickable header (engine gold/disabled header if the exe exposes AddHeader, else a
+-- decorative row). Used ONLY for the deduplicated "Detachment <name>" entity block -- not for
+-- grouping a target's orders (those read as a confusing flat subsection).
+local function add_header(ui, text)
+    if ui.AddHeader then
+        ui:AddHeader(text)
+    else
+        ui:AddItem("--- " .. text .. " ---")
+    end
+end
+
+local cmd_build_tick = nil
+local cmd_build_items = {}
+-- Add a GLOBAL (not squad-specific) item/header at most once per property-box build, so it doesn't
+-- repeat once per squad when several stack on one map pixel (all per-spot callbacks of one build
+-- share the time_global() tick). as_header renders it as a header instead of a clickable item.
+local function add_global_item(ui, text, as_header)
+    local now = time_global()
+    if now ~= cmd_build_tick then
+        cmd_build_tick = now
+        cmd_build_items = {}
+    end
+    local key = (as_header and "\1" or "") .. text
+    if cmd_build_items[key] then return end
+    cmd_build_items[key] = true
+    if as_header then add_header(ui, text) else ui:AddItem(text) end
 end
 
 local function map_spot_menu_add_property(ui,id,lvl)
@@ -59,8 +103,6 @@ local function map_spot_menu_add_property(ui,id,lvl)
         return
     end
     warfare_log.trace("map_spot_menu_add_property: id=%s name=%s lvl=%s", tostring(id), tostring(obj:name()), tostring(lvl))
-
-    local selectedObject = pda_flagger.get_selected_object()
 
     if (obj:clsid() == clsid.smart_terrain) then
         local f = obj.owning_faction or "none"
@@ -105,7 +147,7 @@ local function map_spot_menu_add_property(ui,id,lvl)
                     buy_items[#buy_items + 1] = str_wrfr[4]
                 end
 
-                if (money >= warfare_options.options.heli_price) then
+                if (money >= warfare_options.options.heli_price) and warfare_squad_command.can_buy_heli() then
                     buy_items[#buy_items + 1] = str_wrfr[5]
                 end
 
@@ -117,6 +159,16 @@ local function map_spot_menu_add_property(ui,id,lvl)
                     end
 
                     ui:AddItem("----------------")
+                end
+            end
+
+            -- Point selection: flag this owned base as the single command point.
+            -- Mutually exclusive with the squad multi-select.
+            if (warfare_options.options.cmd_enable) then
+                if warfare_squad_command.is_point_selected(obj.id) then
+                    ui:AddItem(str_wrfr[72]) -- unselect point
+                else
+                    ui:AddItem(str_wrfr[71]) -- select point
                 end
             end
         else
@@ -142,73 +194,124 @@ local function map_spot_menu_add_property(ui,id,lvl)
         if (alife_storage_manager.get_state().enable_azazel_mode and faction == warfare.actor_faction) then -- should only be allowed is azazel mode is enabled in the game
             ui:AddItem(str_wrfr[7])
         end
-    end
-    
-    if (selectedObject) then
-        if (selectedObject:clsid() == clsid.online_offline_group_s and selectedObject:get_squad_community() == warfare.actor_faction) then
-            if (obj.id == AC_ID) then
-                ui:AddItem(str_wrfr[8])
-            elseif (obj:clsid() == clsid.online_offline_group_s) then
-                local faction = obj:get_squad_community()
-                local enemy = game_relations.is_factions_enemies(faction, warfare.actor_faction)
 
-                if (enemy) then
-                    ui:AddItem(str_wrfr[9])
-                else
-                    ui:AddItem(str_wrfr[8])
-                end
-            elseif (obj:clsid() == clsid.smart_terrain) then
-                local faction = obj.owning_faction or "none"
-                local enemy = game_relations.is_factions_enemies(faction, warfare.actor_faction)
+        -- Player command: select / control / detachment actions on your own squads.
+        if (warfare_options.options.cmd_enable and faction == warfare.actor_faction) then
+            local has_sel = warfare_squad_command.is_any_selected()
+            local my_gid = warfare_squad_command.squad_detachment[obj.id]
 
-                if (enemy) then
-                    ui:AddItem(str_wrfr[9])
+            -- Individual selection only for squads NOT in a detachment -- members act as a group.
+            if not my_gid then
+                if warfare_squad_command.is_selected(obj.id) then
+                    ui:AddItem(str_wrfr[41]) -- deselect
                 else
-                    ui:AddItem(str_wrfr[11])
+                    ui:AddItem(str_wrfr[40]) -- select
                 end
             end
-        elseif (selectedObject:clsid() == clsid.smart_terrain and selectedObject.owning_faction == warfare.actor_faction) then
-            local base = selectedObject.props and selectedObject.props.base > 0 or false
-        
-            if (obj.id == AC_ID) then
-                ui:AddItem(str_wrfr[12])
-                ui:AddItem(str_wrfr[13])
-            elseif (obj:clsid() == clsid.online_offline_group_s) then    
-                local faction = obj:get_squad_community()
-                local enemy = game_relations.is_factions_enemies(faction, warfare.actor_faction)
+            if warfare_squad_command.is_controlled(obj.id) then
+                ui:AddItem(str_wrfr[43]) -- release control
+            else
+                ui:AddItem(str_wrfr[42]) -- take control
+            end
 
-                if (enemy) then
-                    ui:AddItem(str_wrfr[9])
-                    ui:AddItem(str_wrfr[16])
-                else
-                    ui:AddItem(str_wrfr[12])
-                    ui:AddItem(str_wrfr[13])
+            -- Detachment membership for THIS squad. A squad already in a detachment must Remove
+            -- before joining another, so "Add to" / "New Detachment" only show when ungrouped.
+            if not my_gid then
+                ui:AddItem(str_wrfr[61]) -- new detachment (this squad)
+                for _, d in ipairs(warfare_squad_command.list_detachments()) do
+                    ui:AddItem(strformat(str_wrfr[62], d.name)) -- add to: X
                 end
-            elseif (obj:clsid() == clsid.smart_terrain) then
-                local faction = obj.owning_faction or "none"
-                local actor_faction = faction == warfare.actor_faction
-                local enemy = game_relations.is_factions_enemies(faction, warfare.actor_faction)
-                
-                if (enemy or faction == "none") then
-                    if (base) then
-                        ui:AddItem(str_wrfr[10])
+            else
+                ui:AddItem(strformat(str_wrfr[63], warfare_squad_command.detachment_name(my_gid))) -- remove this squad from its detachment
+            end
+
+            -- Selection-scoped detachment actions (global; appear once even with stacked squads).
+            if has_sel then
+                add_global_item(ui, str_wrfr[44]) -- form detachment from selected
+                for _, d in ipairs(warfare_squad_command.list_detachments()) do
+                    if d.gid ~= my_gid then
+                        add_global_item(ui, strformat(str_wrfr[47], d.name)) -- add selected to: X
                     end
-                    
-                    ui:AddItem(str_wrfr[9])
-                    ui:AddItem(str_wrfr[16])        
-                else
-                    if (actor_faction) then
-                        ui:AddItem(str_wrfr[14])
-                        ui:AddItem(str_wrfr[15])
-                    end            
-                    
-                    ui:AddItem(str_wrfr[12])
-                    ui:AddItem(str_wrfr[13])
+                end
+            end
+            -- NOTE: the "Detachment <name>" entity block is emitted at the very END of the menu
+            -- (after all target orders) so its header doesn't visually capture the orders below it.
+        end
+    end
+
+    -- Point (base) orders: with a base selected, act on its garrisoned squads / its AI targets.
+    if (warfare_options.options.cmd_enable) then
+        local sp = warfare_squad_command.get_selected_point()
+        if (sp and sp ~= obj.id) then
+            local sel = alife_object(sp)
+            local sp_name = sel and smart_label(sel) or ""
+            add_global_item(ui, strformat(str_wrfr[73], sp_name)) -- "Send all from <selected base>"
+            if (obj:clsid() == clsid.smart_terrain and (obj.owning_faction or "none") == warfare.actor_faction) then
+                add_global_item(ui, strformat(str_wrfr[74], sp_name)) -- "Take all to <selected base>"
+            end
+            -- Mark / unmark this base as the selected base's AI attack target.
+            if (obj:clsid() == clsid.smart_terrain and obj.props and obj.props.base > 0) then
+                local sel_is_base = sel and sel.props and sel.props.base > 0
+                local tf = obj.owning_faction or "none"
+                local hostile = tf == "none" or game_relations.is_factions_enemies(tf, warfare.actor_faction)
+                if (sel_is_base and hostile) then
+                    if (sel.target_smarts and sel.target_smarts[obj.id]) then
+                        add_global_item(ui, str_wrfr[76]) -- remove target
+                    else
+                        add_global_item(ui, str_wrfr[75]) -- mark as target
+                    end
                 end
             end
         end
     end
-    
+
+    -- Player command: orders for the SELECTED squads toward this object (GLOBAL -> add_global_item so
+    -- they appear once even when several squads stack on this map pixel).
+    if (warfare_options.options.cmd_enable) then
+        if warfare_squad_command.is_any_selected() then
+            if (obj.id == AC_ID) then
+                add_global_item(ui, str_wrfr[55]) -- follow me (selected)
+            elseif (obj:clsid() == clsid.online_offline_group_s) then
+                local enemy = game_relations.is_factions_enemies(obj:get_squad_community(), warfare.actor_faction)
+                add_global_item(ui, enemy and str_wrfr[49] or str_wrfr[51])
+            elseif (obj:clsid() == clsid.smart_terrain) then
+                local enemy = game_relations.is_factions_enemies(obj.owning_faction or "none", warfare.actor_faction)
+                add_global_item(ui, enemy and str_wrfr[49] or str_wrfr[50])
+            end
+        end
+
+        -- Per-detachment direct orders (no need to select the detachment's squads first). These
+        -- target THIS specific object (follow this squad / move to this smart), so they are LOCAL
+        -- (ui:AddItem) and bind to this spot -- they intentionally repeat per stacked squad because
+        -- each squad is a distinct follow-target. Skip a detachment only on its own member squads.
+        if (obj.id ~= AC_ID) then
+            local target_gid = (obj:clsid() == clsid.online_offline_group_s)
+                and warfare_squad_command.squad_detachment[obj.id] or nil
+            for _, d in ipairs(warfare_squad_command.list_detachments()) do
+                if d.gid ~= target_gid then
+                    if (obj:clsid() == clsid.online_offline_group_s) then
+                        local enemy = game_relations.is_factions_enemies(obj:get_squad_community(), warfare.actor_faction)
+                        ui:AddItem(strformat(enemy and str_wrfr[65] or str_wrfr[66], d.name))
+                    elseif (obj:clsid() == clsid.smart_terrain) then
+                        local enemy = game_relations.is_factions_enemies(obj.owning_faction or "none", warfare.actor_faction)
+                        ui:AddItem(strformat(enemy and str_wrfr[65] or str_wrfr[64], d.name))
+                    end
+                end
+            end
+        end
+
+        -- The detachment as its own deduplicated entity, emitted LAST so its header doesn't visually
+        -- capture the order items above it. Shown once even when several of its members are stacked.
+        if (obj:clsid() == clsid.online_offline_group_s and obj:get_squad_community() == warfare.actor_faction) then
+            local my_gid = warfare_squad_command.squad_detachment[obj.id]
+            if my_gid then
+                local dname = warfare_squad_command.detachment_name(my_gid)
+                add_global_item(ui, strformat(str_wrfr[68], dname), true) -- "Detachment <name>" header
+                add_global_item(ui, strformat(str_wrfr[48], dname))       -- disband
+            end
+        end
+    end
+
 end
 
 -- Manual command wrapper. An explicit PDA order may interrupt AlifePlus: release the
@@ -217,7 +320,9 @@ end
 local function issue_order(squad, target)
     warfare_alifeplus.reclaim_from_ap(squad)
     if squad then squad.stay_time = nil end
-    sim_squad_warfare.set_target(squad, target)
+    -- force=true: a player order overrides the AI dispatch guard and can re-task even a
+    -- squad already under player control.
+    sim_squad_warfare.set_target(squad, target, true)
 end
 
 local function buy_squad(obj, tier, price)
@@ -231,12 +336,6 @@ local function buy_squad(obj, tier, price)
     else
         warfare_log.warn("faction_control: failed to create %s squad section=%s", tier, tostring(section))
     end
-end
-
-local function commander_name(squad)
-    local id = squad:commander_id()
-    local commander = id and alife_object(id)
-    return commander and commander.character_name and commander:character_name()
 end
 
 -- Squads parked at a smart that the player may command: registered with warfare,
@@ -263,167 +362,203 @@ local function notify(msg, ...)
     news_manager.send_tip(db.actor, text, nil, "patriarch", nil, nil)
 end
 
--- Territory display name, falling back to the raw section name.
-local function smart_label(obj)
-    return translate_smart_name(obj:name()) or obj:name()
+-- Report a control refusal ("rank"/"elite"/"quota"/"max") to the player. Shared by take-control,
+-- base/squad orders, detachment adds, and order dispatch so the message is consistent everywhere.
+local function notify_control_fail(reason)
+    if reason == "rank" then
+        notify(str_wrfr[57], warfare_squad_command.rank_name(warfare_squad_command.actor_rank_index()))
+    elseif reason == "elite" then
+        notify(str_wrfr[80], tostring(warfare_squad_command.elite_quota()))
+    elseif reason == "quota" then
+        notify(str_wrfr[56], tostring(warfare_squad_command.count_controlled()),
+            tostring(warfare_squad_command.quota_for_rank()))
+    elseif reason == "max" then
+        notify(str_wrfr[67])
+    end
 end
 
--- Order the selected squad itself to a target (squad or smart); announce by tactical names.
-local function send_squad_to(squad, target, msg)
-    issue_order(squad, target.id)
-    notify(msg, warfare_names.get_name(squad), warfare_names.get_name(target))
+-- Authorize a squad for a player order (promote to control under the quota/rank bands), then issue.
+-- When cmd_enable is off, authorize_order passes through unconditionally. Returns ok, reason.
+local function controlled_order(squad, target_id)
+    local ok, reason = warfare_squad_command.authorize_order(squad)
+    if ok then issue_order(squad, target_id) end
+    return ok, reason
 end
 
--- Dispatch a smart's garrisoned defense squads against a target squad;
--- announce by smart name + the target squad's commander.
-local function dispatch_garrison_at(smart, target_squad, msg, all)
-    local squads = commandable_squads(smart.id)
+-- Send every commandable squad parked at source_smart_id to target_id (quota-gated; squads come
+-- under player control as the quota/rank bands allow). Backs "Send all from %s" / "Take all to %s".
+local function send_all_from(source_smart_id, target_id)
+    local squads = commandable_squads(source_smart_id)
+    local sent, blocked = 0, nil
     for i = 1, #squads do
-        issue_order(squads[i], target_squad.id)
-        notify(msg, smart_label(smart), commander_name(target_squad))
-        if not all then break end
+        local ok, reason = controlled_order(squads[i], target_id)
+        if ok then sent = sent + 1 else blocked = reason end
     end
+    if sent > 0 then notify(str_wrfr[58], tostring(sent)) end
+    if blocked then notify_control_fail(blocked) end
 end
 
--- Move squads from one smart to another; announce source -> dest by territory names.
-local function transfer_squads(source_smart, dest_smart, msg, all)
-    local squads = commandable_squads(source_smart.id)
-    if all then
-        for i = 1, #squads do issue_order(squads[i], dest_smart.id) end
-    else
-        issue_order(squads[math.random(#squads)], dest_smart.id)
-    end
-    notify(msg, smart_label(source_smart), smart_label(dest_smart))
-end
 
 -- ---------------------------------------------------------------------------
--- Declarative dispatch for selected-object -> target orders.
--- selected_kind/target_kind classify the two objects; the bucket's `rel`
--- resolver yields a relation key; the matching row's {prop, msg, all, take}
--- drives the bucket's `action`. Irregular leaves (actor target, base
--- target-add) are handled explicitly in handle_selected_order.
+-- Player command (multi-select / control / detachments) click handling.
 -- ---------------------------------------------------------------------------
 
-local function target_kind(obj)
-    if obj.id == AC_ID then return "actor" end
-    local c = obj:clsid()
-    if c == clsid.online_offline_group_s then return "squad" end
-    if c == clsid.smart_terrain then return "smart" end
-end
+-- Issue a player order to a set of squads against target_id. Uncontrolled squads are promoted
+-- to control if the quota and rank bands allow (req 5/7); already-controlled squads always obey.
+-- clear_sel auto-deselects afterward (selection-based orders only).
+local REFUSALS = { "rank", "elite", "quota" }
 
-local function selected_kind(sel)
-    local c = sel:clsid()
-    if c == clsid.online_offline_group_s then return "squad" end
-    if c == clsid.smart_terrain then return "smart" end
-end
-
--- Relation of a target to the actor's faction. Resolvers differ by target type
--- and by who is asking: an unowned ("none") smart counts as friendly when a
--- squad moves to it, but as hostile when one base targets another.
-local function rel_squad(obj)
-    return game_relations.is_factions_enemies(obj:get_squad_community(), warfare.actor_faction)
-        and "enemy" or "friend"
-end
-
-local function rel_smart_2way(obj)
-    return game_relations.is_factions_enemies(obj.owning_faction or "none", warfare.actor_faction)
-        and "enemy" or "friend"
-end
-
-local function rel_smart_3way(obj)
-    local faction = obj.owning_faction or "none"
-    if faction == "none" or game_relations.is_factions_enemies(faction, warfare.actor_faction) then
-        return "enemy"
+local function dispatch_orders(squads, target_id, clear_sel)
+    local sent, blocked = 0, {}
+    for i = 1, #squads do
+        local squad = squads[i]
+        local ok, reason = warfare_squad_command.authorize_order(squad)
+        if ok then
+            issue_order(squad, target_id)
+            sent = sent + 1
+        elseif reason then
+            blocked[reason] = true
+        end
     end
-    if faction == warfare.actor_faction then return "own" end
-    return "friend"
-end
-
-local function act_send(sel, obj, r)     send_squad_to(sel, obj, str_wrfr[r.msg]) end
-local function act_garrison(sel, obj, r) dispatch_garrison_at(sel, obj, str_wrfr[r.msg], r.all) end
-local function act_transfer(sel, obj, r)
-    if r.take then
-        transfer_squads(obj, sel, str_wrfr[r.msg], r.all)
-    else
-        transfer_squads(sel, obj, str_wrfr[r.msg], r.all)
+    if sent > 0 then notify(str_wrfr[58], tostring(sent)) end
+    -- One notify per distinct reason, in a fixed order, however many squads hit it.
+    for i = 1, #REFUSALS do
+        if blocked[REFUSALS[i]] then notify_control_fail(REFUSALS[i]) end
     end
+    if clear_sel then warfare_squad_command.clear_selection() end
 end
 
--- ORDER_GRID[selected_kind][target_kind] = { rel = resolver, action = fn, rows = { [relation] = {row...} } }
--- row = { prop, msg, all, take }: prop/msg index str_wrfr; all -> one vs every squad; take -> reverse direction.
-local ORDER_GRID = {
-    squad = {
-        squad = { rel = rel_squad, action = act_send, rows = {
-            enemy  = { { prop = 9,  msg = 22 } },
-            friend = { { prop = 8,  msg = 23 } },
-        } },
-        smart = { rel = rel_smart_2way, action = act_send, rows = {
-            enemy  = { { prop = 9,  msg = 22 } },
-            friend = { { prop = 11, msg = 21 } },
-        } },
-    },
-    smart = {
-        squad = { rel = rel_squad, action = act_garrison, rows = {
-            enemy  = { { prop = 9,  msg = 26, all = false }, { prop = 16, msg = 27, all = true } },
-            friend = { { prop = 12, msg = 28, all = false }, { prop = 13, msg = 29, all = true } },
-        } },
-        smart = { rel = rel_smart_3way, action = act_transfer, rows = {
-            enemy  = { { prop = 9,  msg = 31, all = false }, { prop = 16, msg = 32, all = true } },
-            friend = { { prop = 12, msg = 35, all = false }, { prop = 13, msg = 36, all = true } },
-            own    = { { prop = 14, msg = 33, all = false, take = true }, { prop = 15, msg = 34, all = true, take = true },
-                       { prop = 12, msg = 35, all = false }, { prop = 13, msg = 36, all = true } },
-        } },
-    },
-}
+-- Returns true if the click was a player-command action and was handled.
+local function handle_command_click(obj, prop)
+    if not warfare_options.options.cmd_enable then return false end
 
-local function handle_selected_order(selectedObject, obj, prop)
-    local sk = selected_kind(selectedObject)
-    if not sk then return end
-    local tk = target_kind(obj)
-    if not tk then return end
+    local is_squad = obj:clsid() == clsid.online_offline_group_s
+    local is_smart = obj:clsid() == clsid.smart_terrain
+    local af_squad = is_squad and obj:get_squad_community() == warfare.actor_faction
 
-    -- Orders that target the actor: take a squad as a companion / follower.
-    if tk == "actor" then
-        if sk == "squad" and prop == str_wrfr[8] then
-            warfare_log.info("faction_control: follow actor: squad=%s", tostring(selectedObject:name()))
-            sim_squad_warfare.add_companion_squad(selectedObject)
-            issue_order(selectedObject, obj.id)
-        elseif sk == "smart" and prop == str_wrfr[12] then
-            local squads = commandable_squads(selectedObject.id)
-            if squads[1] then
-                sim_squad_warfare.add_companion_squad(squads[1])
-                notify(str_wrfr[24], smart_label(selectedObject))
+    -- Point (base) selection toggle on one of your own smarts.
+    if is_smart and (obj.owning_faction or "none") == warfare.actor_faction then
+        if prop == str_wrfr[71] then
+            warfare_squad_command.set_point(obj); return true
+        elseif prop == str_wrfr[72] then
+            warfare_squad_command.clear_point(); return true
+        end
+    end
+
+    -- Squad-context actions (only on your own squads).
+    if af_squad then
+        if prop == str_wrfr[40] then
+            warfare_squad_command.select(obj); return true
+        elseif prop == str_wrfr[41] then
+            warfare_squad_command.deselect(obj); return true
+        elseif prop == str_wrfr[42] then
+            local ok, reason = warfare_squad_command.take_control(obj)
+            if ok then
+                notify(str_wrfr[59], warfare_names.get_name(obj))
+            else
+                notify_control_fail(reason)
             end
-        elseif sk == "smart" and prop == str_wrfr[13] then
-            local squads = commandable_squads(selectedObject.id)
-            for i = 1, #squads do
-                issue_order(squads[i], obj.id)
-                notify(str_wrfr[25], smart_label(selectedObject))
+            return true
+        elseif prop == str_wrfr[43] then
+            warfare_squad_command.release_control(obj)
+            notify(str_wrfr[60], warfare_names.get_name(obj))
+            return true
+        elseif prop == str_wrfr[44] then
+            local gid, reason = warfare_squad_command.create_detachment(warfare_squad_command.selected_list())
+            if gid then
+                notify(str_wrfr[45], warfare_squad_command.detachment_name(gid))
+                warfare_squad_command.clear_selection()
+            else
+                notify_control_fail(reason)
+            end
+            return true
+        elseif prop == str_wrfr[61] then
+            local gid, reason = warfare_squad_command.create_detachment({ obj })
+            if gid then
+                notify(str_wrfr[45], warfare_squad_command.detachment_name(gid))
+            else
+                notify_control_fail(reason)
+            end
+            return true
+        end
+        for _, d in ipairs(warfare_squad_command.list_detachments()) do
+            if prop == strformat(str_wrfr[62], d.name) then
+                local added, reason = warfare_squad_command.add_to_detachment(d.gid, { obj })
+                if added == 0 then notify_control_fail(reason) end
+                return true
+            elseif prop == strformat(str_wrfr[47], d.name) then
+                local added, reason = warfare_squad_command.add_to_detachment(d.gid, warfare_squad_command.selected_list())
+                if added == 0 then notify_control_fail(reason) end
+                warfare_squad_command.clear_selection(); return true
+            elseif prop == strformat(str_wrfr[63], d.name) then
+                warfare_squad_command.remove_from_detachment(obj); return true
+            elseif prop == strformat(str_wrfr[48], d.name) then
+                warfare_squad_command.disband(d.gid); return true
             end
         end
-        return
     end
 
-    -- Mark another base as a target of the selected base (no squads moved).
-    if sk == "smart" and tk == "smart" and prop == str_wrfr[10] then
-        local base = selectedObject.props and selectedObject.props.base > 0
-        if base and rel_smart_3way(obj) == "enemy" and not selectedObject.target_smarts[obj.id] then
-            selectedObject.target_smarts[obj.id] = true
-            notify(str_wrfr[30], smart_label(obj), smart_label(selectedObject))
+    -- Follow-me (selected): make selected squads the actor's companions.
+    if prop == str_wrfr[55] then
+        local squads = warfare_squad_command.selected_list()
+        for i = 1, #squads do
+            sim_squad_warfare.add_companion_squad(squads[i])
+            issue_order(squads[i], obj.id)
         end
-        return
+        if #squads > 0 then notify(str_wrfr[58], tostring(#squads)) end
+        warfare_squad_command.clear_selection()
+        return true
     end
 
-    local bucket = ORDER_GRID[sk][tk]
-    if not bucket then return end
-    local rows = bucket.rows[bucket.rel(obj)]
-    if not rows then return end
-    for _, r in ipairs(rows) do
-        if prop == str_wrfr[r.prop] then
-            bucket.action(selectedObject, obj, r)
-            return
+    -- Target orders on the selected set (auto-deselect after).
+    if prop == str_wrfr[49] or prop == str_wrfr[50] or prop == str_wrfr[51] then
+        dispatch_orders(warfare_squad_command.selected_list(), obj.id, true)
+        return true
+    end
+
+    -- Per-detachment direct target orders (no selection needed). The clicked item is bound to the
+    -- specific target object; a detachment is never offered/ordered at one of its own member squads.
+    local target_gid = (obj:clsid() == clsid.online_offline_group_s)
+        and warfare_squad_command.squad_detachment[obj.id] or nil
+    for _, d in ipairs(warfare_squad_command.list_detachments()) do
+        if d.gid ~= target_gid and (prop == strformat(str_wrfr[64], d.name)
+            or prop == strformat(str_wrfr[65], d.name)
+            or prop == strformat(str_wrfr[66], d.name)) then
+            dispatch_orders(warfare_squad_command.detachment_squads(d.gid), obj.id, false)
+            return true
         end
     end
+
+    -- Point (base) orders: a base is selected and this is the target. The send/take labels embed the
+    -- selected base's name, so match the formatted strings.
+    local sp = warfare_squad_command.get_selected_point()
+    if sp and sp ~= obj.id then
+        local sel = alife_object(sp)
+        local sp_name = sel and smart_label(sel) or ""
+        if prop == strformat(str_wrfr[73], sp_name) then       -- send all from <selected base>
+            send_all_from(sp, obj.id)
+            return true
+        elseif prop == strformat(str_wrfr[74], sp_name) then   -- take all to <selected base>
+            send_all_from(obj.id, sp)
+            return true
+        elseif prop == str_wrfr[75] then       -- mark obj as the selected base's AI target
+            if sel and sel.target_smarts and not sel.target_smarts[obj.id] then
+                sel.target_smarts[obj.id] = true
+                warfare_squad_command.refresh_point_targets()
+                notify(str_wrfr[77], smart_label(obj), smart_label(sel))
+            end
+            return true
+        elseif prop == str_wrfr[76] then       -- unmark obj as target
+            if sel and sel.target_smarts and sel.target_smarts[obj.id] then
+                sel.target_smarts[obj.id] = nil
+                warfare_squad_command.refresh_point_targets()
+                notify(str_wrfr[78], smart_label(obj), smart_label(sel))
+            end
+            return true
+        end
+    end
+
+    return false
 end
 
 local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
@@ -435,7 +570,10 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
     end
     warfare_log.debug("map_spot_menu_property_clicked: id=%s name=%s prop=%s", tostring(id), tostring(obj:name()), tostring(prop))
 
-    local selectedObject = pda_flagger.get_selected_object()
+    -- Player command (multi-select / control / detachment) actions take priority.
+    if handle_command_click(obj, prop) then
+        return
+    end
 
     if (prop == str_wrfr[1]) then
         warfare_log.info("faction_control: manual capture requested for smart=%s", tostring(obj:name()))
@@ -486,11 +624,12 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                 safe_release_manager.release(heli)
                 notify(str_wrfr[37])
             end
+
+            player_heli = nil
         end
 
         return
     elseif (prop == str_wrfr[5]) then
-        local charge_fee = true
         warfare_log.info("faction_control: buy heli requested")
 
         if (player_heli) then
@@ -501,9 +640,9 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
                 local playerLevel = get_player_level_id()
 
                 if (heliLevel ~= playerLevel) then
-                    warfare_log.debug("faction_control: existing heli on diff level (heli=%s actor=%s), recycling without charge", tostring(heliLevel), tostring(playerLevel))
+                    warfare_log.debug("faction_control: existing heli on diff level (heli=%s actor=%s), replacing at full price", tostring(heliLevel), tostring(playerLevel))
                     safe_release_manager.release(o)
-                    charge_fee = false
+                    player_heli = nil
                 else
                     warfare_log.debug("faction_control: heli already spawned on actor level, refusing")
                     notify(str_wrfr[38])
@@ -520,13 +659,11 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
             local se_obj = heli_alife_warfare.create_heli_weak(warfare.actor_faction, 0, nearestSmart, pos)
 
             if (se_obj) then
-                if (charge_fee) then
-                    db.actor:give_money(-1 * (warfare_options.options.heli_price))
-                end
+                db.actor:give_money(-1 * (warfare_options.options.heli_price))
 
                 heli_alife_warfare.set_target(se_obj, 0)
                 player_heli = se_obj.id
-                warfare_log.info("faction_control: heli spawned id=%s faction=%s charged=%s", tostring(se_obj.id), tostring(warfare.actor_faction), tostring(charge_fee))
+                warfare_log.info("faction_control: heli spawned id=%s faction=%s", tostring(se_obj.id), tostring(warfare.actor_faction))
 
                 notify(str_wrfr[20])
             else
@@ -537,11 +674,6 @@ local function map_spot_menu_property_clicked(property_ui,id,level_name,prop)
         end
 
         return
-    end
-    
-    if (selectedObject) then
-        warfare_log.debug("faction_control: selectedObject=%s clsid_match=%s target_obj=%s", tostring(selectedObject:name()), tostring(selectedObject:clsid()), tostring(obj:name()))
-        handle_selected_order(selectedObject, obj, prop)
     end
 
 end

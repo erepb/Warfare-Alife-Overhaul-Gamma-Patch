@@ -60,6 +60,7 @@ function refresh_strings()
     str_wrfr[17] = game.translate_string("st_goodwill_enemy")
     str_wrfr[18] = game.translate_string("st_goodwill_indifferent")
     str_wrfr[19] = game.translate_string("st_goodwill_friendly")
+    str_wrfr[20] = game.translate_string("ui_st_rank") -- base-game string, localized in every language
 end
 
 function translate_smart_name(name)
@@ -297,6 +298,8 @@ function remove_squad(squad)
     if (squad and squad:clsid() == clsid.online_offline_group_s) then
         local f = squad:get_squad_community()
 
+        warfare_squad_command.on_squad_removed(squad)
+
         if (warfare.registered_squads[f]) then
             warfare_log.debug("remove_squad: unregister squad=%s faction=%s", squad.id, f)
             smart_terrain_warfare.remove_random_patrol(squad.id)
@@ -491,12 +494,17 @@ function sim_squad_scripted.sim_squad_scripted.show(self)
         end
     end
 
+    -- Player command overlay (yellow = controlled, orange = selected); self-gates on warfare_spot.
+    warfare_squad_command.update_overlay(self)
+
 end
 
 -- Hide warfare icon.
 --function hide_squad(squad)
 function sim_squad_scripted.sim_squad_scripted.hide(self)
     warfare_log.trace("hide: squad=%s", self and self.id or "?")
+
+    warfare_squad_command.clear_overlay(self)
 
     if not (self.warfare_spot) then
         return
@@ -577,10 +585,19 @@ function get_squad_info(squad, full_detail, show_target)
     local commander = commanderID and alife_object(commanderID)
     local commanderName = commander and commander.character_name and commander:character_name()
 
+    -- Append the player detachment in parentheses on the squad's title line (this hint is the map
+    -- spot's hint -> the context-menu section title and the hover tooltip), e.g. "X's Squad (Bravo)".
+    local det_suffix = ""
+    local det_gid = warfare_squad_command.squad_detachment[squad.id]
+    if det_gid then
+        det_suffix = " (" .. warfare_squad_command.detachment_name(det_gid) .. ")"
+    end
+
     local props = ""
 
     if (commanderName and IsStalker(commander)) then
-        props = props .. " \\n" .. strformat(str_wrfr[1], commanderName) .. " \\n"
+        local rank_sfx = full_detail and warfare_squad_command.rank_suffix(squad) or ""
+        props = props .. " \\n" .. strformat(str_wrfr[1], commanderName) .. rank_sfx .. det_suffix .. " \\n"
 
         if warfare_log.enabled() then
             props = props .. " \\n" .. name .. " \\n"
@@ -605,6 +622,9 @@ function get_squad_info(squad, full_detail, show_target)
             local power = sim_offline_combat.calculate_squad_power(squad)
             props = props .. " \\n" .. power .. " " .. str_wrfr[8]
         end
+
+        props = props .. " \\n" .. str_wrfr[20] .. ": "
+            .. warfare_squad_command.rank_name(warfare_squad_command.squad_rank_index(squad)) .. " \\n"
 
         if (squad.patrol_owner) then
             local owner = alife_object(squad.patrol_owner)
@@ -803,12 +823,20 @@ function find_target(squad)
 end
 
 -- Function to help set a squads target; also registers the squad if they are not registered already.
-function set_target(squad, target)
-    warfare_log.trace("set_target: squad=%s target=%s", squad and squad.id or "?", target)
+function set_target(squad, target, force)
+    warfare_log.trace("set_target: squad=%s target=%s force=%s", squad and squad.id or "?", target, force)
 
     -- added xQd's fix for not being able to dismiss companions
     if not (squad) or axr_companions.companion_squads[squad.id] then
 
+        return
+    end
+
+    -- Player-controlled squads only accept orders from the player (force=true). The AI
+    -- dispatchers call set_target without force, so they can't retask a controlled squad;
+    -- an in-flight target still completes (this only blocks new assignments).
+    if not force and warfare_squad_command.is_controlled(squad.id) then
+        warfare_log.trace("set_target: skip player-controlled squad=%s", squad.id)
         return
     end
 

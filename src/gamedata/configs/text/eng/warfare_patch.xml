@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="windows-1251" ?>
 <string_table>
+	<!-- Player Command MCM section -->
+	<string id="ui_mm_menu_command">
+		<text>Player Command</text>
+	</string>
+	<string id="ui_mm_alife_warfare_command_enable_player_command">
+		<text>Enable player squad command</text>
+	</string>
+	<string id="ui_mm_alife_warfare_command_enable_player_command_desc">
+		<text>Lets you take persistent control of your faction's squads from the PDA map, select and order multiple squads, and group them into detachments</text>
+	</string>
+	<string id="ui_mm_alife_warfare_command_command_max_squads">
+		<text>Maximum controllable squads</text>
+	</string>
+	<string id="ui_mm_alife_warfare_command_command_max_squads_desc">
+		<text>How many squads you can hold under control once you reach the highest rank. You start with one and the cap grows with every rank you gain. Which squads you may take depends on how far they stand below you: squads two or more ranks below are unrestricted, squads one rank below fill at most half your cap, and squads of your own standing or higher will not take your orders</text>
+	</string>
 <string id="ui_mm_prst_warfare_alifeoverhaul">
 		<text>Alife Overhaul - Default (1x)</text>
 	</string>

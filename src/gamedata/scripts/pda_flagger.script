@@ -1,0 +1,3 @@
+-- Intentionally inert override of the stock warfare pda_flagger: this empty file shadows it so its
+-- "Select Squad"/"Select Point" map-menu items do not register. Do not delete -- removing it lets the
+-- stock pda_flagger load and re-add those items.

@@ -1,0 +1,638 @@
+-- Player squad command state: "under control" (persistent, AI cannot retask), "selected"
+-- (transient actor set for the next order), and "detachments" (named persistent groups of
+-- controlled squads). See claudedocs/player-squad-control-redesign.md and
+-- claudedocs/kb/flows/squad-command-menu.md.
+--
+-- The set_target guard (sim_squad_warfare) and the squad map spot (sim_squad_warfare show/hide)
+-- read these tables directly, so no per-squad runtime flag or on-load rehydration is required:
+-- persistence is just save/restore of the tables below.
+
+-- [squad_id] = true. Persistent. The AI may not assign new targets to these squads.
+controlled = {}
+-- [squad_id] = true. Transient (never saved). Actor set for the next order.
+selected = {}
+-- Single selected smart id (a "point"/base), transient. Mutually exclusive with the squad
+-- selection: selecting squads clears this, and selecting a point clears the squad selection.
+selected_point = nil
+-- [gid] = { name, slot (1..MAX_DETACHMENTS), members = { [squad_id] = true } }. Persistent.
+detachments = {}
+-- [squad_id] = gid. Reverse lookup. Persistent.
+squad_detachment = {}
+-- next detachment id (monotonic, for unique gids). Persistent.
+next_gid = 1
+
+local OVERLAY_CONTROLLED = "warfare_controlled"
+local OVERLAY_SELECTED = "warfare_selected"
+-- Markers placed on smart ids (not squads): the selected base, and each base it has marked as an
+-- AI attack target (shown only while that base is selected).
+local POINT_SELECTED = "warfare_point_selected"
+local POINT_TARGET = "warfare_point_target"
+
+-- Up to 10 detachments; each takes a stable slot 1..10 driving its name and ring colour.
+MAX_DETACHMENTS = 10
+
+local DETACHMENT_NAMES = {
+    "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliet",
+}
+
+-- Per-slot ring spot section (injected by modxml_warfare_patch_map_spots). Slot N uses
+-- warfare_det_N, coloured from a 10-way categorical palette (see the map_spots patch).
+local function detachment_overlay(slot)
+    return "warfare_det_" .. slot
+end
+
+-- ---------------------------------------------------------------------------
+-- Map spot overlay. Ring priority: selected (orange) > detachment (slot colour) >
+-- controlled (yellow) > none.
+-- ---------------------------------------------------------------------------
+
+-- Every overlay section a squad might carry, so reconcile/clear can remove stale ones.
+local OVERLAY_SECTIONS = { OVERLAY_CONTROLLED, OVERLAY_SELECTED }
+for slot = 1, MAX_DETACHMENTS do
+    OVERLAY_SECTIONS[#OVERLAY_SECTIONS + 1] = detachment_overlay(slot)
+end
+
+local function spot_present(id, sec)
+    local ok, res = pcall(level.map_has_object_spot, id, sec)
+    return ok and res ~= 0
+end
+
+local function spot_add(id, sec, hint)
+    pcall(level.map_add_object_spot, id, sec, hint or "")
+end
+
+local function spot_remove(id, sec)
+    pcall(level.map_remove_object_spot, id, sec)
+end
+
+-- A short label for a squad, for overlay-spot hints (becomes the context-menu section header when
+-- the ring is the representative spot under the cursor; without it the engine shows "no hint").
+local function squad_label(squad)
+    if warfare_names and warfare_names.get_name then
+        local ok, name = pcall(warfare_names.get_name, squad)
+        if ok and name and name ~= "" then return name end
+    end
+    return squad.section_name and squad:section_name() or tostring(squad.id)
+end
+
+-- Reconcile a squad's overlay ring with its current state, against the engine's ACTUAL spot
+-- state (not a tracked field, which desyncs across save/load). Only overlays squads that carry
+-- a base warfare spot (i.e. are shown on the map). Cosmetic only: every engine call is pcall-
+-- guarded so an overlay failure can never abort take_control/select/load.
+function update_overlay(squad)
+    if not squad then return end
+    local id = squad.id
+    local desired, hint
+    if squad.warfare_spot then
+        -- Ring hint. Either the ring or the squad icon can end up the menu's representative spot for
+        -- this id (engine dedups by id), so BOTH carry the squad name + detachment-in-parens (the
+        -- icon's copy is built in sim_squad_warfare.get_squad_info) to guarantee the title shows it.
+        if selected[id] then
+            desired = OVERLAY_SELECTED
+        else
+            local gid = squad_detachment[id]
+            local d = gid and detachments[gid]
+            if d then
+                desired = detachment_overlay(d.slot)
+            elseif controlled[id] then
+                desired = OVERLAY_CONTROLLED
+            end
+        end
+        if desired then
+            hint = squad_label(squad) .. rank_suffix(squad)
+            local gid = squad_detachment[id]
+            if gid and detachments[gid] then
+                hint = hint .. " (" .. detachments[gid].name .. ")" -- show detachment in the title
+            end
+        end
+    end
+
+    for i = 1, #OVERLAY_SECTIONS do
+        local sec = OVERLAY_SECTIONS[i]
+        local has = spot_present(id, sec)
+        if sec == desired then
+            if not has then
+                spot_add(id, sec, hint)
+            else
+                pcall(level.map_change_spot_hint, id, sec, hint) -- keep the title current (e.g. detachment changed)
+            end
+        elseif has then
+            spot_remove(id, sec)
+        end
+    end
+end
+
+-- Remove any overlay (used by hide / removal).
+function clear_overlay(squad)
+    if not squad then return end
+    for i = 1, #OVERLAY_SECTIONS do
+        local sec = OVERLAY_SECTIONS[i]
+        if spot_present(squad.id, sec) then
+            spot_remove(squad.id, sec)
+        end
+    end
+end
+
+-- ---------------------------------------------------------------------------
+-- Queries
+-- ---------------------------------------------------------------------------
+
+function is_controlled(id)
+    -- When the feature is disabled, treat nothing as controlled so the AI resumes managing
+    -- squads (avoids stranding squads if the option is turned off mid-game).
+    if not warfare_options.options.cmd_enable then return false end
+    return controlled[id] == true
+end
+
+function is_selected(id)
+    return selected[id] == true
+end
+
+-- Live counts of controlled squads that still resolve: the total, and how many of them sit one
+-- rung below the actor (the band that is capped at half the quota -- see command_band).
+function count_controlled()
+    local n, elite = 0, 0
+    local ar = actor_rank_index()
+    for id in pairs(controlled) do
+        local squad = alife_object(id)
+        if squad then
+            n = n + 1
+            if ar - squad_rank_index(squad) == 1 then elite = elite + 1 end
+        end
+    end
+    return n, elite
+end
+
+-- Squads currently selected, as resolved squad objects of the actor faction.
+function selected_list()
+    local out = {}
+    for id in pairs(selected) do
+        local squad = alife_object(id)
+        if squad and squad:get_squad_community() == warfare.actor_faction then
+            out[#out + 1] = squad
+        end
+    end
+    return out
+end
+
+
+-- ---------------------------------------------------------------------------
+-- The rank ladder (the fixed Anomaly ranks) + the command bands
+--
+-- The ACTOR sits on the game's own rank ladder, parsed straight out of game_relations "rating"
+-- (only the ORDER of the rungs matters, so a modlist that moves the thresholds -- GAMMA does --
+-- or changes the rung count is followed automatically).
+--
+-- SQUADS use the mod's existing grade instead: the tier in the section name
+-- (<faction>_sim_squad_<tier>), which is already what drives the spawn pick
+-- (faction_expansions.get_section), the three buy prices, and the label the player reads on the
+-- map ("Stalker (Veteran)" -- ui_warfare_options_hints.squad_names). Deriving a squad's standing
+-- from its members' ranks instead would be a second, competing answer that disagrees with that
+-- label: npc_random rolls each member independently, so two squads of the SAME section would
+-- land differently and the player could not tell which of two identically-named squads will obey.
+-- ---------------------------------------------------------------------------
+
+-- Where each squad tier stands on the actor's ladder. A balance call, not something derivable:
+-- it answers "how good is a veteran squad next to a Veteran player". Everything else about the
+-- bands falls out of these three (see command_band).
+local TIER_RUNG = { novice = 1, advanced = 3, veteran = 5 }
+
+-- { { name = "novice", max = 3499 }, ... , { name = "legend", max = nil } }, ascending. Built once.
+local ladder
+
+local function rank_ladder()
+    if ladder then return ladder end
+    ladder = {}
+    local ok, raw = pcall(function() return ini_sys:r_string_ex("game_relations", "rating") end)
+    if ok and raw then
+        -- "novice, 3499, trainee, 6499, ..., legend": rung names at odd indices, the threshold
+        -- that ends each rung at the even index after it (the last rung has none).
+        local t = parse_names(raw)
+        for i = 1, #t, 2 do
+            ladder[#ladder + 1] = { name = t[i], max = tonumber(t[i + 1]) }
+        end
+    end
+    if #ladder == 0 then
+        warfare_log.warn("rank_ladder: game_relations/rating unreadable, command bands disabled")
+        ladder[1] = { name = "novice" }
+    end
+    return ladder
+end
+
+local function rank_index(points)
+    local l = rank_ladder()
+    points = tonumber(points) or 0
+    for i = 1, #l do
+        if not l[i].max or points <= l[i].max then return i end
+    end
+    return #l
+end
+
+-- Localized rung name for the refusal messages; st_rank_* ship with the base game.
+function rank_name(idx)
+    local l = rank_ladder()
+    local e = l[idx] or l[#l]
+    return e and game.translate_string("st_rank_" .. e.name) or ""
+end
+
+function actor_rank_index()
+    if not db.actor then return 1 end
+    return rank_index(db.actor:character_rank())
+end
+
+function squad_rank_index(squad)
+    if not squad then return TIER_RUNG.novice end
+    local sec = squad.section_name and squad:section_name() or ""
+    local tier = sec:match("_sim_squad_(%a+)")
+    return TIER_RUNG[tier] or TIER_RUNG.novice
+end
+
+function rank_suffix(squad)
+    local n = rank_name(squad_rank_index(squad))
+    if not n or n == "" then return "" end
+    return " [" .. n .. "]"
+end
+
+function quota_for_rank()
+    if not warfare_options.options.cmd_enable then return 0 end
+    local hi = warfare_options.options.cmd_max_squads or 10
+    if hi < 1 then hi = 1 end
+    local n = #rank_ladder()
+    if n < 2 then return hi end
+    return math.floor(1 + (hi - 1) * ((actor_rank_index() - 1) / (n - 1)) + 0.5)
+end
+
+function elite_quota()
+    return math.floor(quota_for_rank() / 2)
+end
+
+local HELI_RANK_BAND = 2
+
+function can_buy_heli()
+    if not db.actor then return false end
+    local n = #rank_ladder()
+    if n <= HELI_RANK_BAND then return true end
+    return actor_rank_index() > n - HELI_RANK_BAND
+end
+
+-- Where a squad sits relative to the actor:
+--   "open"  -- two or more rungs below: unlimited (within the quota)
+--   "elite" -- exactly one rung below: capped at elite_quota()
+--   "over"  -- level with the actor or above: refused outright
+function command_band(squad)
+    local d = actor_rank_index() - squad_rank_index(squad)
+    if d >= 2 then return "open" end
+    if d == 1 then return "elite" end
+    return "over"
+end
+
+-- ---------------------------------------------------------------------------
+-- Control transitions
+-- ---------------------------------------------------------------------------
+
+-- Bring a squad under player control, if the quota and the rank bands allow.
+-- Returns true, or false + reason ("off"/"rank"/"quota"/"elite").
+function take_control(squad)
+    if not squad then return false, "nil" end
+    if not warfare_options.options.cmd_enable then return false, "off" end
+    local id = squad.id
+    if controlled[id] then return true end
+
+    local band = command_band(squad)
+    if band == "over" then
+        warfare_log.debug("take_control: refused (rank) squad=%s", id)
+        return false, "rank"
+    end
+
+    local n, elite = count_controlled()
+    if n >= quota_for_rank() then
+        warfare_log.debug("take_control: refused (quota) squad=%s", id)
+        return false, "quota"
+    end
+    if band == "elite" and elite >= elite_quota() then
+        warfare_log.debug("take_control: refused (elite) squad=%s", id)
+        return false, "elite"
+    end
+
+    controlled[id] = true
+    warfare_log.info("take_control: squad=%s now under player control", id)
+    update_overlay(squad)
+    return true
+end
+
+-- Return a squad to AI control; also drops it from any detachment and deselects it.
+function release_control(squad)
+    if not squad then return end
+    local id = squad.id
+    controlled[id] = nil
+    selected[id] = nil
+    _remove_from_detachment(id)
+    warfare_log.info("release_control: squad=%s returned to AI", id)
+    update_overlay(squad)
+end
+
+-- Authorize a player order on a squad. Already-controlled squads always pass; an uncontrolled
+-- squad is promoted to controlled if the quota and rank bands allow. Returns true, or false + reason.
+function authorize_order(squad)
+    if not squad then return false, "nil" end
+    if not warfare_options.options.cmd_enable then return true end -- feature off: orders pass through
+    if controlled[squad.id] then return true end
+    return take_control(squad)
+end
+
+-- ---------------------------------------------------------------------------
+-- Selection (transient)
+-- ---------------------------------------------------------------------------
+
+function select(squad)
+    if not squad then return end
+    clear_point() -- mutual exclusion: a squad selection clears any point selection
+    selected[squad.id] = true
+    update_overlay(squad)
+end
+
+function deselect(squad)
+    if not squad then return end
+    selected[squad.id] = nil
+    update_overlay(squad)
+end
+
+function is_any_selected()
+    return next(selected) ~= nil
+end
+
+-- Clear the whole squad selection (called after an order is dispatched -- auto-deselect).
+function clear_selection()
+    for id in pairs(selected) do
+        local squad = alife_object(id)
+        if squad then
+            selected[id] = nil
+            update_overlay(squad)
+        else
+            selected[id] = nil
+        end
+    end
+end
+
+-- ---------------------------------------------------------------------------
+-- Point (smart/base) selection -- single slot, mutually exclusive with squads.
+-- ---------------------------------------------------------------------------
+
+local point_target_marks = {} -- [smart_id] = true: target markers currently drawn
+
+-- Redraw the red "target" markers for the selected base's target_smarts (only while selected).
+function refresh_point_targets()
+    for tid in pairs(point_target_marks) do
+        spot_remove(tid, POINT_TARGET)
+        point_target_marks[tid] = nil
+    end
+    if not selected_point then return end
+    local sm = alife_object(selected_point)
+    if sm and sm.target_smarts then
+        for tid in pairs(sm.target_smarts) do
+            if alife_object(tid) then
+                spot_add(tid, POINT_TARGET, "")
+                point_target_marks[tid] = true
+            end
+        end
+    end
+end
+
+function get_selected_point()
+    return selected_point
+end
+
+function is_point_selected(id)
+    return selected_point ~= nil and selected_point == id
+end
+
+-- Select a base as the single point; clears squad selection (mutual exclusion) and draws the
+-- selected marker + its target markers.
+function set_point(smart)
+    if not smart then return end
+    clear_selection()
+    if selected_point then spot_remove(selected_point, POINT_SELECTED) end
+    selected_point = smart.id
+    spot_add(smart.id, POINT_SELECTED, "")
+    refresh_point_targets()
+end
+
+function clear_point()
+    if selected_point then spot_remove(selected_point, POINT_SELECTED) end
+    selected_point = nil
+    refresh_point_targets() -- selected_point now nil -> removes all target markers
+end
+
+-- ---------------------------------------------------------------------------
+-- Detachments
+-- ---------------------------------------------------------------------------
+
+function _remove_from_detachment(id)
+    local gid = squad_detachment[id]
+    if not gid then return end
+    squad_detachment[id] = nil
+    local d = detachments[gid]
+    if d then
+        d.members[id] = nil
+        if next(d.members) == nil then
+            warfare_log.info("detachment: %s empty, disbanding", d.name)
+            detachments[gid] = nil
+        end
+    end
+end
+
+function detachment_name(gid)
+    local d = detachments[gid]
+    return d and d.name or "?"
+end
+
+-- Ordered list of { gid, name, slot } for menu building, ordered by slot.
+function list_detachments()
+    local out = {}
+    for gid, d in pairs(detachments) do
+        out[#out + 1] = { gid = gid, name = d.name, slot = d.slot }
+    end
+    table.sort(out, function(a, b) return a.slot < b.slot end)
+    return out
+end
+
+-- Lowest free detachment slot 1..MAX_DETACHMENTS, or nil if all are taken.
+local function _free_slot()
+    local used = {}
+    for _, d in pairs(detachments) do
+        if d.slot then used[d.slot] = true end
+    end
+    for slot = 1, MAX_DETACHMENTS do
+        if not used[slot] then return slot end
+    end
+    return nil
+end
+
+-- Form a new detachment from a list of squad objects. Capped at MAX_DETACHMENTS (returns nil,
+-- "max" when full). Each squad must be controllable under the quota and rank bands (same gate as
+-- Take Control); squads that fail are skipped. Returns gid (or nil + reason "max"/"rank"/"quota"/"elite").
+function create_detachment(squad_objs)
+    local slot = _free_slot()
+    if not slot then return nil, "max" end
+
+    local members = {}
+    local n = 0
+    local last_reason
+    for i = 1, #squad_objs do
+        local squad = squad_objs[i]
+        local ok, reason = take_control(squad)
+        if ok then
+            members[squad.id] = true
+            n = n + 1
+        else
+            last_reason = reason
+        end
+    end
+    if n == 0 then return nil, last_reason end
+
+    local gid = next_gid
+    next_gid = next_gid + 1
+    local name = DETACHMENT_NAMES[slot] or ("Group " .. slot)
+    detachments[gid] = { name = name, slot = slot, members = members }
+    for id in pairs(members) do
+        _remove_from_detachment(id) -- detach from any previous group before reassigning
+        squad_detachment[id] = gid
+        detachments[gid].members[id] = true
+        selected[id] = nil -- detachment members aren't individually selectable; act as a group
+        local sq = alife_object(id)
+        if sq then update_overlay(sq) end
+    end
+    warfare_log.info("create_detachment: %s (slot %s) with %s squads", name, slot, n)
+    return gid
+end
+
+-- Add squad objects to an existing detachment. Each must be controllable under the quota and rank
+-- bands (same gate as Take Control); failures are skipped. Returns count added + last refusal reason.
+function add_to_detachment(gid, squad_objs)
+    local d = detachments[gid]
+    if not d then return 0 end
+    local added = 0
+    local last_reason
+    for i = 1, #squad_objs do
+        local squad = squad_objs[i]
+        local ok, reason = take_control(squad)
+        if ok then
+            _remove_from_detachment(squad.id)
+            squad_detachment[squad.id] = gid
+            d.members[squad.id] = true
+            selected[squad.id] = nil -- members aren't individually selectable; act as a group
+            added = added + 1
+            update_overlay(squad)
+        else
+            last_reason = reason
+        end
+    end
+    return added, last_reason
+end
+
+-- Remove a squad from its detachment (it stays under control, just ungrouped).
+function remove_from_detachment(squad)
+    if not squad then return end
+    _remove_from_detachment(squad.id)
+    update_overlay(squad)
+end
+
+function disband(gid)
+    local d = detachments[gid]
+    if not d then return end
+    local ids = {}
+    for id in pairs(d.members) do
+        squad_detachment[id] = nil
+        ids[#ids + 1] = id
+    end
+    warfare_log.info("disband: %s", d.name)
+    detachments[gid] = nil
+    for _, id in ipairs(ids) do
+        local sq = alife_object(id)
+        if sq then update_overlay(sq) end -- members stay controlled -> ring reverts to yellow
+    end
+end
+
+-- A detachment's live members as resolved squad objects (req 8: order a group directly).
+function detachment_squads(gid)
+    local out = {}
+    local d = detachments[gid]
+    if not d then return out end
+    for id in pairs(d.members) do
+        local squad = alife_object(id)
+        if squad then out[#out + 1] = squad end
+    end
+    return out
+end
+
+-- ---------------------------------------------------------------------------
+-- Lifecycle: cleanup on squad removal/death
+-- ---------------------------------------------------------------------------
+
+function on_squad_removed(squad)
+    if not squad then return end
+    local id = squad.id
+    if controlled[id] or selected[id] or squad_detachment[id] then
+        warfare_log.debug("on_squad_removed: clearing command state for squad=%s", id)
+    end
+    clear_overlay(squad)
+    controlled[id] = nil
+    selected[id] = nil
+    _remove_from_detachment(id)
+end
+
+-- ---------------------------------------------------------------------------
+-- Persistence (m_data.warfare blob; driven from warfare.save_state / load_state)
+-- ---------------------------------------------------------------------------
+
+function save_state(blob)
+    blob.cmd_controlled = controlled
+    blob.cmd_detachments = detachments
+    blob.cmd_squad_detachment = squad_detachment
+    blob.cmd_next_gid = next_gid
+    -- selected is transient and intentionally not persisted
+end
+
+function load_state(blob)
+    controlled = (blob and blob.cmd_controlled) or {}
+    detachments = (blob and blob.cmd_detachments) or {}
+    squad_detachment = (blob and blob.cmd_squad_detachment) or {}
+    next_gid = (blob and blob.cmd_next_gid) or 1
+    selected = {}
+    -- NOTE: do NOT purge by alife_object() here -- squad alife objects are not yet resolvable
+    -- at warfare load time (the vanilla registered_squads restore relies on the same fact and
+    -- restores entries even when alife_object returns nil). Purging here wiped the whole table.
+    -- Stale entries for removed squads are harmless: count_controlled() filters
+    -- by alife_object at runtime, and on_squad_removed() cleans entries when a squad is removed.
+
+    -- Migrate detachments saved before slots existed (or with a clashing/out-of-range slot):
+    -- assign each a stable free slot so name/colour/sort work. Drop any beyond MAX_DETACHMENTS.
+    local used = {}
+    local function claim_free()
+        for slot = 1, MAX_DETACHMENTS do
+            if not used[slot] then used[slot] = true; return slot end
+        end
+        return nil
+    end
+    -- First pass: keep valid, unique, in-range slots.
+    for _, d in pairs(detachments) do
+        if d.slot and d.slot >= 1 and d.slot <= MAX_DETACHMENTS and not used[d.slot] then
+            used[d.slot] = true
+        else
+            d.slot = nil
+        end
+    end
+    -- Second pass: assign free slots to the rest; disband any that can't fit (>10).
+    for gid, d in pairs(detachments) do
+        if not d.slot then
+            local slot = claim_free()
+            if slot then
+                d.slot = slot
+                d.name = DETACHMENT_NAMES[slot] or ("Group " .. slot)
+            else
+                for id in pairs(d.members or {}) do squad_detachment[id] = nil end
+                detachments[gid] = nil
+            end
+        end
+    end
+end

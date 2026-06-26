@@ -88,6 +88,67 @@ function on_xml_read()
 					xml_obj:insertFromXMLString(outline_xml)
 				end
 			end
+
+			local command_spots = {
+				{ name = "warfare_controlled", clr = { 255, 225,  40 }, lvl = 3 }, -- yellow
+				{ name = "warfare_selected",   clr = { 255, 140,  40 }, lvl = 4 }, -- orange
+			}
+			-- Per-detachment rings warfare_det_1..10: a 10-way categorical palette (Trubetskoy
+			-- "distinct colours"), deliberately avoiding yellow/orange so a detachment ring is not
+			-- confused with controlled/selected.
+			local det_palette = {
+				{ 230,  25,  75 }, -- 1 red
+				{  60, 180,  75 }, -- 2 green
+				{   0, 130, 200 }, -- 3 blue
+				{ 240,  50, 230 }, -- 4 magenta
+				{  70, 240, 240 }, -- 5 cyan
+				{ 145,  30, 180 }, -- 6 purple
+				{   0, 128, 128 }, -- 7 teal
+				{ 250, 190, 212 }, -- 8 pink
+				{ 220, 190, 255 }, -- 9 lavender
+				{ 170, 110,  40 }, -- 10 brown
+			}
+			for slot, clr in ipairs(det_palette) do
+				command_spots[#command_spots + 1] = { name = "warfare_det_" .. slot, clr = clr, lvl = 3 }
+			end
+			for _, s in ipairs(command_spots) do
+				local spot_xml = string.format([[
+<%s>
+	<level_map spot="%s_spot"/>
+</%s>
+<%s_spot x="0" y="0" width="22" height="22" alignment="c" stretch="1" location_level="%s">
+	<texture r="%s" g="%s" b="%s">ui\ui_warfare_outline_ring</texture>
+</%s_spot>
+				]],
+					s.name, s.name, s.name,
+					s.name, s.lvl,
+					s.clr[1], s.clr[2], s.clr[3],
+					s.name)
+				xml_obj:insertFromXMLString(spot_xml)
+			end
+
+			-- Markers placed on smart ids for the point-selection system (warfare_squad_command).
+			-- Selected base (blue): a plain ring (the same ui\ui_warfare_outline_ring used by the
+			-- command rings), drawn a touch larger than the red target rings to read as distinct.
+			xml_obj:insertFromXMLString([[
+<warfare_point_selected>
+	<level_map spot="warfare_point_selected_spot" pointer="quest_pointer2"/>
+</warfare_point_selected>
+<warfare_point_selected_spot width="30" height="30" stretch="1" alignment="c" location_level="5">
+	<texture r="0" g="130" b="255">ui\ui_warfare_outline_ring</texture>
+</warfare_point_selected_spot>
+			]])
+
+			-- Attack-target bases (red): a plain red ring (the same ui\ui_warfare_outline_ring used
+			-- by the command rings), not a crosshair.
+			xml_obj:insertFromXMLString([[
+<warfare_point_target>
+	<level_map spot="warfare_point_target_spot" pointer="quest_pointer2"/>
+</warfare_point_target>
+<warfare_point_target_spot width="28" height="28" stretch="1" alignment="c" location_level="5">
+	<texture r="255" g="60" b="60">ui\ui_warfare_outline_ring</texture>
+</warfare_point_target_spot>
+			]])
 		end
 	end)
 end

@@ -327,6 +327,20 @@ function ui_options.init_opt_coder()
         }
     end
 
+    -- Player Command. The quota scales with the actor's rank on the fixed Anomaly rank ladder and
+    -- which squads are eligible falls out of the rank gap, so this is the whole surface: on/off
+    -- plus the ceiling the quota grows toward (see warfare_squad_command).
+    warfare_options.gr[alife_warfare_stalker_options_index + #other_factions + 1] = {
+        id = "command",
+        sh = true,
+        presets = warfare_options.presets,
+        gr = {
+            { id = "slide_command", type = "slide", link = "ui_options_slider_warfare", text = "ui_mm_menu_command", size = { 512, 50 } },
+            { id = "enable_player_command", type = "check", val = 1, def = true },
+            { id = "command_max_squads", type = "track", val = 2, def = 10, min = 1, max = 30, step = 1 },
+        },
+    }
+
     local function code_option(gr, id, num)
         local path
         for i = 1, #gr do

@@ -1490,6 +1490,12 @@ function process_overflow_squad(smart, squad, bases)
     warfare_log.trace("process_overflow_squad: smart=%s squad=%s faction=%s",
         smart:name(), tostring(squad.id), tostring(faction))
 
+    -- Never relocate or delete a player-controlled squad; the player owns its tasking.
+    if warfare_squad_command.is_controlled(squad.id) then
+        warfare_log.trace("process_overflow_squad: skip player-controlled squad=%s", squad.id)
+        return
+    end
+
     if not (#bases > 0) then
         bases = find_nearby_bases(smart, faction)
     end

@@ -121,6 +121,11 @@ function update_settings()
     options.min_invasion_depart_time         = ui_options.get("alife/warfare/general/min_invasion_depart_time")
     options.max_invasion_depart_time         = ui_options.get("alife/warfare/general/max_invasion_depart_time")
 
+    -- Player command. Everything else about the quota is derived from the actor's rank on the
+    -- fixed Anomaly rank ladder (see warfare_squad_command), so this is the only number.
+    options.cmd_enable = ui_options.get("alife/warfare/command/enable_player_command")
+    options.cmd_max_squads = ui_options.get("alife/warfare/command/command_max_squads")
+
     options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count
     options.azazel_respawn_as_companions = ui_options.get("alife/warfare/azazel/respawn_as_companions")
     options.azazel_respawn_as_actor_faction = ui_options.get("alife/warfare/azazel/respawn_as_actor_faction")

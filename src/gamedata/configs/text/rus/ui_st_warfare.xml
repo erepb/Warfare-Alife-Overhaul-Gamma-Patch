@@ -301,4 +301,41 @@
 	<string id="st_wrfr_ap_unknown">
 		<text>Цель неизвестна</text>
 	</string>
-</string_table>
+	<!-- Player command system (multi-select, control, detachments) [EN placeholder; needs RU] -->
+	<string id="st_wrfr_cmd_select"><text>Выбрать</text></string>
+	<string id="st_wrfr_cmd_deselect"><text>Убрать из выбранных</text></string>
+	<string id="st_wrfr_cmd_take"><text>Взять под контроль</text></string>
+	<string id="st_wrfr_cmd_release"><text>Убрать контроль</text></string>
+	<string id="st_wrfr_cmd_form"><text>Создать группу из выбранных</text></string>
+	<string id="st_wrfr_cmd_formed"><text>Группа %s создана</text></string>
+	<string id="st_wrfr_cmd_command_det"><text>Command Detachment: %s</text></string>
+	<string id="st_wrfr_cmd_add_det"><text>Добавить выбранных к групе %s</text></string>
+	<string id="st_wrfr_cmd_disband_det"><text>Распустить группу %s</text></string>
+	<string id="st_wrfr_cmd_attack_sel"><text>Атаковать выбранными отрядами</text></string>
+	<string id="st_wrfr_cmd_move_sel"><text>Переместить сюда выбранные отряды</text></string>
+	<string id="st_wrfr_cmd_follow_sel"><text>Следовать выбранными отрядами</text></string>
+	<string id="st_wrfr_cmd_attack_all"><text>Атаковать всеми подконтрольными</text></string>
+	<string id="st_wrfr_cmd_move_all"><text>Переместить сюда все подконтрольные</text></string>
+	<string id="st_wrfr_cmd_follow_all"><text>Следовать всеми подконтрольными</text></string>
+	<string id="st_wrfr_cmd_followme_sel"><text>Следовать выбранными отрядами</text></string>
+	<string id="st_wrfr_cmd_notify_quota"><text>Лимит командования достигнут (%s/%s)</text></string>
+	<string id="st_wrfr_cmd_notify_rank"><text>Этот отряд не станет выполнять приказы бойца с рангом %s.</text></string>
+	<string id="st_wrfr_cmd_notify_elite"><text>Отрядов, близких к вашему рангу, можно держать не более %s.</text></string>
+	<string id="st_wrfr_cmd_ordered"><text>Отрядов получило команду: %s</text></string>
+	<string id="st_wrfr_cmd_controlled"><text>%s теперь под вашим контролем</text></string>
+	<string id="st_wrfr_cmd_released"><text>%s больше не под вашим контролем</text></string>
+	<string id="st_wrfr_cmd_new_det"><text>Создать группу из отряда</text></string>
+	<string id="st_wrfr_cmd_add_one_det"><text>Добавить отряд в группу %s</text></string>
+	<string id="st_wrfr_cmd_remove_det"><text>Убрать отряд из группы %s</text></string>
+	<string id="st_wrfr_cmd_send_det"><text>Отправить группу %s сюда</text></string>
+	<string id="st_wrfr_cmd_attack_det"><text>Атаковать группой %s</text></string>
+	<string id="st_wrfr_cmd_follow_det"><text>Группа %s: следовать</text></string>
+	<string id="st_wrfr_cmd_max_det"><text>Максимальное количество групп достигнуто (10).</text></string>
+	<string id="st_wrfr_cmd_hdr_det"><text>Группа %s</text></string>
+	<string id="st_wrfr_cmd_hdr_dets"><text>Detachments</text></string>
+	<string id="st_wrfr_cmd_hdr_cmd"><text>Order your forces here</text></string>
+	<string id="st_wrfr_cmd_send_all"><text>Отправить всех из %s сюда</text></string>
+	<string id="st_wrfr_cmd_take_all"><text>Отправить всех отсюда в %s</text></string>
+	<string id="st_wrfr_cmd_untarget"><text>Убрать из целей</text></string>
+	<string id="st_wrfr_cmd_untargeted"><text>%s убран из целей %s</text></string>
+	</string_table>

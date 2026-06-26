@@ -365,6 +365,8 @@ function save_state(m_data)
         m_data.warfare.smart_owners[smart.id] = smart.owning_faction
     end
 
+    warfare_squad_command.save_state(m_data.warfare)
+
     warfare_log.info("save_state: persisted %s registered squads", squad_total)
 end
 
@@ -493,6 +495,8 @@ function load_state(m_data)
         end
     end
 
+
+    warfare_squad_command.load_state(m_data.warfare)
 
     -- clear old data.
     m_data.warfare = nil
