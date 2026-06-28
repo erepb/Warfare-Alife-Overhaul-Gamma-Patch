@@ -60,7 +60,6 @@ function refresh_strings()
     str_wrfr[17] = game.translate_string("st_goodwill_enemy")
     str_wrfr[18] = game.translate_string("st_goodwill_indifferent")
     str_wrfr[19] = game.translate_string("st_goodwill_friendly")
-    str_wrfr[20] = game.translate_string("ui_st_rank") -- base-game string, localized in every language
 end
 
 function translate_smart_name(name)
@@ -585,19 +584,15 @@ function get_squad_info(squad, full_detail, show_target)
     local commander = commanderID and alife_object(commanderID)
     local commanderName = commander and commander.character_name and commander:character_name()
 
-    -- Append the player detachment in parentheses on the squad's title line (this hint is the map
-    -- spot's hint -> the context-menu section title and the hover tooltip), e.g. "X's Squad (Bravo)".
-    local det_suffix = ""
-    local det_gid = warfare_squad_command.squad_detachment[squad.id]
-    if det_gid then
-        det_suffix = " (" .. warfare_squad_command.detachment_name(det_gid) .. ")"
-    end
+    -- Title line suffix " (Rank,Detachment)" (this hint is the map spot's hint -> the context-menu
+    -- section title and the hover tooltip), e.g. "X's Squad (Veteran,Bravo)". full_detail-gated so
+    -- enemy/mutant squads (whose section has no tier to read) show nothing new.
+    local title_sfx = full_detail and warfare_squad_command.title_suffix(squad) or ""
 
     local props = ""
 
     if (commanderName and IsStalker(commander)) then
-        local rank_sfx = full_detail and warfare_squad_command.rank_suffix(squad) or ""
-        props = props .. " \\n" .. strformat(str_wrfr[1], commanderName) .. rank_sfx .. det_suffix .. " \\n"
+        props = props .. " \\n" .. strformat(str_wrfr[1], commanderName) .. title_sfx .. " \\n"
 
         if warfare_log.enabled() then
             props = props .. " \\n" .. name .. " \\n"
@@ -622,9 +617,6 @@ function get_squad_info(squad, full_detail, show_target)
             local power = sim_offline_combat.calculate_squad_power(squad)
             props = props .. " \\n" .. power .. " " .. str_wrfr[8]
         end
-
-        props = props .. " \\n" .. str_wrfr[20] .. ": "
-            .. warfare_squad_command.rank_name(warfare_squad_command.squad_rank_index(squad)) .. " \\n"
 
         if (squad.patrol_owner) then
             local owner = alife_object(squad.patrol_owner)

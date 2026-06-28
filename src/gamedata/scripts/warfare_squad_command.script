@@ -99,11 +99,7 @@ function update_overlay(squad)
             end
         end
         if desired then
-            hint = squad_label(squad) .. rank_suffix(squad)
-            local gid = squad_detachment[id]
-            if gid and detachments[gid] then
-                hint = hint .. " (" .. detachments[gid].name .. ")" -- show detachment in the title
-            end
+            hint = squad_label(squad) .. title_suffix(squad)
         end
     end
 
@@ -247,10 +243,19 @@ function squad_rank_index(squad)
     return TIER_RUNG[tier] or TIER_RUNG.novice
 end
 
-function rank_suffix(squad)
-    local n = rank_name(squad_rank_index(squad))
-    if not n or n == "" then return "" end
-    return " [" .. n .. "]"
+function title_suffix(squad)
+    if not squad then return "" end
+    local parts = {}
+    local rank = rank_name(squad_rank_index(squad))
+    if rank and rank ~= "" then parts[#parts + 1] = rank end
+    if selected[squad.id] then
+        parts[#parts + 1] = game.translate_string("st_wrfr_cmd_sel_leaf")
+    else
+        local gid = squad_detachment[squad.id]
+        if gid and detachments[gid] then parts[#parts + 1] = detachments[gid].name end
+    end
+    if #parts == 0 then return "" end
+    return " (" .. table.concat(parts, ",") .. ")"
 end
 
 function quota_for_rank()
@@ -466,6 +471,14 @@ local function _free_slot()
         if not used[slot] then return slot end
     end
     return nil
+end
+
+-- Name the next auto-created detachment would get (drives the "<name> (New)" menu leaf), or nil
+-- when all slots are taken.
+function next_detachment_name()
+    local slot = _free_slot()
+    if not slot then return nil end
+    return DETACHMENT_NAMES[slot] or ("Group " .. slot)
 end
 
 -- Form a new detachment from a list of squad objects. Capped at MAX_DETACHMENTS (returns nil,

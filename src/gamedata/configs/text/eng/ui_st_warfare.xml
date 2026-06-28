@@ -316,7 +316,7 @@
 		<text>Release Control</text>
 	</string>
 	<string id="st_wrfr_cmd_form">
-		<text>Form Detachment from Selected</text>
+		<text>Form Detachment</text>
 	</string>
 	<string id="st_wrfr_cmd_formed">
 		<text>Detachment %s formed.</text>
@@ -325,19 +325,19 @@
 		<text>Command Detachment: %s</text>
 	</string>
 	<string id="st_wrfr_cmd_add_det">
-		<text>Add Selected to: %s</text>
+		<text>Add to: %s</text>
 	</string>
-	<string id="st_wrfr_cmd_disband_det">
-		<text>Disband: %s</text>
+	<string id="st_wrfr_cmd_follow_grp">
+		<text>Follow by</text>
 	</string>
-	<string id="st_wrfr_cmd_attack_sel">
-		<text>Attack (selected)</text>
+	<string id="st_wrfr_cmd_attack_grp">
+		<text>Attack</text>
 	</string>
-	<string id="st_wrfr_cmd_move_sel">
-		<text>Move Here (selected)</text>
+	<string id="st_wrfr_cmd_send_grp">
+		<text>Send here</text>
 	</string>
-	<string id="st_wrfr_cmd_follow_sel">
-		<text>Follow (selected)</text>
+	<string id="st_wrfr_cmd_sel_leaf">
+		<text>Selected</text>
 	</string>
 	<string id="st_wrfr_cmd_attack_all">
 		<text>Attack (all forces)</text>
@@ -347,9 +347,6 @@
 	</string>
 	<string id="st_wrfr_cmd_follow_all">
 		<text>Follow (all forces)</text>
-	</string>
-	<string id="st_wrfr_cmd_followme_sel">
-		<text>Follow Me (selected)</text>
 	</string>
 	<string id="st_wrfr_cmd_notify_quota">
 		<text>Command capacity reached (%s/%s).</text>
@@ -369,23 +366,25 @@
 	<string id="st_wrfr_cmd_released">
 		<text>%s released to AI control.</text>
 	</string>
-	<string id="st_wrfr_cmd_new_det">
-		<text>New Detachment (this squad)</text>
+	<string id="st_wrfr_cmd_new_det_named">
+		<text>%s (New)</text>
 	</string>
-	<string id="st_wrfr_cmd_add_one_det">
-		<text>Add to: %s</text>
+	<string id="st_wrfr_cmd_remove_one">
+		<text>Remove from Detachment</text>
 	</string>
-	<string id="st_wrfr_cmd_remove_det">
-		<text>Remove from: %s</text>
+	<string id="st_wrfr_cmd_disband_one">
+		<text>Disband</text>
 	</string>
-	<string id="st_wrfr_cmd_send_det">
-		<text>Send %s here</text>
+	<string id="st_wrfr_cmd_grp_sel_submenu">
+		<text>Group</text>
 	</string>
-	<string id="st_wrfr_cmd_attack_det">
-		<text>Attack with %s</text>
+	<string id="st_wrfr_cmd_group_submenu">
+		<text>Add to Detachment</text>
 	</string>
-	<string id="st_wrfr_cmd_follow_det">
-		<text>%s: follow</text>
+	<!-- How a submenu title and one of its leaves collapse into a single row on engines without
+	     submenu support (e.g. "Attack" + "Alpha" -> "Attack: Alpha"). -->
+	<string id="st_wrfr_cmd_flat_fmt">
+		<text>%s: %s</text>
 	</string>
 	<string id="st_wrfr_cmd_max_det">
 		<text>Maximum detachments reached (10).</text>
@@ -398,6 +397,9 @@
 	</string>
 	<string id="st_wrfr_cmd_hdr_cmd">
 		<text>Order your forces here</text>
+	</string>
+	<string id="st_wrfr_cmd_hdr_sel">
+		<text>Selected Squads</text>
 	</string>
 	<string id="st_wrfr_cmd_send_all">
 		<text>Send all from %s</text>

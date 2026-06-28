@@ -1,0 +1,96 @@
+-- Old-engine support for the PDA map context menu. DELETE THIS FILE to drop it.
+--
+-- Pre-submenu exes -- anything older than engine commit 2334f5457 -- expose only
+-- CUIPropertiesBox:AddItem(text), and calling a method that isn't there aborts the whole menu build,
+-- leaving the player with no squad command at all. This module makes an old box look like a new one:
+-- wrap() hands back a proxy implementing AddSubmenu / AddHeader / AutoUpdateSize / tagged AddItem on
+-- top of plain AddItem, flattening submenus into self-describing rows ("Attack" + "Alpha" ->
+-- "Attack: Alpha"). Those four are the entire surface warfare_faction_control uses.
+--
+-- leaf() is the dispatch-side counterpart: it reports what a submenu leaf actually READS as, so
+-- warfare_faction_control can compare the clicked text against it without knowing which engine it is
+-- on. Flattening also removes the ambiguity that made tags necessary in the first place: the bare
+-- "Alpha" that means "order Alpha" in an order submenu and "add this squad to Alpha" in the
+-- membership submenu become "Attack: Alpha" and "Add to Detachment: Alpha", so the flat path needs
+-- no tag support at all.
+--
+-- Removal: grep for warfare_menu_compat -- 11 sites. wrap(ui) unwinds to ui and leaf(title, label)
+-- to label; handle_order_text and its one guarded call site are deleted outright, taking two of the
+-- leaf() sites with them. Unwinding the two "Detachment <name>" comparisons leaves dtitle unused --
+-- drop it, or restore HEAD's shape where str_wrfr[84]/[85] sat in the main prop chain. Then delete
+-- st_wrfr_cmd_flat_fmt from configs/text/{eng,rus}/ui_st_warfare.xml -- rus is cp1251, byte-safe
+-- write only.
+
+-- How a submenu title and a leaf collapse into one row. Localized; the built-in covers an install
+-- whose text files predate the string.
+local FMT_DEFAULT = "%s: %s"
+local fmt = FMT_DEFAULT
+
+local legacy = nil
+
+-- ONE probe, answering for the whole pre-submenu surface: no AddSubmenu implies no tags, no headers,
+-- no multi-spot sections, no on_map_right_click. Collapsing those axes costs at most a text header
+-- instead of a gold one on an in-between exe. Probing tags separately would mean either catching a
+-- luabind overload-resolution failure under pcall or adding a throwaway row that RemoveItemByTAG
+-- (tag-keyed) could not take back out on the very exe that fails the probe.
+local function probe(ui)
+    if legacy ~= nil then return end
+    local ok, has = pcall(function() return ui.AddSubmenu ~= nil end)
+    legacy = not (ok and has)
+    warfare_log.info("warfare_menu: %s engine", legacy and "legacy, flat menu" or "patched, nested menu")
+end
+
+-- True on an old exe, false on a patched one, nil before the first menu build.
+function active()
+    return legacy
+end
+
+local proxy_mt = {}
+proxy_mt.__index = proxy_mt
+
+-- tag is accepted and ignored: an old exe has nowhere to put it, and the composed label carries the
+-- same information.
+function proxy_mt:AddItem(text, tag)
+    self.box:AddItem(self.title and strformat(fmt, self.title, text) or text)
+end
+
+function proxy_mt:AddHeader(text)
+    self.box:AddItem("--- " .. text .. " ---")
+end
+
+-- A submenu proxy shares the parent's real box and folds its title into every leaf.
+function proxy_mt:AddSubmenu(title)
+    return setmetatable({ box = self.box, title = title }, proxy_mt)
+end
+
+function proxy_mt:AutoUpdateSize()
+end
+
+-- Identity on a patched engine, so the modern path pays nothing for this file's existence.
+function wrap(ui)
+    probe(ui)
+    if not legacy then return ui end
+    return setmetatable({ box = ui }, proxy_mt)
+end
+
+-- What a leaf of `title` displays as: the bare label where the engine nests it, the composed row
+-- where it does not.
+function leaf(title, label)
+    if not legacy then return label end
+    return strformat(fmt, title, label)
+end
+
+function refresh_strings()
+    local s = game.translate_string("st_wrfr_cmd_flat_fmt")
+    -- translate_string echoes the id back when the string is missing.
+    if s and s ~= "" and s ~= "st_wrfr_cmd_flat_fmt" then
+        fmt = s
+    else
+        fmt = FMT_DEFAULT
+    end
+end
+
+function on_game_start()
+    RegisterScriptCallback("on_localization_change", refresh_strings)
+    refresh_strings()
+end
