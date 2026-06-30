@@ -301,6 +301,7 @@
 	<string id="st_wrfr_ap_unknown">
 		<text>Цель неизвестна</text>
 	</string>
+    <string id="st_wrfr_pda_tab"><text>Война группировок</text></string>
 	<!-- Player command system (multi-select, control, detachments) [EN placeholder; needs RU] -->
 	<string id="st_wrfr_cmd_select"><text>Выбрать</text></string>
 	<string id="st_wrfr_cmd_deselect"><text>Убрать из выбранных</text></string>
@@ -338,4 +339,4 @@
 	<string id="st_wrfr_cmd_take_all"><text>Отправить всех отсюда в %s</text></string>
 	<string id="st_wrfr_cmd_untarget"><text>Убрать из целей</text></string>
 	<string id="st_wrfr_cmd_untargeted"><text>%s убран из целей %s</text></string>
-	</string_table>
+</string_table>

@@ -1,2 +1,5 @@
 /.idea
 /.vscode
+
+# Local-only codebase knowledge base (survives branch switches, not part of PRs)
+/claudedocs/

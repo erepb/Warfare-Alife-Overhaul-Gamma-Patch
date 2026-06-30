@@ -102,6 +102,19 @@ function dialogs.st_trade_important_documents(a,b,typ,txt)
 end
 --]]
 
+local pda_set_active_subdialog = pda.set_active_subdialog
+function pda.set_active_subdialog(section)
+    if _G.WARFARE then
+        local pda_menu = ActorMenu.get_pda_menu()
+        local tab_control = pda_menu and pda_menu:GetTabControl()
+        local contacts_btn = tab_control and tab_control:GetButtonById("eptContacts")
+        if contacts_btn then
+            contacts_btn:TextControl():SetText(game.translate_string("st_wrfr_pda_tab"))
+        end
+    end
+    return pda_set_active_subdialog(section)
+end
+
 local dialogs_st_trade_important_documents = dialogs.st_trade_important_documents
 function dialogs.st_trade_important_documents(a, b, typ, txt)
     local trade_dialog = dialogs_st_trade_important_documents(a, b, typ, txt)

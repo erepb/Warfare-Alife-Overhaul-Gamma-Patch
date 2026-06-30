@@ -301,6 +301,9 @@
 	<string id="st_wrfr_ap_unknown">
 		<text>Unknown activity</text>
 	</string>
+    <string id="st_wrfr_pda_tab">
+        <text>Warfare</text>
+    </string>
 
 	<!-- Player command system (multi-select, control, detachments) -->
 	<string id="st_wrfr_cmd_select">
