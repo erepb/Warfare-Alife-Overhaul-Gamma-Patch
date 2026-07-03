@@ -102,9 +102,39 @@ function dialogs.st_trade_important_documents(a,b,typ,txt)
 end
 --]]
 
+local function has_dynamic_pda_tabs()
+    local ok, supported = pcall(function()
+        return pda_dynamic_tabs and type(pda_dynamic_tabs.register) == "function"
+            and type(pda_dynamic_tabs.unregister) == "function"
+            and CUITabControl and CUITabControl.AddTab ~= nil
+    end)
+    return ok and supported or false
+end
+
+local pda_dynamic_tab_active = false
+if has_dynamic_pda_tabs() then
+    local registered = false
+    RegisterScriptCallback("actor_on_first_update", function()
+        if registered or not IsWarfare() then
+            return
+        end
+        registered = true
+        pda_dynamic_tabs.register("st_wrfr_pda_tab", function()
+            return ui_pda_warfare_tab.get_ui()
+        end, "eptContacts")
+        pda_dynamic_tab_active = true
+    end)
+end
+
 local pda_set_active_subdialog = pda.set_active_subdialog
 function pda.set_active_subdialog(section)
-    if _G.WARFARE then
+    if section == "eptContacts" and _G.WARFARE and pda_dynamic_tab_active then
+        return ui_pda_contacts_tab.get_ui()
+    end
+
+    local ret = pda_set_active_subdialog(section)
+
+    if _G.WARFARE and not pda_dynamic_tab_active then
         local pda_menu = ActorMenu.get_pda_menu()
         local tab_control = pda_menu and pda_menu:GetTabControl()
         local contacts_btn = tab_control and tab_control:GetButtonById("eptContacts")
@@ -112,7 +142,8 @@ function pda.set_active_subdialog(section)
             contacts_btn:TextControl():SetText(game.translate_string("st_wrfr_pda_tab"))
         end
     end
-    return pda_set_active_subdialog(section)
+
+    return ret
 end
 
 local dialogs_st_trade_important_documents = dialogs.st_trade_important_documents
