@@ -1,5 +1,5 @@
 Warfare Alife Overhaul
-version: 1.5.7
+version: 1.6.0
 by Vintar
 
 for Anomaly 1.5.3
@@ -33,6 +33,7 @@ This addon is compatible with existing Anomaly 1.5.1/1.5.2 Warfare save files, a
 Version Log:
 
 
+1.6.0 - Added a player squad command system: take direct control of friendly squads from the PDA map, group them into named detachments, and issue attack, move and follow orders. Command capacity is derived from the actor's rank, with a configurable squad cap. Warfare now gets its own PDA tab on engine builds that support dynamic tabs instead of taking over the Contacts tab, and the map context menu uses submenus, with a fallback for older engine builds. Faction map icons are no longer tinted: their state is drawn as a coloured outline behind the untouched icon - yellow for planned targets, orange for imminent invasions, red for bases under attack - so icon addons keep working. Added an optional alternative New Levels layout from "It's Warfare Time" by LostToTheSzone, giving the new maps more faction bases, territories and starting squads. Ecologists and free stalkers now scale their squad count with the number of bases they hold, and faction respawn and patrol timings in the balanced preset were rebalanced. Removed the obsolete max_faction_respawn and max_patrol_time preset entries and the Dux patch. Fixed loner bases emptying out, context menu separators being drawn when no purchase is available, the warfare PDA tab name, and FOMOD description indents.
 1.5.7 - Reworked squad overflow and recall logic so displaced squads relocate more sensibly and are never sent to attack heavily defended enemy bases, always falling back to their faction HQ as a last resort. Fixed squads getting orphaned while garrisoning foreign-faction smarts they cannot capture. Fixed the Laundromat base not being protected due to an incorrect smart terrain id. Corrected the offline combat simulator ignore list. Fixed the barman invincibility patch overriding the entire barman config file.
 1.5.6 - Fixed crash caused by offline-online desync after a simulated time skip or sleep. Story NPCs are now properly ignored in all patch combinations. Added a safeguard to avoid updating empty squads. The warfare.log is now truncated once per game launch.
 1.5.5 - Fixed warfare base traders and mechanics offering incorrect, un-completable tasks in the PDA Taskboard. Fixed false-positive lair targeting warning. Fixed orders not reaching AlifePlus-controlled squads. Updated AlifePlus API integration to 1.6.0. Restored the Preset label for GAMMA. INFO log messages are now mirrored into the main game log. Updated mod icon and Russian translation for the balanced preset.
