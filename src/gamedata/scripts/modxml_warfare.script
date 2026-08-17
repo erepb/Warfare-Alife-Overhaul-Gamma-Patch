@@ -177,7 +177,6 @@ function ui_options.init_opt_coder()
     local options = {
         { id = "slide_warfare", type = "slide", link = "ui_options_slider_warfare", text = "ui_mm_title_warfare_faction", size = { 512, 50 } },
 
-        { id = "participate_in_warfare", type = "check", val = 1, def = true, hint = "alife_warfare_faction_participate_in_warfare" },
         { id = "spawn_on_new_game", type = "check", val = 1, def = true, hint = "alife_warfare_faction_spawn_on_new_game" },
         { id = "random_spawn_entries", type = "track", val = 2, def = 1, min = 0, max = 100, step = 1, hint = "alife_warfare_faction_random_spawn_entries" },
         { id = "linked_level_targeting", type = "check", val = 1, def = true, hint = "alife_warfare_faction_linked_level_targeting" },
@@ -311,7 +310,7 @@ function ui_options.init_opt_coder()
             { id = "enable_mutant_offline_combat", type = "check", val = 1, def = true },
             { id = "disable_smart_pop_cap", type = "check", val = 1, def = false },
             { id = "emission_effect", type = "list", val = 0, def = "off", content = {{"off"}, {"kill"}, {"zombify"}} },
-            { id = "purge_zone_percentage", type = "track", val = 2, def = 50, min = 0, max = 100, step = 1 },
+            { id = "purge_zone_percentage", type = "track", val = 2, def = 5, min = 0, max = 100, step = 1 },
             { id = "log_level", type = "list", val = 0, def = "warn", content = {{"off"}, {"error"}, {"warn"}, {"info"}, {"debug"}, {"trace"}} },
             { id = "enable_busyhands_tracer", type = "check", val = 1, def = false, restart = true },
 

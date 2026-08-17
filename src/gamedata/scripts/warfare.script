@@ -1335,7 +1335,7 @@ function snap()
         return
     end
 
-    local p = warfare_options.options.purge_zone_percentage or 50
+    local p = warfare_options.options.purge_zone_percentage or 5
     warfare_log.info("snap: emission purge mode=%s percentage=%s", mode, p)
 
     -- Collect all squad IDs first — modifying registered_squads during pairs() is unsafe
