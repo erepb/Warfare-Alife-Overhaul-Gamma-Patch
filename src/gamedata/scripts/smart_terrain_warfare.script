@@ -619,12 +619,6 @@ function smart_terrain_on_update(smart)
 
     check_owner(smart)
 
-    if smart.owning_faction and smart.owning_faction ~= "none" and not warfare_options.options.factions[smart.owning_faction].participate_in_warfare then
-        warfare_log.trace("smart_terrain_on_update: skip non-participating faction=%s smart=%s",
-            smart.owning_faction, smart:name())
-        return
-    end
-
     check_unique_npcs(smart)    -- see if any merchant NPCs need to be spawned
 
     -- Initialize targeting variables
@@ -647,7 +641,7 @@ function smart_terrain_on_update(smart)
     surge_behavior(smart)
 
     -- Process faction-owned smart terrain
-    if (smart.owning_faction ~= "none" and warfare_options.options.factions[smart.owning_faction] and warfare_options.options.factions[smart.owning_faction].participate_in_warfare) then
+    if (smart.owning_faction ~= "none" and warfare_options.options.factions[smart.owning_faction]) then
         if (smart.props) then
             get_night_activity_flag(smart)
 
@@ -1107,7 +1101,7 @@ function process_base_squads(smart)
     end
 
     local invading_faction_props = warfare_options.options.factions[faction]
-    if not (invading_faction_props and invading_faction_props.participate_in_warfare) then
+    if not (invading_faction_props) then
         return
     end
 
@@ -1805,7 +1799,7 @@ function process_targets(smart)
     end
 
     local invading_faction_props = warfare_options.options.factions[smart.owning_faction]
-    if not (invading_faction_props and invading_faction_props.participate_in_warfare) then
+    if not (invading_faction_props) then
         return
     end
 

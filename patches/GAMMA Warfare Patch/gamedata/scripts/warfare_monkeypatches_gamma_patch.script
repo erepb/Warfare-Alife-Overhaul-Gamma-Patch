@@ -39,7 +39,7 @@ grok_no_north_faction_in_south.on_game_start = function()
 end
 
 function get_random_faction(smart, guard)
-    if _G.WARFARE and smart.owning_faction and smart.owning_faction ~= "none" and warfare_options.options.factions[smart.owning_faction].participate_in_warfare then
+    if _G.WARFARE and smart.owning_faction and smart.owning_faction ~= "none" then
         return smart.owning_faction
     end
 

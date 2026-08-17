@@ -157,7 +157,6 @@ function update_settings()
     -- and max_patrol_squads should probably be based on (current_resources+current_bases)/(total_resources+total_bases).
     for i, faction in pairs(warfare_factions.factions) do
         options.factions[faction] = {}
-        options.factions[faction].participate_in_warfare = ui_options.get("alife/warfare/" .. faction .. "/participate_in_warfare")
         options.factions[faction].spawn_on_new_game = ui_options.get("alife/warfare/" .. faction .. "/spawn_on_new_game")
         options.factions[faction].random_spawn_entries = ui_options.get("alife/warfare/" .. faction .. "/random_spawn_entries")
         options.factions[faction].use_bases_not_resources = ui_options.get("alife/warfare/" .. faction .. "/use_bases_not_resources")

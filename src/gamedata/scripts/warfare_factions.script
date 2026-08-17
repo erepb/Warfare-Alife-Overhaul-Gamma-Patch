@@ -291,7 +291,7 @@ function update_faction(faction)
         end
 
         -- Emergency resurrection when faction has 0 bases
-        if not warfare.is_spawn_blocked() and (ff.participate_in_warfare and (fi.base_count + mod) < 1) then
+        if not warfare.is_spawn_blocked() and ((fi.base_count + mod) < 1) then
             warfare_log.debug("update_faction: %s has 0 effective bases (base_count=%s, mod=%s), considering resurgence", tostring(faction), tostring(fi.base_count), tostring(mod))
             if (warfare.get_time_ref():diffSec(fi.last_resurgence_attempt) > fi.next_resurgence_attempt * 6) then
                 warfare_log.info("update_faction: %s resurgence timer elapsed, attempting resurrection", tostring(faction))
