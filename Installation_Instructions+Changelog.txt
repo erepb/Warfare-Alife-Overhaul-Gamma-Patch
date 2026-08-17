@@ -1,39 +1,42 @@
 Warfare Alife Overhaul
 version: 1.6.0
-by Vintar
+by Vintar - GAMMA patch and continued development by Erepb/SaloEater
 
-for Anomaly 1.5.3
+for Anomaly 1.5.3, including GAMMA (use the Gamma Patch in the installer)
 
 
 To install via Mod Organizer:
 
 1. Import the WarfareALifeOverhaul.zip file into Mod Organizer
 2. Follow the installer, selecting any optionals and patches necessary. Check that your load order has WarfareALifeOverhaul overwriting any addons you selected patches for.
-3. (Highly Recommended) Install Hawkie's Warfare Mechanic Fix, which fixes workbench tool persistence.
-4. Load an 'Alife Overhaul' warfare preset (menu is top-right of screen). Apply a preset BEFORE starting a new game, otherwise respawn timer changes will not take place until the next respawn occurs. If you do not use one of the Alife Overhaul presets, make sure that free stalkers and ecologists are participants in warfare. Do NOT disable them from participating.
+3. On GAMMA, select the 'Gamma Patch' module together with the 'ZCP' and 'LTTZ' patches - GAMMA ships both of those addons. The 'Alternative New Levels Layout' patch is optional and requires the New Levels addon.
+4. Load the 'Alife Overhaul - Balanced' preset: Options > Alife > Warfare, then pick it from the preset dropdown at the top right of the screen. Balanced is the recommended one and the preset kept current with this addon's balance changes; the other 'Alife Overhaul' presets run at fixed 1x, 2x, 5x and 10x pacing. Apply a preset BEFORE starting a new game, otherwise respawn timer changes will not take place until the next respawn occurs.
 
 
 To install manually:
-1. Drop the 'gamedata' folder into your Anomaly root directory (merge it with your existing 'gamedata' folder).
-2. Install any optionals desired.
-3. Install any patches that are needed.
-4. (Highly Recommended) Install Hawkie's Warfare Mechanic Fix, which fixes workbench tool persistence.
-5. Load an 'Alife Overhaul' warfare preset (menu is top-right of screen). Apply a preset BEFORE starting a new game, otherwise respawn timer changes will not take place until the next respawn occurs. If you do not use one of the Alife Overhaul presets, make sure that free stalkers and ecologists are participants in warfare. Do NOT disable them from participating.
+1. Drop the 'gamedata' folder found inside 'src' into your Anomaly root directory (merge it with your existing 'gamedata' folder).
+2. Install any optionals desired - every folder under 'optionals' holds its own 'gamedata' folder, merged the same way.
+3. Install any patches that are needed, from the 'patches' folder, the same way. On GAMMA that means 'GAMMA Warfare Patch', 'ZCP' and 'Patch for LTTZ Directors Cut'.
+4. Load the 'Alife Overhaul - Balanced' preset: Options > Alife > Warfare, then pick it from the preset dropdown at the top right of the screen. Balanced is the recommended one and the preset kept current with this addon's balance changes; the other 'Alife Overhaul' presets run at fixed 1x, 2x, 5x and 10x pacing. Apply a preset BEFORE starting a new game, otherwise respawn timer changes will not take place until the next respawn occurs.
 
 NOTE: The fomod folder is not used if you do not use Mod Organizer, or are installing this addon manually.
+
+NOTE: Workbenches are covered - Hawkie's Warfare Mechanic Fix is bundled, no separate download needed. Every vice belongs to one story mechanic, and the game reads the toolkits it offers off that mechanic; in Warfare he is usually dead or was never spawned, so the toolkits you hand to a Warfare faction mechanic never reach any bench. The bundled fix sources them from the mechanic of the faction holding the smart terrain instead. It stands down when the Gamma Patch is installed, since GAMMA ships its own workbench script and its workshop already counts toolkits you keep in a nearby stash.
+
+NOTE: The per-faction 'Participate in Warfare' switch no longer exists. Every faction always takes part in warfare
 
 
 Description:
 
 Warfare is an extremely cool idea, but its implementation with Anomaly is somewhat... incomplete. It deserves to be more than a tacked-on mode. This addon aims to fix that through a combination of bug-fixing and new features.
 
-This addon is compatible with existing Anomaly 1.5.1/1.5.2 Warfare save files, and has no impact on non-warfare games.
+This addon is compatible with existing Anomaly 1.5.3 Warfare save files, and has no impact on non-warfare games - every change it makes to a base game function is guarded and defers to the original outside warfare mode. Warfare state saved by older versions of this addon is migrated on load.
 
 
 Version Log:
 
 
-1.6.0 - Added a player squad command system: take direct control of friendly squads from the PDA map, group them into named detachments, and issue attack, move and follow orders. Command capacity is derived from the actor's rank, with a configurable squad cap. Warfare now gets its own PDA tab on engine builds that support dynamic tabs instead of taking over the Contacts tab, and the map context menu uses submenus, with a fallback for older engine builds. Faction map icons are no longer tinted: their state is drawn as a coloured outline behind the untouched icon - yellow for planned targets, orange for imminent invasions, red for bases under attack - so icon addons keep working. Added an optional alternative New Levels layout from "It's Warfare Time" by LostToTheSzone, giving the new maps more faction bases, territories and starting squads. Ecologists and free stalkers now scale their squad count with the number of bases they hold, and faction respawn and patrol timings in the balanced preset were rebalanced. Removed the obsolete max_faction_respawn and max_patrol_time preset entries and the Dux patch. Fixed loner bases emptying out, context menu separators being drawn when no purchase is available, the warfare PDA tab name, and FOMOD description indents.
+1.6.0 - Reworked a player squad command system: take direct control of friendly squads from the PDA map, group them into named detachments, and issue attack, move and follow orders. Command capacity is derived from the actor's rank, with a configurable squad cap. Warfare now gets its own PDA tab on engine builds that support dynamic tabs instead of taking over the Contacts tab, and the map context menu uses submenus, with a fallback for older engine builds. Faction map icons are no longer tinted: their state is drawn as a coloured outline behind the untouched icon - yellow for planned targets, orange for imminent invasions, red for bases under attack - so icon addons keep working. Added an optional alternative New Levels layout from "It's Warfare Time" by LostToTheSzone, giving the new maps more faction bases, territories and starting squads. Ecologists and free stalkers now scale their squad count with the number of bases they hold, and faction respawn and patrol timings in the balanced preset were rebalanced. Removed the obsolete max_faction_respawn and max_patrol_time preset entries and the Dux patch. Fixed loner bases emptying out, context menu separators being drawn when no purchase is available, the warfare PDA tab name, and FOMOD description indents.
 1.5.7 - Reworked squad overflow and recall logic so displaced squads relocate more sensibly and are never sent to attack heavily defended enemy bases, always falling back to their faction HQ as a last resort. Fixed squads getting orphaned while garrisoning foreign-faction smarts they cannot capture. Fixed the Laundromat base not being protected due to an incorrect smart terrain id. Corrected the offline combat simulator ignore list. Fixed the barman invincibility patch overriding the entire barman config file.
 1.5.6 - Fixed crash caused by offline-online desync after a simulated time skip or sleep. Story NPCs are now properly ignored in all patch combinations. Added a safeguard to avoid updating empty squads. The warfare.log is now truncated once per game launch.
 1.5.5 - Fixed warfare base traders and mechanics offering incorrect, un-completable tasks in the PDA Taskboard. Fixed false-positive lair targeting warning. Fixed orders not reaching AlifePlus-controlled squads. Updated AlifePlus API integration to 1.6.0. Restored the Preset label for GAMMA. INFO log messages are now mirrored into the main game log. Updated mod icon and Russian translation for the balanced preset.
@@ -75,33 +78,43 @@ Version Log:
 
 
 Altered files:
-- dialogs.script
-- faction_expansions.script
-- game_relations.script
+
+Base game files this addon replaces outright - load it after any addon that also changes these:
+- pda_flagger.script
 - sim_offline_combat.script
-- sim_squad_scripted.script
 - sim_squad_warfare.script
 - smart_terrain_warfare.script
-- tasks_assault.script
-- tasks_smart_control.script
-- ui_mm_faction_select.script
-- ui_options.script
 - ui_pda_warfare_tab.script
 - warfare.script
+- warfare_faction_control.script
 - warfare_factions.script
+- warfare_levels.script
 - warfare_options.script
-- xr_logic.script
-- includes.ltx
-- offline_combat_simulator.ltx
-- simulation_objects_props.ltx
-- tm_warfare.ltx
-- ui_st_options.xml
+- faction_expansions.script (only with the Gamma Patch)
+- configs\misc\task\tm_warfare.ltx
+- configs\text\eng\ui_st_warfare.xml, configs\text\rus\ui_st_warfare.xml
+
+Everything else this addon installs is a new file. Base game configs are extended through DLTX
+(mod_offline_combat_simulator_warfare.ltx, mod_simulation_objects_props_warfare_patch.ltx,
+mod_simulation_warfare.ltx and friends) rather than overwritten, so includes.ltx,
+offline_combat_simulator.ltx and simulation_objects_props.ltx are left alone.
+
+The base game scripts this addon used to overwrite - dialogs, game_relations, xr_logic, xr_conditions,
+xr_effects, sim_squad_scripted, tasks_assault, tasks_smart_control, ui_mm_faction_select, ui_options,
+axr_task_manager, task_objects - are monkey-patched at runtime instead, from
+warfare_monkeypatches.script, warfare_monkeypatches_sim_squad.script and modxml_warfare.script. Each
+override falls back to the original function when warfare mode is off.
 
 
 Credits:
 
 Werejew for creating Warfare
+Vintar for creating Warfare Alife Overhaul, which this GAMMA patch continues
 Illinaru for their warfare addon (Illinaru Warfare Balance), which was the basis for the PDA change, and for their advice
 Lignar for providing the solution to the fog of war dynamic relations issue
+Hawkie for the Warfare Mechanic Fix, bundled here under its Creative Commons licence
+LostToTheSzone for the New Levels layout from "It's Warfare Time", included as an optional patch
+notkc for the fix to the infinite spawns caused by a GAMMA update
+Ace and Hexef for the crash and quest fixes noted in the version log
 
 If you would like to use any of this addon as part of a separate overhaul, feel free to do so. And if you feel like crediting me at all, that would make you a pretty cool person.
