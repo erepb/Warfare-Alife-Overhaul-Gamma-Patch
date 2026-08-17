@@ -162,6 +162,7 @@ function update_settings()
         options.factions[faction].random_spawn_entries = ui_options.get("alife/warfare/" .. faction .. "/random_spawn_entries")
         options.factions[faction].use_bases_not_resources = ui_options.get("alife/warfare/" .. faction .. "/use_bases_not_resources")
         options.factions[faction].linked_level_targeting = ui_options.get("alife/warfare/" .. faction .. "/linked_level_targeting")
+        options.factions[faction].ignore_empty_targets = ui_options.get("alife/warfare/" .. faction .. "/ignore_empty_targets")
 
         options.factions[faction].random_squad_count = ui_options.get("alife/warfare/" .. faction .. "/random_squad_count")
         options.factions[faction].min_random_squad_count = ui_options.get("alife/warfare/" .. faction .. "/min_random_squad_count")

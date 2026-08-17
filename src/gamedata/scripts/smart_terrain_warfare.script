@@ -5636,6 +5636,7 @@ function find_targets(smart, faction_override, overflow_squad)
     local ff_target_same_level         = ff.target_on_same_level_priority
     local ff_target_faction_weaker     = ff.target_faction_weaker_priority
     local ff_target_faction_stronger   = ff.target_faction_stronger_priority
+    local ff_ignore_empty_targets      = ff.ignore_empty_targets
     local opts = warfare_options.options
     local actor_influence_weight = opts.actor_influence_weight
     local prevent_mainbase        = opts.prevent_mainbase_attacks
@@ -5677,6 +5678,11 @@ function find_targets(smart, faction_override, overflow_squad)
 
         -- non-enemy, non-empty, non-loner/ecolog targets are not valid
         if not (is_factions_enemies(faction, other_faction) or other_faction == "none") and (other_faction ~= "stalker") and (other_faction ~= "ecolog") then
+            goto continue
+        end
+
+        -- faction opted out of land grabs: unowned locations are not valid targets
+        if ff_ignore_empty_targets and other_faction == "none" then
             goto continue
         end
 
