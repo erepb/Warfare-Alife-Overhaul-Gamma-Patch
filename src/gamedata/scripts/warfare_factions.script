@@ -526,7 +526,7 @@ function emergency_resurrection_spawn(faction)
     end
 
     -- Step 4: Spawn squads at the selected spawn point targeting the selected base
-    local emergency_squad_count = math.min(4, math.ceil(best_target.max_population * 1.5))
+    local emergency_squad_count = math.max(4, math.ceil(best_target.max_population * 1.5))
 
     warfare_log.info("emergency_resurrection: spawning %s squads for %s at %s (targeting %s)", tostring(emergency_squad_count), tostring(faction), best_spawn:name(), best_target:name())
 
