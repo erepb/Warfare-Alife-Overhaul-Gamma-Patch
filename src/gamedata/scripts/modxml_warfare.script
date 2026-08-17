@@ -50,6 +50,9 @@ end
 local ui_options_UIOptions_update = ui_options.UIOptions.Update
 function ui_options.UIOptions.Update(self)
     ui_options_UIOptions_update(self)
+    if self.hint_locked then
+        return
+    end
     for cap_id, desc in pairs(cap_desc) do
         local ctrl = self._Cap[cap_id]
         if ctrl and ctrl:IsCursorOverWindow() then
@@ -261,18 +264,19 @@ function ui_options.init_opt_coder()
     local stalker_warfare_options = {
         id = "stalker",
         sh = true,
-        presets = { "warfare_alifeoverhaul_balanced", "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" },
+        warfare_presets = true,
         id_gr = "warfare_faction",
         apply_to_all = true,
         gr = options,
     }
 
     local warfare_options = ui_options.options[alife_options_index].gr[alife_warfare_options_index]
-    warfare_options.presets = { "warfare_alifeoverhaul_balanced", "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" }
+    warfare_options.presets = nil
+    warfare_options.warfare_presets = true
     warfare_options.gr[alife_warfare_general_options_index] = {
         id = "general",
         sh = true,
-        presets = { "warfare_alifeoverhaul_balanced", "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" },
+        warfare_presets = true,
         gr = {
             { id = "slide_warfare", type = "slide", link = "ui_options_slider_warfare", text = "ui_mm_title_warfare", size = { 512, 50 } },
 
@@ -344,7 +348,8 @@ function ui_options.init_opt_coder()
             { id = "max_invasion_depart_time", type = "track", val = 2, def = 2400, min = 0, max = 20000, step = 100, hint = "alife_warfare_faction_max_invasion_depart_time" },
         },
     }
-    warfare_options.gr[alife_warfare_azazel_options_index].presets = { "warfare_alifeoverhaul_balanced", "warfare_alifeoverhaul", "warfare_alifeoverhaul_faster", "warfare_alifeoverhaul_veryfast", "warfare_alifeoverhaul_rapidtest", "warfare_default", "warfare_yoko" }
+    warfare_options.gr[alife_warfare_azazel_options_index].presets = nil
+    warfare_options.gr[alife_warfare_azazel_options_index].warfare_presets = true
     warfare_options.gr[alife_warfare_stalker_options_index] = stalker_warfare_options
 
     -- Auto-complete factions options for warfare
@@ -353,7 +358,7 @@ function ui_options.init_opt_coder()
         warfare_options.gr[alife_warfare_stalker_options_index + i] = {
             id = faction,
             sh = stalker_warfare_options.sh,
-            presets = stalker_warfare_options.presets,
+            warfare_presets = stalker_warfare_options.warfare_presets,
             id_gr = stalker_warfare_options.id_gr,
             apply_to_all = stalker_warfare_options.apply_to_all,
             gr = options
@@ -366,7 +371,7 @@ function ui_options.init_opt_coder()
     warfare_options.gr[alife_warfare_stalker_options_index + #other_factions + 1] = {
         id = "command",
         sh = true,
-        presets = warfare_options.presets,
+        warfare_presets = true,
         gr = {
             { id = "slide_command", type = "slide", link = "ui_options_slider_warfare", text = "ui_mm_menu_command", size = { 512, 50 } },
             { id = "enable_player_command", type = "check", val = 1, def = true },

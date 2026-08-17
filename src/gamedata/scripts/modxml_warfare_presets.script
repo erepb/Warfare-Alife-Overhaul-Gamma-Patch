@@ -1,0 +1,821 @@
+--[[
+
+=======================================================================================
+    Warfare option presets -- dynamic discovery, save and delete.
+
+    Vanilla ui_options reads presets from a single CInifile built at script-load time
+    from presets\includes.ltx, and decides which ones to offer from a hardcoded Lua
+    array on each options-tree node. Neither can grow at runtime, and both name presets
+    through the "ui_mm_prst_<id>" string table in *both* directions -- so a preset the
+    player creates has no way to appear.
+
+    This replaces that path for the warfare subtree only. Presets are discovered by
+    listing configs\presets\ and keeping every warfare_*.ltx, which picks up the five
+    presets this mod ships plus vanilla's warfare_default / warfare_yoko for free, with
+    their existing localized names. Non-warfare groups (video, economy, gameplay) are
+    left entirely to vanilla.
+
+    File contract -- configs\presets\warfare_<slug>.ltx, section name == filename stem:
+
+        [warfare_brutal]
+                display_name              = "Brutal"    ; quoted: _parse eats bare spaces
+                user                      = true        ; written only by Save
+                alife/warfare/general/... = ...
+
+    Both metadata keys are skipped by the apply loop for free: ui_options.get_opt_table
+    returns an empty table for ids it does not know, so they never reach an option.
+
+    "user" is the write guard. Save only overwrites, and Delete only removes, a preset
+    carrying it -- so the shipped presets, vanilla's two, and any third-party
+    warfare_*.ltx are protected by construction, with no name list to maintain. This
+    matters under MO2: file_delete unlinks the real file in whichever mod folder
+    provides it.
+
+    Schema drift needs no migration. Vanilla's apply loop skips ids get_opt_table does
+    not recognize, and options a preset omits simply keep their current value, so old
+    presets keep loading across mod versions.
+=======================================================================================
+
+--]]
+
+local PRESET_DIR    = "presets\\"
+local PRESET_PREFIX = "warfare_"
+local KEY_DISPLAY   = "display_name"
+local KEY_USER      = "user"
+local STR_PRST      = "ui_mm_prst_"
+
+-- Mirrors ui_options' file-local `opt_section`: the axr_options.ltx section every option
+-- value is stored under.
+local OPT_SECTION   = "options"
+
+local SLUG_MAX      = 40
+local DISPLAY_MAX   = 48
+
+local injected = false
+
+--------------------------------------------------------------------------------------
+-- Store
+--------------------------------------------------------------------------------------
+
+-- Discovered presets, rebuilt on dialog open and after every save/delete. Each entry is
+-- { slug, display, user }. nil means "not scanned yet".
+local cache = nil
+
+local function preset_path(slug)
+    return PRESET_DIR .. slug .. ".ltx"
+end
+
+function invalidate()
+    cache = nil
+end
+
+--- Resolve the name shown in the combo: the author's own text when the file carries one,
+--- otherwise the string table entry vanilla and this mod already ship for the presets
+--- they own, otherwise the bare slug.
+local function resolve_display(ini, slug)
+    if ini:line_exist(slug, KEY_DISPLAY) then
+        local stored = ini:r_string_wq(slug, KEY_DISPLAY)
+        if stored and stored ~= "" then
+            return stored
+        end
+    end
+
+    local key = STR_PRST .. slug
+    local translated = game.translate_string(key)
+    if translated and translated ~= key and translated ~= "" then
+        return translated
+    end
+
+    return slug
+end
+
+local function read_flag(ini, slug, key)
+    if not ini:line_exist(slug, key) then
+        return false
+    end
+    return ini:r_bool(slug, key)
+end
+
+local function read_meta(slug)
+    local ini = ini_file(preset_path(slug))
+    if not ini:section_exist(slug) then
+        return nil
+    end
+
+    return {
+        slug    = slug,
+        display = resolve_display(ini, slug),
+        user    = read_flag(ini, slug, KEY_USER),
+    }
+end
+
+function list_presets()
+    if cache then
+        return cache
+    end
+
+    cache = {}
+
+    local flist = getFS():file_list_open("$game_config$", PRESET_DIR, bit_or(FS.FS_ListFiles, FS.FS_RootOnly))
+    local count = flist and flist:Size() or 0
+    for i = 1, count do
+        local fname = string.lower(flist:GetAt(i - 1))
+        local slug = string.match(fname, "^(" .. PRESET_PREFIX .. "[%w_]+)%.ltx$")
+        if slug then
+            local meta = read_meta(slug)
+            if meta then
+                cache[#cache + 1] = meta
+            else
+                warfare_log.warn("modxml_warfare_presets.list_presets: %s carries no [%s] section, skipped", fname, slug)
+            end
+        end
+    end
+    if flist then
+        flist:Free()
+    end
+
+    table.sort(cache, function(a, b)
+        if a.user ~= b.user then
+            return b.user
+        end
+        return a.display < b.display
+    end)
+
+    local seen = {}
+    for i = 1, #cache do
+        if seen[cache[i].display] then
+            cache[i].display = cache[i].display .. " [" .. cache[i].slug .. "]"
+        end
+        seen[cache[i].display] = true
+    end
+
+    warfare_log.debug("modxml_warfare_presets.list_presets: found %s preset(s)", tostring(#cache))
+    return cache
+end
+
+function find_preset(slug)
+    local items = list_presets()
+    for i = 1, #items do
+        if items[i].slug == slug then
+            return items[i]
+        end
+    end
+    return nil
+end
+
+--------------------------------------------------------------------------------------
+-- Naming
+--------------------------------------------------------------------------------------
+
+function sanitize_display(text)
+    local s = string.gsub(text or "", "[\"\r\n\t;=]", " ")
+    s = string.gsub(s, "%s+", " ")
+    s = string.gsub(s, "^%s+", "")
+    s = string.gsub(s, "%s+$", "")
+    if string.len(s) > DISPLAY_MAX then
+        s = string.sub(s, 1, DISPLAY_MAX)
+    end
+    return s
+end
+
+function slugify(text)
+    local s = string.lower(text or "")
+    s = string.gsub(s, "[^%w]+", "_")
+    s = string.gsub(s, "^_+", "")
+    s = string.gsub(s, "_+$", "")
+    if s == "" then
+        return nil
+    end
+
+    if string.sub(s, 1, string.len(PRESET_PREFIX)) ~= PRESET_PREFIX then
+        s = PRESET_PREFIX .. s
+    end
+    if string.len(s) > SLUG_MAX then
+        s = string.sub(s, 1, SLUG_MAX)
+    end
+    s = string.gsub(s, "_+$", "")
+
+    if s == PRESET_PREFIX or s == string.sub(PRESET_PREFIX, 1, string.len(PRESET_PREFIX) - 1) then
+        return nil
+    end
+    return s
+end
+
+--- Returns slug, display, hint. The slug is a preset's only identity, so a name that
+--- cannot produce one is refused rather than stored under a generated stand-in; hint is
+--- the reason, shown under the input while the player types.
+function validate_name(raw)
+    local display = sanitize_display(raw)
+    if display == "" then
+        return nil, nil, ""
+    end
+
+    local slug = slugify(display)
+    if not slug then
+        return nil, nil, game.translate_string("ui_mm_warfare_preset_bad_name")
+    end
+
+    local existing = find_preset(slug)
+    if existing and not existing.user then
+        return nil, nil, strformat(game.translate_string("ui_mm_warfare_preset_protected"), existing.display)
+    end
+
+    return slug, display, ""
+end
+
+--------------------------------------------------------------------------------------
+-- Snapshot
+--------------------------------------------------------------------------------------
+
+local function warfare_node()
+    local opts = ui_options.options
+    for i = 1, #opts do
+        if opts[i].id == "alife" and opts[i].gr then
+            local gr = opts[i].gr
+            for j = 1, #gr do
+                if gr[j].id == "warfare" then
+                    return gr[j], ui_options.cc("alife", "warfare")
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function collect(node, path, out)
+    local gr = node.gr
+    if not gr then
+        return
+    end
+    for i = 1, #gr do
+        local e = gr[i]
+        if e.gr then
+            collect(e, ui_options.cc(path, e.id), out)
+        elseif e.id and e.type and ui_options.allowed_type[e.type] then
+            out[#out + 1] = { id = ui_options.cc(path, e.id), opt = e }
+        end
+    end
+end
+
+local function warfare_leaves()
+    local node, path = warfare_node()
+    if not node then
+        return nil
+    end
+    local out = {}
+    collect(node, path, out)
+    return out
+end
+
+--- Every leaf under alife/warfare, valued as the player currently sees it: the pending
+--- edit if there is one, then the applied value, then the option's default.
+local function snapshot()
+    local leaves = warfare_leaves()
+    if not leaves then
+        return nil
+    end
+
+    local pending = ui_options.opt_temp or {}
+    local values = {}
+    for i = 1, #leaves do
+        local id, v = leaves[i].id, leaves[i].opt
+
+        local value = pending[id]
+        if value == nil then
+            value = axr_main.config:r_value(OPT_SECTION, id, v.val)
+        end
+        if value == nil then
+            value = (type(v.def) == "table") and ui_options.exec(unpack(v.def)) or v.def
+        end
+
+        if value ~= nil then
+            values[#values + 1] = { id = id, value = value }
+        end
+    end
+
+    return values
+end
+
+function count_pending()
+    local pending = ui_options.opt_temp
+    local leaves = pending and warfare_leaves()
+    if not leaves then
+        return 0
+    end
+
+    local n = 0
+    for i = 1, #leaves do
+        if pending[leaves[i].id] ~= nil then
+            n = n + 1
+        end
+    end
+    return n
+end
+
+--------------------------------------------------------------------------------------
+-- Write / delete
+--------------------------------------------------------------------------------------
+
+function save_preset(slug, display)
+    local values = snapshot()
+    if not values then
+        warfare_log.err("modxml_warfare_presets.save_preset: alife/warfare node not found, nothing saved")
+        return false
+    end
+
+    local ini = create_ini_file("[" .. slug .. "]\n")
+    ini:set_readonly(false)
+    ini:set_override_names(true)
+
+    ini:w_string(slug, KEY_DISPLAY, "\"" .. display .. "\"", "")
+    ini:w_string(slug, KEY_USER, "true", "")
+    for i = 1, #values do
+        ini:w_string(slug, values[i].id, tostring(values[i].value), "")
+    end
+
+    local full = getFS():update_path("$game_config$", "") .. preset_path(slug)
+    local ok = ini:save_as(full)
+    if not ok then
+        warfare_log.err("modxml_warfare_presets.save_preset: could not write %s", full)
+        return false
+    end
+
+    warfare_log.info("modxml_warfare_presets.save_preset: wrote %s (%s options) as '%s'",
+        full, tostring(#values), display)
+    invalidate()
+    return true
+end
+
+function delete_preset(slug)
+    local entry = find_preset(slug)
+    if not (entry and entry.user) then
+        warfare_log.warn("modxml_warfare_presets.delete_preset: %s is not a player preset, refused", tostring(slug))
+        return false
+    end
+
+    getFS():file_delete("$game_config$", preset_path(slug))
+    warfare_log.info("modxml_warfare_presets.delete_preset: removed %s", preset_path(slug))
+    invalidate()
+    return true
+end
+
+--------------------------------------------------------------------------------------
+-- Apply
+--------------------------------------------------------------------------------------
+
+local function apply_preset(self, slug)
+    local ini = ini_file(preset_path(slug))
+    if not ini:section_exist(slug) then
+        warfare_log.warn("modxml_warfare_presets.apply_preset: [%s] vanished from disk", slug)
+        return false
+    end
+
+    local applied = 0
+    local n = ini:line_count(slug)
+    for i = 0, n - 1 do
+        local _, id, value = ini:r_line(slug, i, "", "")
+
+        local v = ui_options.get_opt_table(id)
+        if v and v.type then
+            local to_hide = v.precondition and (not ui_options.exec(unpack(v.precondition)))
+            if not to_hide then
+                if v.val == 1 then
+                    value = (value == "true") and true or false
+                elseif v.val == 2 then
+                    value = tonumber(value)
+                end
+
+                local t = ui_options.str_opt_explode(id)
+                local opt = t[#t]
+                local path = t[1]
+                for j = 2, #t - 1 do
+                    path = ui_options.cc(path, t[j])
+                end
+
+                self:CacheValue(path, opt, value, v)
+                applied = applied + 1
+            end
+        end
+    end
+
+    warfare_log.info("modxml_warfare_presets.apply_preset: [%s] applied %s of %s lines",
+        slug, tostring(applied), tostring(n))
+    return true
+end
+
+--------------------------------------------------------------------------------------
+-- UI -- controls
+--------------------------------------------------------------------------------------
+
+local base_InitControls = ui_options.UIOptions.InitControls
+function ui_options.UIOptions.InitControls(self)
+    base_InitControls(self)
+
+    invalidate()
+
+    if not injected then
+        warfare_log.err("modxml_warfare_presets.InitControls: preset controls were not injected into the options XML")
+        return
+    end
+
+    local xml = self.xml
+
+    self.wp_btn_save = xml:Init3tButton("main:btn_preset_save", self.dialog)
+    self:Register(self.wp_btn_save, "wp_btn_save")
+    self.wp_btn_save:Show(false)
+
+    self.wp_btn_del = xml:Init3tButton("main:btn_preset_del", self.dialog)
+    self:Register(self.wp_btn_del, "wp_btn_del")
+    self.wp_btn_del:Show(false)
+
+    self.wp_prompt = xml:InitStatic("preset_prompt", self)
+    xml:InitStatic("preset_prompt:bg", self.wp_prompt)
+    xml:InitTextWnd("preset_prompt:cap", self.wp_prompt)
+
+    self.wp_input = xml:InitEditBox("preset_prompt:input", self.wp_prompt)
+    self:Register(self.wp_input, "wp_input")
+
+    self.wp_hint = xml:InitTextWnd("preset_prompt:hint", self.wp_prompt)
+
+    self.wp_prompt_ok = xml:Init3tButton("preset_prompt:btn_ok", self.wp_prompt)
+    self:Register(self.wp_prompt_ok, "wp_prompt_ok")
+
+    self.wp_prompt_cancel = xml:Init3tButton("preset_prompt:btn_cancel", self.wp_prompt)
+    self:Register(self.wp_prompt_cancel, "wp_prompt_cancel")
+
+    self.wp_prompt:Show(false)
+
+    self.wp_mb = CUIMessageBoxEx()
+    self:Register(self.wp_mb, "wp_mb")
+    self.wp_mb_action = nil
+    self.wp_mb_slug = nil
+    self.wp_mb_display = nil
+end
+
+local base_InitCallBacks = ui_options.UIOptions.InitCallBacks
+function ui_options.UIOptions.InitCallBacks(self)
+    base_InitCallBacks(self)
+
+    if not injected then
+        return
+    end
+
+    self:AddCallback("wp_btn_save", ui_events.BUTTON_CLICKED, self.wp_OnSave, self)
+    self:AddCallback("wp_btn_del", ui_events.BUTTON_CLICKED, self.wp_OnDelete, self)
+    self:AddCallback("wp_prompt_ok", ui_events.BUTTON_CLICKED, self.wp_OnPromptOk, self)
+    self:AddCallback("wp_prompt_cancel", ui_events.BUTTON_CLICKED, self.wp_OnPromptCancel, self)
+    self:AddCallback("wp_mb", ui_events.MESSAGE_BOX_YES_CLICKED, self.wp_OnConfirm, self)
+end
+
+--------------------------------------------------------------------------------------
+-- UI -- combo population and selection
+--------------------------------------------------------------------------------------
+
+function ui_options.UIOptions.wp_ShowButtons(self, show)
+    if not self.wp_btn_save then
+        return
+    end
+    self.wp_btn_save:Show(show)
+    self.wp_btn_del:Show(show)
+    if not show then
+        self:wp_HidePrompt()
+    end
+end
+
+function ui_options.UIOptions.wp_Selected(self)
+    return self.wp_sel_slug and find_preset(self.wp_sel_slug) or nil
+end
+
+function ui_options.UIOptions.wp_UpdateDelete(self)
+    if not self.wp_btn_del then
+        return
+    end
+    local entry = self:wp_Selected()
+    self.wp_btn_del:Enable(entry ~= nil and entry.user)
+end
+
+--- The caption above the combo is one widget shared by every options page, captioned from
+--- the options XML with ui_mm_preset. GAMMA's text overhaul rewrites that string to
+--- "(DON'T USE)" to steer players off the vanilla difficulty presets; warfare's presets are
+--- real, so title it ourselves while a warfare tree is open and hand the vanilla string back
+--- on every other page. On stock Anomaly both strings read "Preset", so nothing changes.
+local function set_caption(self, is_warfare)
+    if not self.preset_cap then
+        return
+    end
+    self.preset_cap:TextControl():SetText(
+        game.translate_string(is_warfare and "ui_warfare_preset" or "ui_mm_preset"))
+end
+
+local base_Register_Preset = ui_options.UIOptions.Register_Preset
+function ui_options.UIOptions.Register_Preset(self, ct)
+    if not ct then
+        self:wp_ShowButtons(false)
+        return
+    end
+
+    if not ct.warfare_presets then
+        base_Register_Preset(self, ct)
+        set_caption(self, false)
+        self:wp_ShowButtons(false)
+        return
+    end
+
+    local items = list_presets()
+
+    self.preset:ClearList()
+    self.wp_map = {}
+    for i = 1, #items do
+        self.preset:AddItem(items[i].display, i)
+        self.wp_map[items[i].display] = items[i]
+    end
+
+    local sel = ct.wp_curr and find_preset(ct.wp_curr)
+    self.wp_sel_slug = sel and sel.slug or nil
+    if sel then
+        self.preset:SetText(sel.display)
+    end
+
+    self.preset:Show(true)
+    self.preset_cap:Show(true)
+    set_caption(self, true)
+    self:wp_ShowButtons(true)
+    self:wp_UpdateDelete()
+end
+
+local base_Callback_Preset = ui_options.UIOptions.Callback_Preset
+function ui_options.UIOptions.Callback_Preset(self)
+    local ct = self.last_curr_tree
+
+    if not (ct and ct.warfare_presets) then
+        base_Callback_Preset(self)
+        return
+    end
+
+    if not self.last_path then
+        return
+    end
+
+    local entry = self.wp_map and self.wp_map[self.preset:GetText() or ""]
+    if not entry then
+        return
+    end
+
+    ct.wp_curr = entry.slug
+    self.wp_sel_slug = entry.slug
+    apply_preset(self, entry.slug)
+
+    self:Reset_opt(ct, self.last_path)
+    self:UpdatePending()
+    self:wp_UpdateDelete()
+end
+
+--------------------------------------------------------------------------------------
+-- UI -- save / delete flow
+--------------------------------------------------------------------------------------
+
+function ui_options.UIOptions.wp_HidePrompt(self)
+    if self.wp_prompt then
+        self.wp_prompt:Show(false)
+    end
+end
+
+function ui_options.UIOptions.wp_PromptShown(self)
+    return self.wp_prompt and self.wp_prompt:IsShown()
+end
+
+function ui_options.UIOptions.wp_Message(self, template, text, action)
+    self.wp_mb_action = action
+    self.wp_mb:InitMessageBox(template)
+    self.wp_mb:SetText(text)
+    self.wp_mb:ShowDialog(true)
+end
+
+function ui_options.UIOptions.wp_Validate(self)
+    local raw = self.wp_input:GetText() or ""
+    if raw == self.wp_last_input then
+        return
+    end
+    self.wp_last_input = raw
+
+    local slug, display, hint = validate_name(raw)
+
+    self.wp_valid_slug = slug
+    self.wp_valid_display = display
+    self.wp_hint:SetText(hint)
+    self.wp_prompt_ok:Enable(slug ~= nil)
+end
+
+function ui_options.UIOptions.wp_OnSave(self)
+    local entry = self:wp_Selected()
+
+    self.wp_input:SetText(entry and entry.user and entry.display or "")
+    self.wp_last_input = nil
+    self.wp_valid_slug = nil
+    self.wp_valid_display = nil
+
+    self.wp_prompt:Show(true)
+    self:wp_Validate()
+end
+
+function ui_options.UIOptions.wp_OnPromptCancel(self)
+    self:wp_HidePrompt()
+end
+
+function ui_options.UIOptions.wp_OnPromptOk(self)
+    self:wp_Validate()
+
+    local slug, display = self.wp_valid_slug, self.wp_valid_display
+    if not slug then
+        return
+    end
+
+    self:wp_HidePrompt()
+
+    if find_preset(slug) then
+        self.wp_mb_slug = slug
+        self.wp_mb_display = display
+        self:wp_Message("message_box_yes_no",
+            strformat(game.translate_string("ui_mm_warfare_preset_overwrite"), display), "save")
+        return
+    end
+
+    self:wp_DoSave(slug, display)
+end
+
+function ui_options.UIOptions.wp_DoSave(self, slug, display)
+    local pending = count_pending()
+    if not save_preset(slug, display) then
+        return
+    end
+
+    self:Register_Preset(self.last_curr_tree)
+
+    local entry = find_preset(slug)
+    if not entry then
+        warfare_log.err("modxml_warfare_presets.wp_DoSave: [%s] saved but not listed back from %s",
+            slug, PRESET_DIR)
+        return
+    end
+
+    self.wp_sel_slug = slug
+    self.preset:SetText(entry.display)
+    if self.last_curr_tree then
+        self.last_curr_tree.wp_curr = slug
+    end
+    self:wp_UpdateDelete()
+
+    warfare_log.info("modxml_warfare_presets.wp_DoSave: saved '%s' (%s unapplied change(s) included)",
+        entry.display, tostring(pending))
+end
+
+function ui_options.UIOptions.wp_OnDelete(self)
+    local entry = self:wp_Selected()
+    if not (entry and entry.user) then
+        return
+    end
+
+    self.wp_mb_slug = entry.slug
+    self:wp_Message("message_box_yes_no",
+        strformat(game.translate_string("ui_mm_warfare_preset_confirm_delete"), entry.display), "delete")
+end
+
+function ui_options.UIOptions.wp_OnConfirm(self)
+    local action = self.wp_mb_action
+    self.wp_mb_action = nil
+
+    if action == "save" then
+        self:wp_DoSave(self.wp_mb_slug, self.wp_mb_display)
+    elseif action == "delete" then
+        if delete_preset(self.wp_mb_slug) then
+            self.wp_sel_slug = nil
+            if self.last_curr_tree then
+                self.last_curr_tree.wp_curr = nil
+            end
+            self:Register_Preset(self.last_curr_tree)
+            self:wp_UpdateDelete()
+        end
+    end
+end
+
+--------------------------------------------------------------------------------------
+-- UI -- keyboard
+--------------------------------------------------------------------------------------
+
+local base_Update = ui_options.UIOptions.Update
+function ui_options.UIOptions.Update(self)
+    local shown = self:wp_PromptShown()
+    self.hint_locked = shown and true or nil
+
+    base_Update(self)
+
+    if shown then
+        self.hint_wnd:Update()
+        self:wp_Validate()
+    end
+end
+
+local base_OnKeyboard = ui_options.UIOptions.OnKeyboard
+function ui_options.UIOptions.OnKeyboard(self, dik, keyboard_action)
+    if self:wp_PromptShown() and keyboard_action == ui_events.WINDOW_KEY_PRESSED then
+        if dik == DIK_keys.DIK_ESCAPE then
+            self:wp_OnPromptCancel()
+            return true
+        end
+        if dik == DIK_keys.DIK_RETURN or dik == DIK_keys.DIK_NUMPADENTER then
+            self:wp_OnPromptOk()
+            return true
+        end
+    end
+
+    return base_OnKeyboard(self, dik, keyboard_action)
+end
+
+--------------------------------------------------------------------------------------
+-- XML injection
+--------------------------------------------------------------------------------------
+
+local function num(attr, key, def)
+    local v = attr and tonumber(attr[key])
+    return v or def
+end
+
+function on_xml_read()
+    warfare_log.debug("modxml_warfare_presets.on_xml_read: registering callback")
+    RegisterScriptCallback("on_xml_read", function(xml_file_name, xml_obj)
+        if not string.find(xml_file_name, "ui_options") then
+            return
+        end
+
+        local main = xml_obj:query("main")
+        main = main and main[1]
+        if not main then
+            warfare_log.err("modxml_warfare_presets: no <main> node in %s, preset controls not injected", tostring(xml_file_name))
+            return
+        end
+
+        local anchor = xml_obj:query("main > cap_preset")
+        anchor = anchor and anchor[1]
+        local a = anchor and xml_obj:getElementAttr(anchor)
+
+        local btn_w = 76
+        local btn_h = num(a, "height", 25)
+        local btn_y = num(a, "y", 16)
+        local del_x = num(a, "x", 638) - btn_w - 6
+        local save_x = del_x - btn_w - 6
+
+        warfare_log.info("modxml_warfare_presets: injecting preset controls into %s", tostring(xml_file_name))
+
+        xml_obj:insertFromXMLString(string.format([[
+<btn_preset_save x="%s" y="%s" width="%s" height="%s" stretch="1">
+    <text align="c" font="letterica16">ui_mm_warfare_preset_save</text>
+    <texture>ui_button_ordinary</texture>
+</btn_preset_save>
+<btn_preset_del x="%s" y="%s" width="%s" height="%s" stretch="1">
+    <text align="c" font="letterica16">ui_mm_warfare_preset_delete</text>
+    <texture>ui_button_ordinary</texture>
+</btn_preset_del>
+        ]],
+            save_x, btn_y, btn_w, btn_h,
+            del_x, btn_y, btn_w, btn_h),
+            main)
+
+        local pw, ph = 380, 152
+        local px = math.floor((1024 - pw) / 2)
+        local py = math.floor((768 - ph) / 2)
+
+        xml_obj:insertFromXMLString(string.format([[
+<preset_prompt x="%s" y="%s" width="%s" height="%s" stretch="1">
+    <bg x="0" y="0" width="%s" height="%s" stretch="1">
+        <texture>ui_inGame2_message_box</texture>
+    </bg>
+    <cap x="14" y="14" width="%s" height="24" stretch="1">
+        <text complex_mode="1" r="200" g="200" b="200" align="c" vert_align="c" font="letterica18">ui_mm_warfare_preset_name</text>
+    </cap>
+    <input x="14" y="48" width="%s" height="30" stretch="1">
+        <text x="4" font="letterica16" vert_align="c" align="l"/>
+        <texture>ui_inGame2_edit_box_2</texture>
+    </input>
+    <hint x="14" y="82" width="%s" height="26" stretch="1">
+        <text complex_mode="1" r="250" g="150" b="75" align="c" vert_align="c" font="letterica16"/>
+    </hint>
+    <btn_ok x="%s" y="112" width="76" height="28" stretch="1">
+        <text align="c" font="letterica16">ui_mm_apply</text>
+        <texture>ui_button_ordinary</texture>
+    </btn_ok>
+    <btn_cancel x="%s" y="112" width="76" height="28" stretch="1">
+        <text align="c" font="letterica16">ui_mm_cancel</text>
+        <texture>ui_button_ordinary</texture>
+    </btn_cancel>
+</preset_prompt>
+        ]],
+            px, py, pw, ph,
+            pw, ph,
+            pw - 28,
+            pw - 28,
+            pw - 28,
+            math.floor(pw / 2) - 80, math.floor(pw / 2) + 4))
+
+        injected = true
+    end)
+end

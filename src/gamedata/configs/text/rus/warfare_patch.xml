@@ -443,4 +443,26 @@
 	<string id="ui_mm_alife_warfare_faction_lvl_k02_trucks_cemetery_priority_desc">
 		<text>Постоянная надбавка к приоритету всех целей на Кладбище техники. Положительные значения притягивают фракцию к этому уровню, отрицательные — отталкивают.</text>
 	</string>
+	<!-- Warfare preset save/delete UI -->
+	<string id="ui_mm_warfare_preset_save">
+		<text>Сохранить</text>
+	</string>
+	<string id="ui_mm_warfare_preset_delete">
+		<text>Удалить</text>
+	</string>
+	<string id="ui_mm_warfare_preset_name">
+		<text>Название пресета</text>
+	</string>
+	<string id="ui_mm_warfare_preset_overwrite">
+		<text>Перезаписать пресет «%s»?</text>
+	</string>
+	<string id="ui_mm_warfare_preset_protected">
+		<text>«%s» — встроенный пресет, его нельзя заменить. Выберите другое название.</text>
+	</string>
+	<string id="ui_mm_warfare_preset_confirm_delete">
+		<text>Удалить пресет «%s»?</text>
+	</string>
+	<string id="ui_mm_warfare_preset_bad_name">
+		<text>Используйте латинские буквы или цифры</text>
+	</string>
 </string_table>

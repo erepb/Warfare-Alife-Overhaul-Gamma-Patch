@@ -448,4 +448,26 @@
 	<string id="ui_mm_alife_warfare_faction_lvl_k02_trucks_cemetery_priority_desc">
 		<text>Flat priority added to every target in the Truck Cemetery. Positive values draw this faction toward the level, negative values push it away.</text>
 	</string>
+	<!-- Warfare preset save/delete UI -->
+	<string id="ui_mm_warfare_preset_save">
+		<text>Save preset</text>
+	</string>
+	<string id="ui_mm_warfare_preset_delete">
+		<text>Delete preset</text>
+	</string>
+	<string id="ui_mm_warfare_preset_name">
+		<text>Preset name</text>
+	</string>
+	<string id="ui_mm_warfare_preset_overwrite">
+		<text>Overwrite the preset '%s'?</text>
+	</string>
+	<string id="ui_mm_warfare_preset_protected">
+		<text>'%s' is a built-in preset and cannot be replaced. Pick another name.</text>
+	</string>
+	<string id="ui_mm_warfare_preset_confirm_delete">
+		<text>Delete the preset '%s'?</text>
+	</string>
+	<string id="ui_mm_warfare_preset_bad_name">
+		<text>Use latin letters or digits</text>
+	</string>
 </string_table>

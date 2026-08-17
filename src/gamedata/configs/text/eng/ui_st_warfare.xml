@@ -8,6 +8,10 @@
 	<string id="st_wrfr_opt_presets">
 		<text>Presets</text>
 	</string>
+	<!-- Caption above the preset combo on warfare pages; see modxml_warfare_presets. -->
+	<string id="ui_warfare_preset">
+		<text>Preset</text>
+	</string>
 	<string id="st_wrfr_opt_apply_to_all">
 		<text>Apply to All</text>
 	</string>
