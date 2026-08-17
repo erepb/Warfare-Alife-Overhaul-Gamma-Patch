@@ -272,6 +272,11 @@ function calculate_distance_combat_multiplier(pos, community)
         return 1.0 -- No modification if feature is disabled
     end
 
+    if not (pos) then
+        warfare_log.warn("calculate_distance_combat_multiplier: nil pos for community=%s, skipping distance multiplier", tostring(community))
+        return 1.0
+    end
+
     -- Cache option lookups outside loop
     local global_max_distance = opts.distance_combat_max_distance
     local min_multiplier = opts.distance_combat_min_multiplier
@@ -287,15 +292,17 @@ function calculate_distance_combat_multiplier(pos, community)
     local max_distance = 0
     local distance_factor = 0
     local props
+    local smart_pos
 
     -- Iterate through all smart terrains to find smarts of the specified type owned by the same faction
     for name,smart in pairs(SIMBOARD.smarts_by_names) do
         props = smart and smart.props
         if props then
-            -- Check if this smart is owned by the same faction
-            if smart.owning_faction == community then
+            smart_pos = (smart.owning_faction == community) and global_position.from(smart)
+
+            if smart_pos then
                 -- Calculate distance using the existing warfare system function
-                distance = math.max(1, warfare.distance_to_xz_sqr(global_position.from(smart), pos))
+                distance = math.max(1, warfare.distance_to_xz_sqr(smart_pos, pos))
                 distance = math.pow(distance, 0.5)
 
                 multiplier = min_multiplier

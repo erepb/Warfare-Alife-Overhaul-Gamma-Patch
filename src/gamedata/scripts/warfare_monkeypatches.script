@@ -910,13 +910,38 @@ function xr_logic.configure_schemes(npc, ini, ini_filename, stype, section_logic
     return st.ini
 end
 
+-- global_position.from() can return nil from two different places and callers feed the result
+-- straight into vector math, so the nil surfaces as a crash several frames away from its origin
+-- (see sim_offline_combat.calculate_distance_combat_multiplier). Both branches are logged so the
+-- offending object and the branch that produced the nil land in the log ahead of any such crash.
+--
+-- Object path (level_id nil): vanilla from() falls off the end when an object has no .position or
+-- no .m_game_vertex_id. Note vanilla recurses through the script-global from(), which is this
+-- function, so an object on an unmapped level ends up in the position path below.
+-- Position path (level_id set): no offset entry for that level_id.
 local global_position_from = global_position.from
 global_position.from = function(object_or_position, level_id)
     if (level_id == nil) then
-        return global_position_from(object_or_position, level_id)
+        local gp = global_position_from(object_or_position, level_id)
+        if not (gp) then
+            -- tostring() throughout: any of these can be nil, and string.format("%s", nil) throws.
+            local id = object_or_position and object_or_position.id
+            warfare_log.warn("global_position.from: nil for object id=%s name=%s gvid=%s level_id=%s pos=%s",
+                tostring(id),
+                tostring(id and object_or_position:name()),
+                tostring(object_or_position and object_or_position.m_game_vertex_id),
+                tostring(object_or_position and object_or_position.level_id),
+                (object_or_position and object_or_position.position) and "ok" or "nil")
+        end
+        return gp
     end
+
     local offset = global_position.level_offsets[level_id]
     if (not object_or_position) or (not offset) then
+        warfare_log.warn("global_position.from: nil for position level_id=%s pos=%s offset=%s",
+            tostring(level_id),
+            object_or_position and "ok" or "nil",
+            offset and "ok" or "nil")
         return
     end
     local p = object_or_position
