@@ -25,6 +25,40 @@ function ui_options.UIOptions.On_Cancel(self)
     ui_options_UIOptions_on_cancel(self)
 end
 
+--- Hover descriptions for options declared with a `hint`.
+--- ui_options documents `hint` as forcing both "ui_mm_<hint>" and "ui_mm_<hint>_desc", but only
+--- the label honors it: UIOptions.Update looks the description up from the caption's registration
+--- id, which is the option path. Warfare hands the same option table to all 13 faction groups, so
+--- a shared description would have to be authored once per faction path to ever show -- which is
+--- why only the group whose path matched ("stalker") had tooltips. Resolve the description from
+--- the hint at registration time and serve it on hover.
+local cap_desc = {}
+
+local ui_options_UIOptions_register_cap = ui_options.UIOptions.Register_Cap
+function ui_options.UIOptions.Register_Cap(self, xml, handler, id, hint)
+    local h = ui_options_UIOptions_register_cap(self, xml, handler, id, hint)
+    if hint then
+        local str = "ui_mm_" .. hint .. "_desc"
+        local desc = game.translate_string(str)
+        if desc ~= str then
+            cap_desc[string.gsub(id, "/", "_")] = desc
+        end
+    end
+    return h
+end
+
+local ui_options_UIOptions_update = ui_options.UIOptions.Update
+function ui_options.UIOptions.Update(self)
+    ui_options_UIOptions_update(self)
+    for cap_id, desc in pairs(cap_desc) do
+        local ctrl = self._Cap[cap_id]
+        if ctrl and ctrl:IsCursorOverWindow() then
+            self.hint_wnd:Update(desc)
+            return
+        end
+    end
+end
+
 --- map of setting_id and type
 local settings_map = {}
 function init_settings_map()
