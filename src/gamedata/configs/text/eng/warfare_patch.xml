@@ -162,7 +162,7 @@
 		<text>Use new resurgence logic</text>
 	</string>
 	<string id="ui_mm_alife_warfare_general_use_new_resurgence_logic_desc">
-		<text>When enabled, uses improved emergency resurrection system for extinct factions. Creates powerful squads that target the closest enemy/empty strategic locations when a faction has zero bases. When disabled, uses the original random resurgence system.</text>
+		<text>Chooses which emergency resurrection runs when a faction is down to zero bases and its resurgence timer elapses. Enabled: a force of at least 4 squads, scaling to 1.5x the target's population cap, spawns at the nearest safe territory, resource or lair and attacks one enemy or empty base, preferring bases flagged as that faction's resurrection sites and never picking the level you are on; the resurgence chance setting is ignored, so every attempt goes through. Disabled: the old system rolls resurgence chance first, then sends roughly twice the target's population cap at a random enemy or empty base on a random level.</text>
 	</string>
 	<string id="ui_mm_alife_warfare_general_spawn_speed_multiplier">
 		<text>Global spawn speed</text>
@@ -224,7 +224,7 @@
 		<text>Resurgence Chance</text>
 	</string>
 	<string id="ui_mm_alife_warfare_faction_resurgence_chance_desc">
-		<text>When a faction owns zero bases, they are considered 'defeated'. Once defeated, they have a chance for a 'resurgence', where a large attack force appears in an attempt to capture a random enemy base on the map. The timer for this attack depends on the minimum and maximum resurgence times. Additionally, there is a chance that the resurgence attempt will be skipped over: a resurgence chance of 50 will skip half of all resurgence attempts, while a resurgence chance of 0 will always skip attempts (as if the faction is permanently defeated).</text>
+		<text>When a faction owns zero bases, they are considered 'defeated'. Once defeated, they have a chance for a 'resurgence', where a large attack force appears in an attempt to capture a random enemy base on the map. The timer for this attack depends on the minimum and maximum resurgence times. Additionally, there is a chance that the resurgence attempt will be skipped over: a resurgence chance of 50 will skip half of all resurgence attempts, while a resurgence chance of 0 will always skip attempts (as if the faction is permanently defeated). This only applies while "Use new resurgence logic" is disabled - the new logic ignores this chance and carries out every attempt.</text>
 	</string>
 	<string id="ui_mm_alife_warfare_faction_random_squad_count_desc">
 		<text>When enabled, every squad for this faction will have a random number of NPCs between min_random_squad_count and max_random_squad_count.</text>
@@ -324,5 +324,128 @@
 	</string>
 	<string id="ui_mm_lst_trace">
 		<text>Trace</text>
+	</string>
+
+	<string id="ui_mm_alife_warfare_general_purge_zone_percentage_desc">
+		<text>The percentage of warfare squads hit each time an emission fires. Only matters when "Emission effect on warfare squads" is set to Kill or Zombify. Default: 5</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_min_invasion_depart_time_desc">
+		<text>The shortest a gathered invasion force waits at its launch base before setting out. The actual delay is rolled between this and the maximum. If the force is whittled below its planned size the timer resets and restarts once the squads are replaced.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_max_invasion_depart_time_desc">
+		<text>The longest a gathered invasion force waits at its launch base before setting out. The actual delay is rolled between the minimum and this value; a value below the minimum is clamped up to it.</text>
+	</string>
+
+	<string id="ui_mm_alife_warfare_faction_spawn_on_new_game_desc">
+		<text>Whether this faction is handed starting bases, resource points and squads when a new Warfare game is seeded. Disable it to start the faction with nothing on the map.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_random_spawn_entries_desc">
+		<text>How many extra entries this faction gets in the draw for each unclaimed base or resource point during world seeding. At 0 it only claims locations flagged for it in simulation_objects_props.ltx; higher values scatter it across the Zone.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_keep_last_base_desc">
+		<text>When enabled, this faction cannot be wiped off the map: once it is down to a single base, that base stays in its hands even while enemy squads occupy it.</text>
+	</string>
+
+	<string id="ui_mm_alife_warfare_faction_linked_level_targeting_desc">
+		<text>When enabled, a base only looks for targets on its own level and on levels directly connected to it. When disabled it considers locations anywhere in the Zone, which reaches distant fronts but spreads the faction thin.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_ignore_empty_targets_desc">
+		<text>When enabled, this faction's bases will not target unowned locations, so it only expands by taking ground off another faction. Locations it abandons stay empty until someone else claims them. Squad relocation is unaffected: overflowing bases can still move squads to empty ground.</text>
+	</string>
+
+	<string id="ui_mm_alife_warfare_faction_min_resurgence_wait_time_desc">
+		<text>The shortest wait between resurgence attempts while this faction is defeated (holds zero bases). Each attempt is scheduled at a random time between the minimum and the maximum.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_max_resurgence_wait_time_desc">
+		<text>The longest wait between resurgence attempts while this faction is defeated (holds zero bases). Each attempt is scheduled at a random time between the minimum and the maximum.</text>
+	</string>
+
+	<string id="ui_mm_alife_warfare_faction_target_faction_stronger_priority_desc">
+		<text>Added to a target's priority when the faction holding it owns more bases and resources overall than this one. Raise it to make this faction gang up on the leader, lower it to make it avoid stronger rivals.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_target_faction_weaker_priority_desc">
+		<text>Added to a target's priority when the faction holding it owns fewer bases and resources overall than this one. Raise it to make this faction finish off rivals that are already losing.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_target_resource_priority_desc">
+		<text>Added to a target's priority once for every resource point on the level it sits on. Raise it to pull this faction toward resource-rich levels regardless of how valuable the individual location is.</text>
+	</string>
+
+	<string id="ui_mm_alife_warfare_faction_lvl_k00_marsh_priority_desc">
+		<text>Flat priority added to every target on the Great Swamps. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_k01_darkscape_priority_desc">
+		<text>Flat priority added to every target on Darkscape. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l01_escape_priority_desc">
+		<text>Flat priority added to every target on Cordon. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l02_garbage_priority_desc">
+		<text>Flat priority added to every target on Garbage. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l03_agroprom_priority_desc">
+		<text>Flat priority added to every target on Agroprom. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l04_darkvalley_priority_desc">
+		<text>Flat priority added to every target in the Dark Valley. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l05_bar_priority_desc">
+		<text>Flat priority added to every target on Rostok. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l06_rostok_priority_desc">
+		<text>Flat priority added to every target in the Wild Territory. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l07_military_priority_desc">
+		<text>Flat priority added to every target in the Army Warehouses. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l08_yantar_priority_desc">
+		<text>Flat priority added to every target on Yantar. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l09_deadcity_priority_desc">
+		<text>Flat priority added to every target in the Dead City. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l10_limansk_priority_desc">
+		<text>Flat priority added to every target in Limansk. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l10_radar_priority_desc">
+		<text>Flat priority added to every target on Radar. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l10_red_forest_priority_desc">
+		<text>Flat priority added to every target in the Red Forest. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l11_hospital_priority_desc">
+		<text>Flat priority added to every target at the Deserted Hospital. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l11_pripyat_priority_desc">
+		<text>Flat priority added to every target in Pripyat. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l12_stancia_priority_desc">
+		<text>Flat priority added to every target at Chernobyl NPP (South). Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l12u_sarcofag_priority_desc">
+		<text>Flat priority added to every target in the Sarcophagus. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l12u_control_monolith_priority_desc">
+		<text>Flat priority added to every target in the Monolith Control Center. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l12_stancia_2_priority_desc">
+		<text>Flat priority added to every target at Chernobyl NPP (North). Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_l13_generators_priority_desc">
+		<text>Flat priority added to every target at the Generators. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_zaton_priority_desc">
+		<text>Flat priority added to every target on Zaton. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_jupiter_priority_desc">
+		<text>Flat priority added to every target on Jupiter. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_pripyat_priority_desc">
+		<text>Flat priority added to every target in the Outskirts. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_jupiter_underground_priority_desc">
+		<text>Flat priority added to every target in the Jupiter Underground. Positive values draw this faction toward the level, negative values push it away.</text>
+	</string>
+	<string id="ui_mm_alife_warfare_faction_lvl_k02_trucks_cemetery_priority_desc">
+		<text>Flat priority added to every target in the Truck Cemetery. Positive values draw this faction toward the level, negative values push it away.</text>
 	</string>
 </string_table>
