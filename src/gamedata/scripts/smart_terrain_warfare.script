@@ -1291,29 +1291,52 @@ function recall_squad_to_base(from_smart, squad, avoid_uncapturable, bases, neut
         return true
     end
 
-    -- Last resort: head for the faction's closest main base that it still holds or that is
-    -- empty (capturable). Every faction has a main base, so a failure here is unexpected
-    local main_bases = get_main_bases(faction)
-    if main_bases then
-        local best, best_dist
-        for i = 1, #main_bases do
-            local other = alife():story_object(main_bases[i])
-            local owner = other and (other.owning_faction or "none")
-            if other and (owner == faction or owner == "none") then
-                local d = fetch_smart_distance(from_smart, other)
-                if (not best_dist) or (d < best_dist) then
-                    best, best_dist = other, d
-                end
-            end
-        end
-        if best then
-            warfare_log.debug("recall_squad_to_base: squad=%s -> main_base=%s last-resort", squad.id, best.id)
-            sim_squad_warfare.set_target(squad, best.id)
-            return true
-        end
+    if send_to_main_base(from_smart, squad, faction, "recall_squad_to_base") then
+        return true
     end
 
     warfare_log.warn("recall_squad_to_base: no recall target found for squad=%s faction=%s from=%s", squad.id, faction, from_smart.id)
+    return false
+end
+
+
+function send_to_main_base(from_smart, squad, faction, caller)
+--[[
+    Last resort placement: head for the faction's closest main base that it still holds
+    or that is empty (capturable). Every faction has a main base, so a failure here is
+    unexpected.
+
+    Inputs:
+        from_smart: smart the squad is leaving
+        squad: alife object of the squad
+        faction: squad's faction
+        caller: caller name, for the log line only
+    Returns:
+        true if a target was set, false if the faction holds no reachable main base
+]]
+    local main_bases = get_main_bases(faction)
+    if not (main_bases) then
+        return false
+    end
+
+    local best, best_dist
+    for i = 1, #main_bases do
+        local other = alife():story_object(main_bases[i])
+        local owner = other and (other.owning_faction or "none")
+        if other and (owner == faction or owner == "none") then
+            local d = fetch_smart_distance(from_smart, other)
+            if (not best_dist) or (d < best_dist) then
+                best, best_dist = other, d
+            end
+        end
+    end
+
+    if best then
+        warfare_log.debug("%s: squad=%s -> main_base=%s last-resort", caller, squad.id, best.id)
+        sim_squad_warfare.set_target(squad, best.id)
+        return true
+    end
+
     return false
 end
 
@@ -1519,12 +1542,15 @@ function process_overflow_squad(smart, squad, bases)
             movedSquad = true
         end
     end
-    -- If nothing found within linked levels, delete the squad (if pop cap enabled)
-    if (movedSquad == false) and (not warfare_options.options.disable_smart_pop_cap) then
-        warfare_log.warn("process_overflow_squad: deleting squad=%s with no valid target smart=%s faction=%s",
-            tostring(squad.id), smart:name(), tostring(faction))
-        sim_squad_warfare.remove_squad(squad)
-        squad:remove_squad()
+    -- Still nowhere to go: fall back to the faction's HQ, the same last-resort tier
+    -- recall_squad_to_base uses. A squad that cannot be placed is left where it is --
+    -- it is never deleted, since an overflowing base is a population problem and not
+    -- the squad's fault.
+    if (movedSquad == false) then
+        if not send_to_main_base(smart, squad, faction, "process_overflow_squad") then
+            warfare_log.warn("process_overflow_squad: no valid target for squad=%s smart=%s faction=%s, leaving in place",
+                tostring(squad.id), smart:name(), tostring(faction))
+        end
     end
 end
 

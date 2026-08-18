@@ -40,6 +40,8 @@ function update_settings()
     options.fog_of_war_distance = ui_options.get("alife/warfare/general/fog_of_war_distance")
     --xQd
     options.enemy_new_game_bonus = ui_options.get("alife/warfare/general/enemy_new_game_bonus")
+    -- DEPRECATED: its only reader was the overflow-squad deletion branch, which is gone.
+    -- Kept so existing configs and presets carrying the key keep loading.
     options.disable_smart_pop_cap = ui_options.get("alife/warfare/general/disable_smart_pop_cap")
     --xQd
 
