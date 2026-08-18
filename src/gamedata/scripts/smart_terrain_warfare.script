@@ -135,6 +135,10 @@ dbg_hud = false
 dbg_show_invasion_source = false                -- debug: show red circle on bases that are planning an invasion
 
 local guard_size = 1                            -- number of squads to keep at a base when an invasion is sent out
+local BASE_INTAKE_SLACK = 0                     -- headroom above the occupancy cap when picking a destination base.
+                                                -- 0 leaves a hysteresis band of exactly one squad: a base at capacity
+                                                -- neither accepts nor evicts. Any higher value guarantees that a base
+                                                -- sitting at capacity accepts a squad and immediately evicts it again.
 local currently_surge = false
 local reset_defense_timer = {}
 local previous_owner = {}                                        -- have to use this, since using smart.last_owner messes with the pda icons
@@ -1431,6 +1435,9 @@ function find_nearby_bases(smart, faction, overflow_flag)
     local bases = {}
     local neutral_bases = {}
     local hostile_bases = {}
+    -- squads already heading somewhere count against that base's intake; skipped when
+    -- overflow_flag is set, since that path ignores capacity entirely
+    local incoming = (not overflow_flag) and build_incoming_map(faction) or nil
     local level_info = warfare_levels.level_information[smart.level_id]
     for i,sm in pairs(level_info.smarts) do
         local other = sm and alife_object(sm)
@@ -1440,7 +1447,7 @@ function find_nearby_bases(smart, faction, overflow_flag)
                 check_owner(other)
             end
 
-            if (other.owning_faction == "none") or ((other.owning_faction == faction) and (overflow_flag or base_has_vacancy(other, faction))) then
+            if (other.owning_faction == "none") or ((other.owning_faction == faction) and (overflow_flag or base_can_accept(other, faction, incoming))) then
                 local dist = fetch_smart_distance(smart, other)
                 bases[#bases + 1] = { other.id, dist }    -- Empty base or Friendly base
             elseif not is_factions_enemies(faction, other.owning_faction) then
@@ -1522,21 +1529,63 @@ function process_overflow_squad(smart, squad, bases)
 end
 
 
+-- Occupancy cap for a base. Invasion staging and stationary guards can raise it above
+-- max_population. Shared by base_has_vacancy and base_can_accept so the two predicates
+-- can never drift apart.
+local function base_max_allowable(smart, stationary_sq_num)
+    local invasion_force_size = invasions[smart.id] and invasions[smart.id][2] or 0
+    local guards = math.max(guard_size, stationary_sq_num)
+    return math.max((invasion_force_size + guards), smart.max_population)    -- invasion prep allows temporary overflow at a given base
+end
+
+
+function build_incoming_map(faction)
+--[[
+    Count the squads already en route to each smart, keyed by target smart id.
+
+    Built once per find_nearby_bases / find_targets_for_overflow call so the cost is
+    O(faction squads) instead of O(faction squads x candidate bases).
+
+    Keyed on `current_target_id` rather than the value stored in registered_squads:
+    sim_squad_warfare re-points a squad to its own smart_id when its target object has
+    gone away, without updating the registry, so the registry value can go stale and
+    would permanently inflate a base's incoming count.
+
+    Inputs:
+        faction: faction string whose squads to count
+    Returns:
+        table of target_smart_id -> number of squads in transit to it
+]]
+    local incoming = {}
+    local registered = warfare.registered_squads[faction]
+    if not (registered) then
+        return incoming
+    end
+
+    for sid,_ in pairs(registered) do
+        local squad = sid and alife_object(sid)
+        if (squad) and (squad.current_action == 0) and (squad.current_target_id) then
+            incoming[squad.current_target_id] = (incoming[squad.current_target_id] or 0) + 1
+        end
+    end
+
+    return incoming
+end
+
+
 function base_has_vacancy(smart, faction)
 --[[
-    Determine if a base has remaining vacancy.
-    Returns true if the base is exactly at capacity!
+    "Am I over capacity?" - the eviction test. A base at exactly its cap is NOT over it,
+    so it evicts nobody. Pair with base_can_accept, which answers the other question.
 
     Inputs:
         smart: chosen smart terrain
         faction: faction string of the owner of `smart`
     Returns:
-        boolean true/false whether the base has vacancy or not
+        boolean true/false whether the base is within its occupancy cap
 ]]
     local regular_squads, sq_pow, stationary_sq_num = squad_count_detailed(smart, faction)
-    local invasion_force_size = invasions[smart.id] and invasions[smart.id][2] or 0
-    local guards = math.max(guard_size, stationary_sq_num)
-    local max_allowable_size = math.max((invasion_force_size + guards), smart.max_population)    -- invasion prep allows temporary overflow at a given base
+    local max_allowable_size = base_max_allowable(smart, stationary_sq_num)
     if (regular_squads + stationary_sq_num > max_allowable_size) then
         warfare_log.trace("base_has_vacancy: full smart=%s regular=%s stat=%s max=%s",
             smart:name(), tostring(regular_squads), tostring(stationary_sq_num), tostring(max_allowable_size))
@@ -1544,6 +1593,39 @@ function base_has_vacancy(smart, faction)
     else
         return true
     end
+end
+
+
+function base_can_accept(smart, faction, incoming)
+--[[
+    "Can I receive one more?" - the destination test, and the counterpart to
+    base_has_vacancy. Two distinct questions need two distinct thresholds: reusing the
+    eviction test to pick a destination is what produced the base-to-base ping-pong,
+    because a base at exactly capacity looked like it had room, tipped over on arrival,
+    and evicted the squad straight back.
+
+    Squads already in transit are counted, so several bases cannot all commit to the
+    same free slot in one window. squad_count_detailed only counts arrived squads
+    (current_action == 1), which is why the caller has to supply them.
+
+    Inputs:
+        smart: candidate destination base
+        faction: faction string of the squad being placed
+        incoming: map from build_incoming_map, or nil to ignore squads in transit
+    Returns:
+        boolean true/false whether the base can take another squad
+]]
+    local regular_squads, sq_pow, stationary_sq_num = squad_count_detailed(smart, faction)
+    local max_allowable_size = base_max_allowable(smart, stationary_sq_num)
+    local en_route = (incoming and incoming[smart.id]) or 0
+
+    if (regular_squads + stationary_sq_num + en_route < max_allowable_size + BASE_INTAKE_SLACK) then
+        return true
+    end
+
+    warfare_log.trace("base_can_accept: no intake smart=%s regular=%s stat=%s incoming=%s max=%s",
+        smart:name(), tostring(regular_squads), tostring(stationary_sq_num), tostring(en_route), tostring(max_allowable_size))
+    return false
 end
 
 
@@ -5833,6 +5915,8 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
         return
     end
 
+    local incoming = build_incoming_map(faction)
+
     for i=1,#smartCollection do
         local other = smartCollection[i] and alife_object(smartCollection[i])
 
@@ -5843,7 +5927,10 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
             local other_level = other.level_id
 
             if (other.props.base > 0) then
-                if base_has_vacancy(other, faction) then
+                -- same intake test as find_nearby_bases: a base at capacity must not earn
+                -- the 10x "vacant" bonus, or relocation keeps feeding a base that will
+                -- evict the squad on arrival
+                if base_can_accept(other, faction, incoming) then
                     priority = 10 * (other.props.base * faction_props.base_priority)  -- Highly prioritize vacant bases
                 else
                     priority = 0.1 * (other.props.base * faction_props.base_priority)
