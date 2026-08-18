@@ -158,6 +158,7 @@ night_flag_timer = {}
 night_flag_next_update = {}
 
 smart_terrain_distances = {}                -- store distances when they get used. Save it in warfare.script to avoid lag spikes from continuously measuring distances between smart terrains
+smart_terrain_distances_linear = {}         -- sqrt of the above, cached the same way; used by the target scorers for a plain 1/r falloff
 under_attack = {}                            -- when a smart is under attack, halt squad assignment from that smart until the threat has passed or the point has changed hands
 
 patrol_squads = {}
@@ -5878,8 +5879,7 @@ function find_targets(smart, faction_override, overflow_squad)
                 priority = priority / 1000
             end
 
-            local distance = fetch_smart_distance(smart, other)
-            local inv_dist = 1 / distance
+            local inv_dist = 1 / fetch_smart_distance_linear(smart, other)
 
             targets_n = targets_n + 1
             targets[targets_n] = { priority * inv_dist, other.id }
@@ -5889,7 +5889,7 @@ function find_targets(smart, faction_override, overflow_squad)
     end
 
     table.sort(targets, function(a, b)
-        return math.abs(a[1]) > math.abs(b[1])
+        return a[1] > b[1]
     end)
 
 
@@ -6013,11 +6013,9 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
             end
 
             if (priority > 0) then
-                local distance = fetch_smart_distance(smart,other)
-                local inv_dist = (1 / distance)
+                local inv_dist = 1 / fetch_smart_distance_linear(smart, other)
 
-                -- extra weight on distance
-                targets[#targets+1] = { priority * inv_dist * inv_dist, other.id }
+                targets[#targets+1] = { priority * inv_dist, other.id }
             end
         end
     end
@@ -6052,6 +6050,27 @@ function pick_target(smart, squad, targets, override_checks)
             end
         end
     end
+end
+
+
+function fetch_smart_distance_linear(smart, other)
+--[[
+    True linear distance between two smarts, cached like fetch_smart_distance.
+
+    fetch_smart_distance returns a SQUARED distance (warfare.distance_to_xz_sqr), so
+    weighting by 1/that is really 1/r^2, and squaring it again -- as the overflow
+    scorer used to -- is 1/r^4. Both produced very heavy clustering around the source
+    smart. Scorers use this instead so the falloff is a plain 1/r.
+]]
+    if not smart_terrain_distances_linear[smart.id] then
+        smart_terrain_distances_linear[smart.id] = {}
+    end
+
+    if not smart_terrain_distances_linear[smart.id][other.id] then
+        smart_terrain_distances_linear[smart.id][other.id] = math.max(1, math.sqrt(fetch_smart_distance(smart, other)))
+    end
+
+    return smart_terrain_distances_linear[smart.id][other.id]
 end
 
 
