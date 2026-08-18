@@ -21,6 +21,59 @@ options = {}
 
 -- Will want to cycle through each variable to ensure it exists within
 -- warfare_options.ltx, or set it to defaults
+-- Level priorities used to run to +/-200 while every other additive weight sat around
+-- 50, so a single homeland value drowned out target type entirely. The range is now
+-- +/-100 and the shipped presets are re-tuned into a 60/30/15 band.
+--
+-- Values that match what a shipped preset used to write are remapped;
+-- anything else was tuned by hand and is only clamped into the new range.
+local LVL_SCALE_REV = 1
+local LVL_SCALE_KEY = "alife/warfare/general/_lvl_scale_rev"
+
+-- old shipped value -> new value. Applied per key only when the stored value matches.
+local lvl_scale_remap = {
+    [200] = 60,
+    [50]  = 30,
+    [40]  = 30,
+    [30]  = 30,
+    [25]  = 15,
+    [20]  = 15,
+    [15]  = 15,
+    [-10] = -15,
+    [-15] = -15,
+    [-25] = -30,
+}
+
+function migrate_level_priority_scale()
+    local rev = axr_main.config:r_value("options", LVL_SCALE_KEY, 2, 0)
+    if (rev and rev >= LVL_SCALE_REV) then
+        return
+    end
+
+    local changed = 0
+    for _, faction in pairs(warfare_factions.all_factions) do
+        for _, lvl in pairs(level_targets.level_names) do
+            local key = "alife/warfare/" .. faction .. "/lvl_" .. lvl .. "_priority"
+            local stored = axr_main.config:r_value("options", key, 2)
+            if (stored) then
+                local mapped = lvl_scale_remap[stored]
+                if (not mapped) and (stored > 100 or stored < -100) then
+                    mapped = (stored > 0) and 100 or -100    -- hand-tuned but now out of range
+                end
+                if (mapped) and (mapped ~= stored) then
+                    axr_main.config:w_value("options", key, mapped)
+                    changed = changed + 1
+                end
+            end
+        end
+    end
+
+    axr_main.config:w_value("options", LVL_SCALE_KEY, LVL_SCALE_REV)
+    axr_main.config:save()
+    warfare_log.info("warfare_options: migrated %s level priorities to the +/-100 scale", tostring(changed))
+end
+
+
 function update_settings()
     warfare_log.info("warfare_options.update_settings: reading MCM settings")
     options.factions = {}
@@ -62,6 +115,8 @@ function update_settings()
 
     options.enemy_resource_boost = ui_options.get("alife/warfare/general/enemy_resource_boost")
     options.enemy_base_boost = ui_options.get("alife/warfare/general/enemy_base_boost")
+
+    migrate_level_priority_scale()
 
     -- Migrate old boolean purge_zone_on_emission -> emission_effect
     local old_purge = axr_main.config:r_value("options", "alife/warfare/general/purge_zone_on_emission", 0)
@@ -203,6 +258,7 @@ function update_settings()
         options.factions[faction].base_priority = ui_options.get("alife/warfare/" .. faction .. "/base_priority")
         options.factions[faction].resource_priority = ui_options.get("alife/warfare/" .. faction .. "/resource_priority")
         options.factions[faction].territory_priority = ui_options.get("alife/warfare/" .. faction .. "/territory_priority")
+        options.factions[faction].lair_priority = ui_options.get("alife/warfare/" .. faction .. "/lair_priority")
         options.factions[faction].faction_flag_priority = ui_options.get("alife/warfare/" .. faction .. "/flag_priority")
         options.factions[faction].is_being_targeted_priority = ui_options.get("alife/warfare/" .. faction .. "/is_being_targeted_priority")
         options.factions[faction].target_weaker_priority = ui_options.get("alife/warfare/" .. faction .. "/target_weaker_priority")

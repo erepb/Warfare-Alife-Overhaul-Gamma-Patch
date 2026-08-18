@@ -200,27 +200,31 @@ local night_activity_allowed = {}                -- night activity is cleared on
 local actor_informed = {}                        -- Players on the same level of an allied defending point will be notified one time about the attack
 
 
+-- Whether a faction wants pure territories / lairs on a given level, using the same
+-- arithmetic the target scorers use: baseline type weight plus the faction's priority
+-- for that level. A faction with a negative baseline needs enough enthusiasm for the
+-- level to overcome it, which is what makes per-level behaviour tunable rather than a
+-- single global on/off. Replaces the old send_to_territory boolean table.
+function territory_interest(faction, level_id)
+    local ff = warfare_options.options.factions[faction]
+    if not (ff) then return 0 end
+    return (ff.territory_priority or 0) + (ff[get_level_priority_key(level_id)] or 0)
+end
+
+
+function lair_interest(faction, level_id)
+    local ff = warfare_options.options.factions[faction]
+    if not (ff) then return 0 end
+    return (ff.lair_priority or 0) + (ff[get_level_priority_key(level_id)] or 0)
+end
+
+
 -- if has_alife_info("bar_deactivate_radar_done") then  --- method to determine scorcher status
 
 
 -- this variable doesn't get used
 control_hold = {}
 
-send_to_territory = {
-    ["stalker"] = false,
-    ["bandit"]     = true,
-    ["csky"]     = false,
-    ["army"]     = false,
-    ["freedom"] = false,
-    ["dolg"]     = false,
-    ["ecolog"]     = false,
-    ["killer"]     = false,
-    ["monolith"] = true,
-    ["renegade"] = false,
-    ["greh"]     = true,
-    ["isg"]     = false,
-    ["zombied"] = true,
-}
 
 pda_icons = {
     ["stalker"] = "circle_stalker",
@@ -551,8 +555,6 @@ function set_max_population(smart)
     warfare_log.debug("set_max_population: smart=%s max_pop=%s default=%s",
         smart:name(), tostring(smart.max_population), tostring(smart.default_max_population))
 end
-
-
 
 
 
@@ -1115,6 +1117,7 @@ function process_base_squads(smart)
 
     local bases = {}
     local resources = {}
+    local lairs = {}
     local enemy_bases = {}
     local regular_squads, sq_pow, stationary_sq_num = squad_count_detailed(smart, faction)  -- Get squad counts of the smart terrain owner. Does NOT count random patrol squads
     local squads = SIMBOARD.smarts[smart.id].squads
@@ -1159,11 +1162,29 @@ function process_base_squads(smart)
                                     enemy_bases[#enemy_bases + 1] = { other.id, dist }    -- enemy bases
                                 end
 
-                                if other.props and ( (other.props.resource > 0) or (other.props.territory > 0 and other.props.lair < 1 and send_to_territory[faction]) ) then  -- Some factions also target pure territories
+                                -- Resources, and pure territories the faction actually wants. Territory
+                                -- interest is the same arithmetic the scorers use: the faction's baseline
+                                -- territory weight plus its priority for this level. A faction disinterested
+                                -- in territory needs enough enthusiasm for the level to overcome it.
+                                local wants_territory = (other.props.territory > 0) and (other.props.lair < 1)
+                                    and (other.props.resource < 1) and (other.props.base < 1)
+                                    and (territory_interest(faction, smart.level_id) > 0)
+
+                                if other.props and ((other.props.resource > 0) or wants_territory) then
                                     local numTargeting = squad_count(other, smart.owning_faction)  -- See if already sending a squad to the resource
                                     if (numTargeting < 1) and (other.owning_faction == "none" or ((other.owning_faction == "stalker" or other.owning_faction == "ecolog") and (other.props.base < 1) and not is_factions_enemies(smart.owning_faction, other.owning_faction))) then
                                         local dist = fetch_smart_distance(smart, other)
                                         resources[#resources + 1] = { other.id, dist }    -- claimable resources
+                                    end
+                                end
+
+                                -- Lairs are a separate, lowest tier: only factions that hunt mutants take
+                                -- them, and only after every resource and territory has been considered.
+                                if other.props and (other.props.lair > 0) and (other.props.base < 1) and (other.props.resource < 1)
+                                    and (other.owning_faction == "none") and (lair_interest(faction, smart.level_id) > 0) then
+                                    if (squad_count(other, smart.owning_faction) < 1) then
+                                        local dist = fetch_smart_distance(smart, other)
+                                        lairs[#lairs + 1] = { other.id, dist }
                                     end
                                 end
                             end
@@ -1173,6 +1194,10 @@ function process_base_squads(smart)
                             end)
 
                             table.sort(resources, function(a, b)
+                                return a[2] < b[2]
+                            end)
+
+                            table.sort(lairs, function(a, b)
                                 return a[2] < b[2]
                             end)
                         end
@@ -1196,10 +1221,31 @@ function process_base_squads(smart)
                                     end
                                 end
                             end
-                            -- Only send one squad per update of this function, to allow other bases to also send squads
-                            if squad_sent then
-                                break
+                        end
+
+                        -- Lowest tier: nothing claimable left, so mutant-hunting factions clear a den
+                        if not squad_sent and (#lairs > 0) then
+                            local closest_enemy_base_distance = enemy_bases and enemy_bases[1] and enemy_bases[1][2] or nil
+                            for i=1,#lairs do
+                                local lair_id = lairs[i][1]
+                                local lair_distance = lairs[i][2]
+                                local other = lair_id and alife_object(lair_id)
+                                if (closest_enemy_base_distance and (lair_distance < closest_enemy_base_distance)) or not closest_enemy_base_distance then
+                                    if (squad_count(other, smart.owning_faction) < 1) and (math.random(100) < aggression) then
+                                        warfare_log.debug("process_base_squads: send squad to lair smart=%s squad=%s -> lair=%s",
+                                            smart:name(), tostring(squad.id), tostring(lair_id))
+                                        sim_squad_warfare.set_target(squad, lair_id)
+                                        squad_sent = true
+                                        regular_squads = regular_squads - 1
+                                        break
+                                    end
+                                end
                             end
+                        end
+
+                        -- Only send one squad per update of this function, to allow other bases to also send squads
+                        if squad_sent then
+                            break
                         end
                     end
 
@@ -5562,7 +5608,7 @@ function find_random_patrol_target(smart, faction, sid)
                         priority = priority + (other.props.resource * warfare_options.options.factions[faction].resource_priority)
                     end
 
-                    if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1 and faction_options.territory_priority) then
+                    if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1 and other.props.lair < 1 and faction_options.territory_priority) then
                         priority = priority + (other.props.territory * warfare_options.options.factions[faction].territory_priority)
                     end
 
@@ -5814,7 +5860,7 @@ function find_targets(smart, faction_override, overflow_squad)
             priority = priority + other_props.resource * ff_resource_priority
         end
 
-        if other_props.territory > 0 and other_props.resource < 1 and other_props.base < 1 then
+        if other_props.territory > 0 and other_props.resource < 1 and other_props.base < 1 and other_props.lair < 1 then
             priority = priority + other_props.territory * ff_territory_priority
         end
 
@@ -5837,6 +5883,10 @@ function find_targets(smart, faction_override, overflow_squad)
         local p = get_level_priority_key(other_level)
         if ff[p] then
             priority = priority + ff[p]
+        end
+
+        if other_level == level then
+            priority = priority + ff_target_same_level
         end
 
         -- slight priority boost for empty resources or bases, or resources owned by neutral loner/ecolog
@@ -5868,10 +5918,6 @@ function find_targets(smart, faction_override, overflow_squad)
                         priority = priority + ff_target_faction_stronger
                     end
                 end
-            end
-
-            if other_level == level then
-                priority = priority + ff_target_same_level
             end
 
             -- greatly de-prioritize loner/ecolog bases, but not to zero
@@ -5969,7 +6015,7 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
 
             -- pure territories, scored by the faction's territory_priority (negative for most
             -- factions, so they stay excluded unless the faction actually values territory)
-            if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1) then
+            if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1 and other.props.lair < 1) then
                 priority = priority + (other.props.territory * faction_props.territory_priority)
             end
 
