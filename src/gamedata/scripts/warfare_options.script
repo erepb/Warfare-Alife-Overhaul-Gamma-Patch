@@ -115,6 +115,7 @@ function update_settings()
 
     options.enemy_resource_boost = ui_options.get("alife/warfare/general/enemy_resource_boost")
     options.enemy_base_boost = ui_options.get("alife/warfare/general/enemy_base_boost")
+    options.overflow_distance_cost = ui_options.get("alife/warfare/general/overflow_distance_cost")
 
     migrate_level_priority_scale()
 

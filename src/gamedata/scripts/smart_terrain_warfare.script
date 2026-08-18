@@ -5950,30 +5950,37 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
     Used to handle overflow squads on bases that need to be redistributed.
     Searches current level + linked levels by default, or all levels if search_all_levels is true.
 
-    Returns own/empty bases, resources, and (for factions that value them, via
+    Returns empty bases with intake, resources, and (for factions that value them, via
     territory_priority) pure territories. Enemy-owned bases are never returned (heavily
     defended — a relocation must not become a suicide attack); lightly-held enemy holdings
-    such as resources/territories are kept but de-prioritized.
+    such as resources/territories are kept.
+
+    Scoring is additive and every term is an existing faction knob:
+
+        base/resource/territory_priority  +  lvl_<level>_priority
+        + target_on_same_level_priority   (target is on the squad's current level)
+        - overflow_distance_cost/100      per world unit travelled
+
+    Because distance is charged rather than divided in, the `priority > 0` gate turns each
+    score into a real travel radius -- score / cost -- so a faction reaches further for what
+    it values and a level it dislikes shrinks every radius into it. A multiplicative 1/d
+    score cannot express a radius at all: it never reaches zero, so distance alone can never
+    rule a candidate out, which is how squads relocated onto levels their faction disliked.
 
     Inputs:
         smart: smart terrain with overflow squad(s) to be moved
         faction: owner of `smart`, and faction of the overflow squad
         search_all_levels: boolean flag whether or not to search beyond linked-levels or not
     Returns:
-        targets: list of bases sorted with closest first
+        targets: list of { score, smart_id }, best first
 ]]
     warfare_log.trace("find_targets_for_overflow: smart=%s faction=%s all_levels=%s",
         smart:name(), tostring(faction), tostring(search_all_levels))
     local level = smart.level_id
     local targets = {}
-    local d = smart.defense_power or 0
     local faction_props = warfare_options.options.factions[faction]
-
-    if (faction) then
-        d = get_faction_power(smart, faction)
-    end
-
-    d = d * get_max_power_mult(smart) or 1
+    -- option is per 100 world units so the MCM slider stays an integer
+    local distance_cost = (warfare_options.options.overflow_distance_cost or 5) / 100
 
     -- Use precalculated smart collections
     local smartCollection
@@ -5992,82 +5999,100 @@ function find_targets_for_overflow(smart, faction, search_all_levels)
     for i=1,#smartCollection do
         local other = smartCollection[i] and alife_object(smartCollection[i])
 
-        -- Find bases with vacancy to go to
-        if other and other.props then
+        if not (other and other.props) then
+            goto continue
+        end
+
+        local other_props = other.props
+        local other_faction = other.owning_faction or "none"
+        local other_level = other.level_id
+        local is_enemy = is_factions_enemies(faction, other_faction)
+
+        -- Hard exclusions. These were -1000/-500/-100 sentinels that the `priority > 0` gate
+        -- happened to discard; with additive scoring no fixed sentinel is reliably below the
+        -- gate, so a candidate that must never be chosen is skipped outright.
+
+        -- storyline travel restrictions (Scorcher, Miracle Machine, underground, Monolith south)
+        if not is_travel_allowed(level, other_level, faction) then
+            goto continue
+        end
+
+        -- enemy bases are heavily defended: never an overflow/recall target
+        if is_enemy and (other_props.base > 0) then
+            goto continue
+        end
+
+        -- holdings of a faction we are not at war with are not up for grabs
+        if (not is_enemy) and (other_faction ~= "none") and (faction ~= other_faction)
+            and (other_faction ~= "stalker") and (other_faction ~= "ecolog") then
+            goto continue
+        end
+
+        -- loner/ecolog bases stay theirs; their unowned-adjacent holdings are still fair game
+        if (not is_enemy) and ((other_faction == "stalker") or (other_faction == "ecolog"))
+            and (other_props.base > 0) then
+            goto continue
+        end
+
+        -- main base protection: never target a base still held by its original faction
+        if warfare_options.options.prevent_mainbase_attacks and other_faction == get_protected_base_faction(other:name()) then
+            goto continue
+        end
+
+        do
             local priority = 0
-            local other_faction = other.owning_faction or "none"
-            local other_level = other.level_id
+            local usable = false
 
-            if (other.props.base > 0) then
-                -- same intake test as find_nearby_bases: a base at capacity must not earn
-                -- the 10x "vacant" bonus, or relocation keeps feeding a base that will
-                -- evict the squad on arrival
-                if base_can_accept(other, faction, incoming) then
-                    priority = 10 * (other.props.base * faction_props.base_priority)  -- Highly prioritize vacant bases
-                else
-                    priority = 0.1 * (other.props.base * faction_props.base_priority)
+            if (other_props.base > 0) then
+                -- A base at capacity is not a relocation destination. process_overflow_squad's
+                -- on-level pass already refuses them, and recall_squad_to_base's pass includes
+                -- them via overflow_flag, so carrying them here would undo both.
+                if not base_can_accept(other, faction, incoming) then
+                    goto continue
                 end
+                priority = priority + (other_props.base * faction_props.base_priority)
+                usable = true
             end
 
-            if (other.props.resource > 0) then
-                priority = priority + (other.props.resource * faction_props.resource_priority)
+            if (other_props.resource > 0) then
+                priority = priority + (other_props.resource * faction_props.resource_priority)
+                usable = true
             end
 
-            -- pure territories, scored by the faction's territory_priority (negative for most
-            -- factions, so they stay excluded unless the faction actually values territory)
-            if (other.props.territory > 0 and other.props.resource < 1 and other.props.base < 1 and other.props.lair < 1) then
-                priority = priority + (other.props.territory * faction_props.territory_priority)
+            -- pure territories only; a lair or resource sharing the smart is scored on its own terms
+            if (other_props.territory > 0 and other_props.resource < 1 and other_props.base < 1 and other_props.lair < 1) then
+                priority = priority + (other_props.territory * faction_props.territory_priority)
+                usable = true
             end
 
-            -- storyline travel restrictions (Scorcher, Miracle Machine, underground, Monolith south)
-            if not is_travel_allowed(level, other_level, faction) then
-                priority = -1000
+            -- nothing here this faction can hold (pure lairs, lair+territory, propless smarts).
+            -- Checked explicitly: no later term may lift such a smart above the gate.
+            if not usable then
+                goto continue
             end
 
-            -- enemy bases are heavily defended: never an overflow/recall target.
-            -- lightly-held enemy holdings (resources) are kept, just de-prioritized.
-            if is_factions_enemies(faction, other_faction) then
-                if (other.props.base > 0) then
-                    priority = -1000
-                else
-                    priority = priority * 0.2
-                end
+            -- how much the faction wants to be on that level at all. Absent from this scorer
+            -- before, which is why squads relocated onto levels their faction actively disliked.
+            priority = priority + (faction_props[get_level_priority_key(other_level)] or 0)
+
+            -- straight-line distance is a poor proxy for crossing a map boundary, so staying on
+            -- the level is worth the faction's own same-level weight, as it is in find_targets
+            if (other_level == level) then
+                priority = priority + (faction_props.target_on_same_level_priority or 0)
             end
 
-            -- neutral factions get de-prioritized
-            if not (is_factions_enemies(faction, other_faction) or other_faction == "none") and (faction ~= other_faction) and (other_faction ~= "stalker") and (other_faction ~= "ecolog") then
-                priority = -500
-            end
-
-            if ((other_faction == "stalker") or (other_faction == "ecolog")) and not is_factions_enemies(faction, other_faction) and (other.props.base > 0) then
-                priority = -100
-            end
-
-            -- priority boost for empty resources, bases, or territories
-            if (other_faction == "none") and (other.props.resource > 0 or other.props.base > 0 or other.props.territory > 0) then
-                priority = priority * 1.5
-            end
-
-            -- Monolith actor: soft de-prioritize southern levels while scorcher active (hard block handled by is_travel_allowed)
-            if IsStoryMode() and not has_alife_info("bar_deactivate_radar_done") and (faction == "monolith") and (faction == warfare.actor_faction) and ( (other_level < 12) or (other_level > 31) ) then
-                priority = priority * 0.8
-            end
-
-            -- main base protection: never target a base still held by its original faction
-            if warfare_options.options.prevent_mainbase_attacks and other_faction == get_protected_base_faction(other:name()) then
-                priority = -1000
-            end
+            priority = priority - (distance_cost * fetch_smart_distance_linear(smart, other))
 
             if (priority > 0) then
-                local inv_dist = 1 / fetch_smart_distance_linear(smart, other)
-
-                targets[#targets+1] = { priority * inv_dist, other.id }
+                targets[#targets+1] = { priority, other.id }
             end
         end
+
+        ::continue::
     end
 
     table.sort(targets, function(a, b)
-        return math.abs(a[1]) > math.abs(b[1])
+        return a[1] > b[1]
     end)
 
     return targets

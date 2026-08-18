@@ -477,4 +477,11 @@
 	<string id="ui_mm_alife_warfare_faction_lair_priority_desc">
 		<text>How much this faction wants to clear mutant lairs. Lairs are the lowest-priority target: a squad is only sent to one once no resource or territory is available. This value is added to the faction's priority for the level its base sits on, and a lair is pursued only when that total is above zero. A strongly negative value therefore keeps lairs off even on the faction's favourite levels, while any positive value enables them almost everywhere. Default: -75</text>
 	</string>
+	<!-- Overflow relocation -->
+	<string id="ui_mm_alife_warfare_general_overflow_distance_cost">
+		<text>Overflow travel cost per 100m</text>
+	</string>
+	<string id="ui_mm_alife_warfare_general_overflow_distance_cost_desc">
+		<text>How many priority points a relocating squad pays for every 100 units it travels. Overflow scoring is additive, so this converts distance into the same units as the base, resource and territory weights: a destination is dropped once the travel cost exceeds what it is worth. That makes each target's effective travel radius equal to its total priority divided by this value, so raise it to keep squads local and lower it to let them roam. Default: 5</text>
+	</string>
 </string_table>

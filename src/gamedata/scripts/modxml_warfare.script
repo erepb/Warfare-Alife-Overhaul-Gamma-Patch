@@ -297,6 +297,7 @@ function ui_options.init_opt_coder()
             { id = "enemy_new_game_bonus", type = "check", val = 1, def = false },
             { id = "enemy_resource_boost", type = "track", val = 2, def = 0, min = -50, max = 50, step = 1 },
             { id = "enemy_base_boost", type = "track", val = 2, def = 0, min = -50, max = 50, step = 1 },
+            { id = "overflow_distance_cost", type = "track", val = 2, def = 5, min = 1, max = 50, step = 1, hint = "alife_warfare_general_overflow_distance_cost" },
 
             { id = "actor_influence_weight", type = "track", val = 2, def = 250, min = 0, max = 10000, step = 50 },
             { id = "novice_squad_price", type = "track", val = 2, def = 1000, min = 0, max = 100000, step = 1000 },
