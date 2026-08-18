@@ -1,0 +1,196 @@
+--[[
+
+=======================================================================================
+    Workbench toolkit tiers for Warfare mechanics.
+
+    Bundled from Hawkie's "Warfare Mechanic Fix" v0.2, used under the Creative Commons
+    licence it is published under on ModDB, and adapted for this addon. The file keeps
+    Hawkie's name so that installing the standalone version alongside this addon
+    replaces this copy instead of registering the callback twice.
+
+    The problem: itms_manager.ltx [workshop_angles] ties every vice to one story
+    mechanic, and bind_awr reads that mechanic's <section>_upgrade_tier_N infoportions
+    to decide which toolkits the bench itself provides. In Warfare that story mechanic
+    is usually dead or was never spawned, so the toolkits handed to a Warfare faction
+    mechanic -- tm_warfare.ltx grants sim_default_<faction>_mechanic_upgrade_tier_N on
+    the toolkit fetch tasks -- never reach any bench, and every vice behaves as if it
+    had no tools. Access itself is not the issue: bind_awr.access already returns true
+    for the whole Zone while _G.WARFARE is set.
+
+    The fix: once the story owner is gone, source the tiers from
+    sim_default_<owning faction>_mechanic instead, keep the story owner's own tiers when
+    they were of the actor's faction, and label the workshop with the Warfare mechanic
+    who actually stands there.
+
+    Skipped when this addon's GAMMA patch is installed. GAMMA ships its own bind_awr
+    (from "G.A.M.M.A. Vices are free") whose access() carries an extra SMR clause;
+    taking the callback over would drop it, and GAMMA's workshop already counts toolkits
+    kept in a nearby stash, which makes the bench-supplied tiers far less important.
+=======================================================================================
+
+--]]
+
+local MECHANIC_PREFIX = "sim_default_"
+local MECHANIC_SUFFIX = "_mechanic"
+
+local ini_manager
+
+-- vice name -> [workshop_angles] row; [1] is the story mechanic that owns the vice.
+local angles = {}
+
+--------------------------------------------------------------------------------------
+-- Lookups
+--------------------------------------------------------------------------------------
+
+local function nearest_smart()
+    local id = smart_terrain.nearest_to_actor_smart and smart_terrain.nearest_to_actor_smart.id
+    return id and alife_object(id)
+end
+
+--- The faction whose mechanic the bench should answer to: whoever holds the smart the
+--- actor is standing on, falling back to the actor's own faction on unowned ground.
+local function mechanic_faction(smart)
+    local faction = smart and smart.owning_faction
+    if not faction or faction == "none" then
+        faction = warfare.actor_faction
+    end
+    return faction
+end
+
+--- Name of the Warfare mechanic garrisoning this smart, or nil. Warfare merchants carry
+--- no story id, so they cannot be resolved the way the vanilla owner is.
+local function garrison_mechanic_name(smart, faction)
+    local board = smart and SIMBOARD.smarts[smart.id]
+    local squads = board and board.squads
+    if not squads then
+        return nil
+    end
+
+    -- Merc squads are named after "merc", not after the "killer" faction id -- the same
+    -- remap check_unique_npcs does before it spawns them.
+    local unique = warfare_utils.CheckUniqueSquad(faction == "killer" and "merc" or faction)
+    for sid, _ in pairs(squads) do
+        local se_squad = sid and alife_object(sid)
+        if se_squad and unique:is_npc_mechanic(se_squad:name()) then
+            local commander_id = se_squad:commander_id()
+            local commander = commander_id and alife_object(commander_id)
+            if commander and commander.character_name then
+                local name = commander:character_name()
+                if name then
+                    warfare_log.debug("zz_warfare_mech_fix: garrison mechanic=%s smart=%s", name, smart:name())
+                    return name
+                end
+            end
+        end
+    end
+    return nil
+end
+
+local function has_tier(mechanic, tier)
+    return db.actor:has_info(mechanic .. "_upgrade_tier_" .. tier)
+end
+
+local function has_drugkit(mechanic)
+    local done = ini_manager:r_string_ex("drugkit_access", mechanic)
+    return (done and db.actor:has_info(done)) and true or false
+end
+
+--------------------------------------------------------------------------------------
+-- Callback
+--------------------------------------------------------------------------------------
+
+function physic_object_on_use_callback(obj, who)
+    if not (_G.WARFARE and obj and string.match(obj:name(), "awr_tiski")) then
+        return bind_awr.physic_object_on_use_callback(obj, who)
+    end
+
+    local name = obj:name()
+    local story_mechanic = angles[name] and angles[name][1]
+    local story_obj = story_mechanic and get_story_object(story_mechanic)
+
+    -- The vice still has its owner: vanilla already reads the right tiers off him.
+    if story_obj and story_obj:alive() then
+        return bind_awr.physic_object_on_use_callback(obj, who)
+    end
+
+    if not (bind_awr.access(obj) and obj:position():distance_to(db.actor:position()) < 1.5) then
+        return
+    end
+
+    bind_awr.r_unused()
+
+    local smart = nearest_smart()
+    local faction = mechanic_faction(smart)
+    local mechanic = MECHANIC_PREFIX .. faction .. MECHANIC_SUFFIX
+
+    local flag_1 = has_tier(mechanic, 1)
+    local flag_2 = has_tier(mechanic, 2)
+    local flag_3 = has_tier(mechanic, 3)
+    local flag_4 = has_drugkit(mechanic)
+
+    -- The fallen owner's own tiers still count when he served the actor's faction.
+    if story_obj and story_obj:character_community() == warfare.actor_faction then
+        flag_1 = flag_1 or has_tier(story_mechanic, 1)
+        flag_2 = flag_2 or has_tier(story_mechanic, 2)
+        flag_3 = flag_3 or has_tier(story_mechanic, 3)
+        flag_4 = flag_4 or has_drugkit(story_mechanic)
+    end
+
+    warfare_log.info("zz_warfare_mech_fix: vice=%s owner=%s tiers=%s/%s/%s drugkit=%s",
+        name, mechanic, tostring(flag_1), tostring(flag_2), tostring(flag_3), tostring(flag_4))
+
+    local owner_name = garrison_mechanic_name(smart, faction)
+            or game.translate_string("st_ui_workshop_owner_nobody")
+
+    local function start_ui()
+        local ui = ui_workshop and ui_workshop.get_workshop_ui(get_hud(), mechanic,
+            { flag_1, flag_2, flag_3, flag_4, false })
+        if ui then
+            ui:ShowDialog(true)
+
+            -- Re-label the owner line: the workshop resolves it through get_story_object,
+            -- which never finds a Warfare merchant.
+            if ui.dlg_state and ui.dlg_state.info_text then
+                ui.dlg_state.info_text:SetText(
+                    game.translate_string("st_ui_workshop_info_state_intro")
+                    .. utils_xml.get_color("d_blue")
+                    .. " \\n - "
+                    .. strformat(game.translate_string("st_ui_workshop_owner"), owner_name))
+            end
+        end
+        return true
+    end
+
+    local delay = actor_effects.is_animations_on() and 2 or 0
+    actor_effects.play_item_fx("workshop_dummy")
+    CreateTimeEvent(0, "delay_workshop", delay, start_ui)
+end
+
+--------------------------------------------------------------------------------------
+-- Install
+--------------------------------------------------------------------------------------
+
+--- Rebuilds bind_awr's private [workshop_angles] table -- it is a file local there.
+local function load_angles()
+    local mesh_list = utils_data.collect_section(ini_manager, "workshop_angles")
+    for _, k in ipairs(mesh_list) do
+        angles[k] = parse_list(ini_manager, "workshop_angles", k)
+    end
+end
+
+function on_game_start()
+    if warfare_monkeypatches_gamma_patch then
+        warfare_log.info("zz_warfare_mech_fix: GAMMA patch installed, leaving bind_awr alone")
+        return
+    end
+
+    ini_manager = itms_manager.ini_manager
+    load_angles()
+
+    -- The registration holds the function value, so bind_awr's own copy has to go: this
+    -- script is named to sort after bind_awr, whose on_game_start has already run.
+    UnregisterScriptCallback("physic_object_on_use_callback", bind_awr.physic_object_on_use_callback)
+    RegisterScriptCallback("physic_object_on_use_callback", physic_object_on_use_callback)
+
+    warfare_log.info("zz_warfare_mech_fix: workbench callback installed")
+end
