@@ -9,7 +9,6 @@
 	is a higher priority level for any enemy faction on neighboring levels.
 	
 	level_information[level].faction_stats[faction] = {
-		target_level = #,
 		base_count = #,
 		territory_count = #,
 		resource_count = #,
@@ -171,32 +170,6 @@ function update_level(lvl)
 			end
 		end
 		
-		-- Only calculate a target if base_count is greater than zero, otherwise its likely a lab.
-		-- Users can flag lab smarts as bases if they want to have the labs target surface levels.
-		if (level_information[lvl].base_count > 0) then
-			for f,tbl in pairs(level_information[lvl].faction_stats) do
-				if f ~= "none" then
-					-- If the faction has no enemies on the current level and there are no empty bases, find a target level.
-					if not (level_information[lvl].faction_stats[f].faction_war or level_information[lvl].faction_stats["none"].base_count > 0) then
-                        local aggression = warfare_options.options.factions[f].expansion_aggression
-
-						if ((pda_actor.manual_control and f ~= warfare.actor_faction) or (not pda_actor.manual_control)) then
-							if (math.random(0, 100) < aggression) then
-								local target = get_level_target(lvl, f)
-								level_information[lvl].faction_stats[f].target_level = target
-
-								if target then
-									warfare_log.debug("update_level: lvl=%s faction=%s assigned target_level=%s", tostring(lvl), tostring(f), tostring(target))
-								else
-									warfare_log.trace("update_level: lvl=%s faction=%s aggression roll passed but no target found", tostring(lvl), tostring(f))
-								end
-							end
-						end
-					end
-				end
-			end
-		end
-		
 		--printf("faction count for " .. game.translate_string(alife():level_name(lvl)) .. ": " .. level_information[lvl].faction_count)
 		
 		for f,tbl in pairs(level_information[lvl].faction_stats) do
@@ -218,89 +191,4 @@ function update_level(lvl)
 		end
 	end
 
-end
-
--- This function will also take into consideration calculated hostility.
--- calculated hostility will be high if enemy faction is targeting, medium if enemy faction has bases on the level (maybe consider total bases / bases owned), and low if no hostile factions.
--- That should allow for relatively decent targeting of levels.
--- Likely still want to use linked levels and run the above function on them. If no valid invasion target found, then go ahead and calculate for every level.
-
-
---[[
-
-This function is used to calculate level target priorities for factions, which will be used when finding an invasion target. Levels will find their own targets independently if they have
-no enemies on their current level.
-
-TODO: assign point values based on the following criteria; smart terrains should operate in a similar manner as well in order to have uniformity in target selection
-
-* are the levels linked
-* is the target level targeting this level (consider not taking this into account so squads can build up in low priority smart terrains to take their first base on target level)
-* distance
-* is the target level targeting a friendly level
-* target level hostility (enemy base count; if another friendly level is targeting or being targeted, consider its base count; consider own levels base count as well)
-* faction priority
-* target level power (enemy total power; if another level is targeting or being targeted, consider its total power; consider own total power as well)
-* target level resource count
-* is a faction war in progress on target level
-
-]]
-
-function get_level_target(lvl, faction)
-	warfare_log.trace("get_level_target: lvl=%s faction=%s", tostring(lvl), tostring(faction))
-	local links = level_targets.level_links[lvl]
-	local levels = level_targets.active_levels
-	local dists = {}
-
-	local a = level_targets.level_offsets[lvl]
-	
-	for i,lvl2 in pairs(levels) do
-		if lvl ~= lvl2 and level_information[lvl2].faction_stats then
-			local b = level_targets.level_offsets[lvl2]
-			local dist = math.pow(b[1] - a[1], 2) + math.pow(b[2] - a[2], 2) + math.pow(b[3] - a[3], 2)
-			local priority = 1
-			
-			-- linked levels get significantly more priority
-			if links[lvl2] then
-				priority = priority + 50
-			end
-			
-			local enemyCount, enemies = faction_enemy_present(lvl2, faction)
-			
-			-- Enemies are present. Calculate how many bases they own vs total number of bases.
-			if enemyCount > 0 then
-			
-				-- Iterate through enemies; for each enemy base present, increase priority by 2
-				for f,v in pairs(enemies) do	
-					local presence = level_information[lvl2].faction_stats[f].base_count	
-					priority = priority + 2
-				end
-			end
-			
-			-- Factor in total level priority, which is the sum total of individual smart terrain priority for the faction
-			if level_information[lvl2].faction_priority[faction] then
-				priority = priority + level_information[lvl2].faction_priority[faction]
-			end
-			
-			-- Only consider levels with enemies or empty bases, as otherwise you'd be targeting neutral or allied factions.
-			if (enemyCount > 0 or level_information[lvl2].faction_stats["none"].base_count > 0) then
-				dists[#dists+1] = { lvl2, dist, priority, (dist/priority) }
-			end
-		end
-	end
-	
-	function level_sort(a, b)
-		return a[4] < b[4]
-	end
-	
-	table.sort(dists, level_sort)
-	
-	--printf("Priorities for " .. game.translate_string(faction) .. " at level " .. alife():level_name(lvl))
-	
-	for i,t in pairs(dists) do
-		--printf(game.translate_string(alife():level_name(t[1])) .. " - dist: " .. t[2] .. " priority: " .. t[3] .. " dist/priority: " .. t[4])
-	end
-    
-		
-	-- Return highest priority level target.
-	return dists[1] and dists[1][1]
 end

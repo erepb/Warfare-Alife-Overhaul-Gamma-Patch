@@ -246,7 +246,6 @@ function actor_on_first_update()
             warfare_log.trace("actor_on_first_update: init level_information[%s]", smart.level_id)
             warfare_levels.level_information[smart.level_id] = {}
             warfare_levels.level_information[smart.level_id].smarts = {}
-            warfare_levels.level_information[smart.level_id].faction_priority = {}
             warfare_levels.level_information[smart.level_id].base_count = 0
             warfare_levels.level_information[smart.level_id].resource_count = 0
             warfare_levels.level_information[smart.level_id].territory_count = 0
@@ -276,17 +275,6 @@ function actor_on_first_update()
                     warfare_levels.level_information[smart.level_id].lair_count = warfare_levels.level_information[smart.level_id].lair_count + 1
                 end
 
-                -- Cycle through factions
-                for i, f in pairs(warfare_factions.factions) do
-                    -- check if smart is flagged for faction
-                    if smart.props[f] and smart.props[f] > 0 then
-                        if not warfare_levels.level_information[smart.level_id].faction_priority[f] then
-                            warfare_levels.level_information[smart.level_id].faction_priority[f] = 0
-                        end
-
-                        warfare_levels.level_information[smart.level_id].faction_priority[f] = warfare_levels.level_information[smart.level_id]["faction_priority"][f] + smart.props[f]
-                    end
-                end
             end
         end
     end
@@ -674,11 +662,6 @@ function initialize()
     -- At this point this just serves to pause everything to ensure squads reach their "waiting at target" state before resource counts etc are calculated.
     initialized = true
 
-    --[[for lvl,tbl in pairs(warfare_levels.level_information) do
-        for f,p in pairs(tbl["faction_priority"]) do
-            ----printf(game.translate_string(alife():level_name(lvl)) .. " priority for " .. game.translate_string(f) .. " = " .. p)
-        end
-    end]]
 end
 
 warfare_positions_filled = false
