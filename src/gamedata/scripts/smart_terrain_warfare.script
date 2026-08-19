@@ -2890,21 +2890,74 @@ function spawn_patrols(smart)
     end
 end
 
+-- How sharply a patrol's choice of destination falls off with distance from its base.
+-- A candidate at distance d weighs (d_nearest / d)^PATROL_DISTANCE_FALLOFF, so the closest
+-- one always weighs 1 and nothing is ever ruled out:
+--   0    -> distance ignored, every territory/lair on the level equally likely
+--   0.5  -> twice as far, ~0.71x as likely  (current setting)
+--   1    -> twice as far, half as likely
+--   2    -> twice as far, a quarter as likely
+local PATROL_DISTANCE_FALLOFF = 0.5
+
+
+local function pick_patrol_destination(candidates)
+--[[
+    Weighted-random pick over every candidate, biased towards the ones nearest the base.
+
+    This replaces a hard "nearest patrol_pop*2" cutoff.
+
+    Inputs:
+        candidates: array of { smart terrain, squared distance from the base }
+    Returns:
+        the chosen smart terrain, or nil if there were no candidates
+]]
+    local n = #candidates
+
+    if (n == 0) then
+        return nil
+    end
+
+    local nearest_sq = candidates[1][2]
+    for i = 2, n do
+        if (candidates[i][2] < nearest_sq) then
+            nearest_sq = candidates[i][2]
+        end
+    end
+
+    local total = 0
+    for i = 1, n do
+        local weight = math.sqrt(nearest_sq / candidates[i][2]) ^ PATROL_DISTANCE_FALLOFF
+        candidates[i][3] = weight
+        total = total + weight
+    end
+
+    local roll = math.random() * total
+    for i = 1, n do
+        roll = roll - candidates[i][3]
+        if (roll <= 0) then
+            return candidates[i][1]
+        end
+    end
+
+    return candidates[n][1]
+end
+
+
 function find_patrol_target(smart,patrol_table,squad)
 --[[
     Pick the next stop for a base patrol: a territory or lair on the level, or an enemy
     patrol to hunt. Bases are deliberately not candidates -- patrols circulate, they do
     not garrison.
 
+    Every eligible smart on the level is a candidate; distance only biases the draw (see
+    pick_patrol_destination), so patrols stay mostly local but do eventually cover the
+    whole map. Distance is measured from the owning base rather than from the squad, so a
+    patrol orbits its home instead of drifting away one hop at a time.
+
     patrol_table is the patrol's current entry ({ target, stay_time, arrive_time,
     attacking }); its target is excluded so the patrol always moves somewhere new.
 ]]
     warfare_log.trace("find_patrol_target: smart=%s", smart:name())
-
-    local target_squads = {}
-    local target_smarts = {}
-    local smarts_by_distance = {}
-    local squads = patrol_squads[smart.id]
 
     if not (smart.owning_faction) then
         check_owner(smart)
@@ -2914,82 +2967,44 @@ function find_patrol_target(smart,patrol_table,squad)
         return
     end
 
-    local patrol_pop = warfare_factions.faction_information[smart.owning_faction].patrol_pop_factor
+    local level_info = warfare_levels.level_information[smart.level_id]
+    local curr_level_smarts = level_info and level_info.smarts
 
-    local curr_level_id = smart.level_id
-    local curr_level_smarts = warfare_levels.level_information[curr_level_id].smarts
+    if not (curr_level_smarts) then
+        return nil,false
+    end
+
+    local base_position = global_position.from(smart)
+    local candidates = {}
 
     for _,neighbor_id in pairs(curr_level_smarts) do
         local neighbor = neighbor_id and alife_object(neighbor_id)
 
-        if (neighbor) then
-            if (neighbor.props and ((neighbor.props.territory > 0 or neighbor.props.lair > 0) and neighbor.props.resource < 1 and neighbor.props.base < 1)) then
-                local dist = warfare.distance_to_xz_sqr(global_position.from(smart), global_position.from(neighbor))
-
-                if (not patrol_table or patrol_table.target ~= neighbor_id) then
-                    smarts_by_distance[#smarts_by_distance + 1] = { neighbor, dist }
-                end
-            end
+        if (neighbor) and (neighbor.props)
+        and ((neighbor.props.territory > 0 or neighbor.props.lair > 0) and neighbor.props.resource < 1 and neighbor.props.base < 1)
+        and (not patrol_table or patrol_table.target ~= neighbor_id) then
+            local dist = warfare.distance_to_xz_sqr(base_position, global_position.from(neighbor))
+            candidates[#candidates + 1] = { neighbor, (dist > 1) and dist or 1 }
         end
     end
 
-    table.sort(smarts_by_distance, function(a, b)
-        return a[2] < b[2]
-    end)
-
-    for j=1,patrol_pop*2 do
-        if (#smarts_by_distance > j) then
-            target_smarts[#target_smarts+1] = smarts_by_distance[j][1]
-        end
-    end
+    -- Enemy patrols sitting on bases this smart already has in its sights are worth hunting
+    local target_squads = {}
 
     if (smart.target_smarts) then
-        target_smarts = {}
-
         for target,_ in pairs(smart.target_smarts) do
             local other = target and alife_object(target)
-            local level_id = smart.level_id
-            local level_smarts = warfare_levels.level_information[level_id].smarts
-            local found_target = false
-            smarts_by_distance = {}
 
-            for _,neighbor_id in pairs(level_smarts) do
-                local neighbor = neighbor_id and alife_object(neighbor_id)
-
-                if (neighbor) then
-                    if (neighbor.props and ((neighbor.props.territory > 0 or neighbor.props.lair > 0) and neighbor.props.resource < 1 and neighbor.props.base < 1)) then
-                        local dist = warfare.distance_to_xz_sqr(global_position.from(smart), global_position.from(neighbor))
-
-                        if (not patrol_table or patrol_table.target ~= neighbor_id) then
-                            smarts_by_distance[#smarts_by_distance + 1] = { neighbor, dist }
-                        end
-                    end
-                end
-            end
-
-            table.sort(smarts_by_distance, function(a, b)
-                return a[2] < b[2]
-            end)
-
-            for j=1,patrol_pop*2 do
-                if (#smarts_by_distance > j) then
-                    target_smarts[#target_smarts+1] = smarts_by_distance[j][1]
-                end
-            end
-
-            if (other.props and other.props.base > 0) then
+            if (other) and (other.props) and (other.props.base > 0) then
                 local squads2 = patrol_squads[target]
 
                 if (squads2) then
                     for patrol_id,obj in pairs(squads2) do
                         local other_patrol = patrol_id and alife_object(patrol_id)
 
-                        if (other_patrol) then
-                            if (other_patrol:clsid() == clsid.online_offline_group_s) then
-                                if (is_factions_enemies(other_patrol:get_squad_community(), squad and squad:get_squad_community() or smart.owning_faction)) then
-                                    target_squads[#target_squads+1] = other_patrol
-                                end
-                            end
+                        if (other_patrol) and (other_patrol:clsid() == clsid.online_offline_group_s)
+                        and is_factions_enemies(other_patrol:get_squad_community(), squad and squad:get_squad_community() or smart.owning_faction) then
+                            target_squads[#target_squads+1] = other_patrol
                         end
                     end
                 end
@@ -2999,11 +3014,16 @@ function find_patrol_target(smart,patrol_table,squad)
 
     local hunt_chance = warfare_options.options.factions[smart.owning_faction].patrol_hunt_chance or 50
 
-
     if (#target_squads > 0 and hunt_chance >= math.random(100)) then
         return target_squads[math.random(#target_squads)],true
-    elseif (#target_smarts > 0) then
-        return target_smarts[math.random(#target_smarts)],false
+    end
+
+    local destination = pick_patrol_destination(candidates)
+
+    if (destination) then
+        warfare_log.debug("find_patrol_target: picked target=%s smart=%s (from %s weighted candidates)",
+            tostring(destination.id), smart:name(), tostring(#candidates))
+        return destination,false
     end
 
     return nil,false
