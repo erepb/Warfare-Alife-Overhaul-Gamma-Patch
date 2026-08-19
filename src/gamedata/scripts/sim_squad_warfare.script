@@ -229,16 +229,20 @@ function squad_warfare_update(squad)
                             -- loner/ecolog can be neither captured nor hijacked. Don't let the
                             -- squad garrison it (it would get adopted by the foreign smart and
                             -- orphaned there forever) — redirect it instead.
-                            local can_take = smartOwner == "none" or smartOwner == community
-                                or smartOwner == "stalker" or smartOwner == "ecolog"
+                            --
+                            -- This test is warfare_targeting.can_garrison, and every dispatcher
+                            -- that chooses a destination is now required to satisfy it, so a
+                            -- squad should no longer arrive somewhere this rejects. It stays as
+                            -- the backstop for squads that got here by other means: an invasion
+                            -- whose target changed hands mid-transit, or a save from an older
+                            -- version.
+                            local can_take = warfare_targeting.can_garrison(se_target, community)
                             local is_patrol = smart_terrain_warfare.random_patrols[squad.id] or squad.patrol_table
 
                             if not can_take and community ~= "monster" and not is_patrol then
-                                -- avoid_uncapturable=true: pulling the squad off a smart it can't
-                                -- capture, so don't route it onto another base it equally can't take.
-                                -- recall_squad_to_base logs an error if it somehow finds no target;
-                                -- leaving current_action at 0 lets this retry on the next update.
-                                smart_terrain_warfare.recall_squad_to_base(se_target, squad, true)
+                                -- Leaving current_action at 0 lets this retry on the next update
+                                -- if the faction has nowhere to put the squad right now.
+                                smart_terrain_warfare.recall_squad_to_base(se_target, squad, "arrival_uncapturable")
                             else
                                 warfare_log.debug("squad_warfare_update: reached friendly/own smart squad=%s target=%s", squad.id, se_target.id)
                                 se_target:on_after_reach(squad)

@@ -1,0 +1,246 @@
+--[[ warfare_targeting.script -- where a squad may go, and how much it wants to be there.
+
+    One eligibility predicate and one scorer, shared by every dispatcher, so that no
+    dispatcher can choose a destination another component immediately rejects.
+
+    Before this module, "may this squad go here?" was answered in five places that
+    disagreed with each other:
+
+        find_nearby_bases           a non-enemy foreign base was a valid recall target
+        find_targets_for_overflow   that same base was skipped, and so were loner bases
+        process_base_squads         a resource was claimable only if unowned
+        pick_target                 re-validated what the scorer had already validated
+        squad_warfare_update        can_take: none / own / stalker / ecolog
+
+    The invariant this module exists to enforce:
+
+        is_rest_target(other, faction)  =>  can_garrison(other, faction)
+
+    A destination good enough to send a squad to is a destination it is allowed to
+    remain at. can_garrison IS the arrival check, so the implication holds by
+    construction instead of by two components happening to agree.
+
+    Eligibility and ranking are also kept apart, which the old scorers conflated via a
+    `priority > 0` gate. A predicate decides whether a candidate is legal; the score
+    only orders the legal ones. That distinction matters for recall: a faction whose
+    base_priority is zero still has to be able to go home.
+]]
+
+
+-- Faction option block, or nil for a faction warfare does not manage (e.g. "monster").
+local function faction_props(faction)
+    return warfare_options.options.factions[faction]
+end
+
+
+-- The MCM slider is expressed per 100 world units so it can stay an integer track.
+local function distance_cost()
+    return (warfare_options.options.overflow_distance_cost or 5) / 100
+end
+
+
+function can_garrison(other, faction)
+--[[
+    Ownership test only: may a squad of `faction` remain at `other` without being
+    ejected on arrival?
+
+    This is squad_warfare_update's `can_take`, promoted to shared truth. Every
+    destination any dispatcher picks must satisfy it, which is what makes the
+    recall/arrival ping-pong impossible.
+
+    Loner and ecologist holdings are included because they are hijackable: warfare
+    lets a faction walk into them rather than having to fight for them.
+]]
+    local owner = other.owning_faction or "none"
+    return (owner == "none") or (owner == faction)
+        or (owner == "stalker") or (owner == "ecolog")
+end
+
+
+function is_rest_target(smart, other, faction, ctx)
+--[[
+    Eligibility for REST: somewhere a displaced or overflowing squad can be garrisoned.
+
+    Strictly narrower than can_garrison -- an own or empty base with intake room, and
+    nothing else. Two deliberate exclusions:
+
+      * Foreign bases, including loner/ecologist ones. can_garrison would tolerate
+        them, but a squad parked on another faction's base cannot capture or hold it,
+        so it is not a place to send one on purpose.
+      * Resources, territories and lairs. process_nonbase_squads exists to recall
+        squads *from* those, so placing one there guarantees it is moved again.
+
+    Capacity is enforced here rather than optionally, so no placement can create the
+    arrive-then-evict cycle. A squad with no eligible base stays where it is.
+]]
+    local props = other.props
+    if not (props) or (props.base < 1) then
+        return false
+    end
+
+    local owner = other.owning_faction or "none"
+    if (owner ~= "none") and (owner ~= faction) then
+        return false
+    end
+
+    return smart_terrain_warfare.base_can_accept(other, faction, ctx and ctx.incoming)
+end
+
+
+function score(smart, other, faction, ff)
+--[[
+    Additive desirability of `other` as seen from `smart`. Every term is an existing
+    per-faction knob; the shape is the one find_targets_for_overflow established:
+
+        sum(prop magnitude * type weight) + level weight + same-level weight
+            - distance cost * linear distance
+
+    Additive rather than multiplicative because only a difference can express a travel
+    radius: a score divided by distance is scale-free, so it can rank candidates but
+    can never say "not worth the walk".
+
+    Returns nil when the smart holds nothing this faction can own -- pure lairs,
+    lair+territory pairs, propless smarts -- which is a different answer from "scores
+    badly" and is why the caller must not treat nil as a number.
+]]
+    local props = other.props
+    local priority = 0
+    local usable = false
+
+    if (props.base > 0) then
+        priority = priority + (props.base * (ff.base_priority or 0))
+        usable = true
+    end
+
+    if (props.resource > 0) then
+        priority = priority + (props.resource * (ff.resource_priority or 0))
+        usable = true
+    end
+
+    if (props.territory > 0) and (props.resource < 1) and (props.base < 1) and (props.lair < 1) then
+        priority = priority + (props.territory * (ff.territory_priority or 0))
+        usable = true
+    end
+
+    if not (usable) then
+        return nil
+    end
+
+    priority = priority + (ff[smart_terrain_warfare.get_level_priority_key(other.level_id)] or 0)
+
+    if (other.level_id == smart.level_id) then
+        priority = priority + (ff.target_on_same_level_priority or 0)
+    end
+
+    return priority - (distance_cost() * smart_terrain_warfare.fetch_smart_distance_linear(smart, other))
+end
+
+
+function find_candidates(smart, faction, eligible, opts)
+--[[
+    Collect and rank every smart terrain this faction may send a squad to.
+
+    The single candidate loop for all dispatchers. Skips that apply regardless of what
+    the squad is being sent to live here; anything intent-specific belongs in the
+    `eligible` predicate.
+
+    Inputs:
+        smart: source smart terrain
+        faction: faction string of the squad
+        eligible: predicate(smart, other, faction, ctx) -> boolean
+        opts: optional table
+            cross_level: also consider other levels, subject to the faction's
+                         linked_level_targeting option; false = this level only
+            min_score: discard candidates scoring at or below this (nil = keep all)
+            ctx: shared per-call state handed to the predicate
+    Returns:
+        list of { score, smart_id }, best first; empty when nothing qualifies
+]]
+    opts = opts or {}
+    local ff = faction_props(faction)
+    if not (ff) then
+        return {}
+    end
+
+    local collection
+    if (opts.cross_level) then
+        collection = smart_terrain_warfare.get_smart_collection(smart.level_id, faction)
+    else
+        local level_info = warfare_levels.level_information[smart.level_id]
+        collection = level_info and level_info.smarts
+    end
+    if not (collection) then
+        return {}
+    end
+
+    local ctx = opts.ctx
+    local min_score = opts.min_score
+    local targets = {}
+
+    for i = 1, #collection do
+        local other = collection[i] and alife_object(collection[i])
+
+        if not (other and other.props) then
+            goto continue
+        end
+
+        if (other.id == smart.id) then
+            goto continue
+        end
+
+        if not (other.owning_faction) then
+            smart_terrain_warfare.check_owner(other)
+        end
+
+        -- storyline travel restrictions (Scorcher, Miracle Machine, underground, Monolith south)
+        if not (smart_terrain_warfare.is_travel_allowed(smart.level_id, other.level_id, faction)) then
+            goto continue
+        end
+
+        if (warfare_options.options.prevent_mainbase_attacks) then
+            local protected_faction = smart_terrain_warfare.get_protected_base_faction(other:name())
+            if (protected_faction) and (protected_faction ~= faction)
+                and (protected_faction == (other.owning_faction or "none")) then
+                goto continue
+            end
+        end
+
+        if not (eligible(smart, other, faction, ctx)) then
+            goto continue
+        end
+
+        do
+            local priority = score(smart, other, faction, ff)
+            if (priority) and ((not min_score) or (priority > min_score)) then
+                targets[#targets + 1] = { priority, other.id }
+            end
+        end
+
+        ::continue::
+    end
+
+    table.sort(targets, function(a, b)
+        return a[1] > b[1]
+    end)
+
+    return targets
+end
+
+
+function find_rest_targets(smart, faction, cross_level)
+--[[
+    Bases this faction can garrison a displaced squad at, best first.
+
+    Replaces find_nearby_bases (on-level) and find_targets_for_overflow (cross-level).
+    Both used to return candidates the arrival check rejected; neither can now.
+
+    Ranked, not gated: recall is an obligation rather than a preference, so a faction
+    whose base_priority is zero or negative must still be able to reach its own bases.
+    Ordering by score instead of raw distance means a squad prefers levels its faction
+    actually wants to hold, which plain distance could not express.
+]]
+    return find_candidates(smart, faction, is_rest_target, {
+        cross_level = cross_level,
+        ctx = { incoming = smart_terrain_warfare.build_incoming_map(faction) },
+    })
+end
