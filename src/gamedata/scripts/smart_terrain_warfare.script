@@ -1133,14 +1133,16 @@ function process_base_squads(smart)
     for sid,_ in pairs(squads) do
         local squad = sid and alife_object(sid) -- Look at each squad individually
         -- First criterion: Operate only on valid idle squads at base. Random patrol squads are included
-        if (squad) and squad_is_commandable(squad, true) and (squad.current_action == 1) then
+        if (squad) and squad_is_commandable(squad, true) and (squad.current_action == 1)
+        and not sim_squad_warfare.squad_is_settled(squad) then
             -- Different actions between squads that own the smart terrain vs those that do not (squatters)
             if (squad:get_squad_community() == faction) then
                 -- Second criterion: Squad movement happens in the morning. An invasion will have already been sent out via `process_targets()`, which happens before this function
                 local squad_sent = false
                 if isMorning or (night_activity_allowed[smart.id] == 1) then
                     -- Retask random patrols during the day
-                    if (random_patrols[squad.id]) and (math.random(100) <= 20) then
+                    if (random_patrols[squad.id]) and (math.random(100) <= 20)
+                    and not sim_squad_warfare.squad_is_settled(squad) then
                         -- 20% chance of moving after a given update
                         local target = find_random_patrol_target(smart, faction, sid)
                         if (target) then
@@ -1382,6 +1384,21 @@ function send_to_main_base(from_smart, squad, faction, caller)
 end
 
 
+local function patrol_system_owns(squad)
+--[[
+    Is this squad currently the patrol system's responsibility?
+
+    A squad whose patrol_table survived but whose entry is gone -- its owning base was
+    lost, say -- is nobody's responsibility, so it stays recallable and gets rescued.
+]]
+    if not (squad.patrol_table) then
+        return false
+    end
+    local owner = squad.patrol_owner
+    return (owner ~= nil) and (patrol_squads[owner] ~= nil) and (patrol_squads[owner][squad.id] ~= nil)
+end
+
+
 function process_nonbase_squads(smart, always_recall, keep_one)
 --[[
     Recall non-patrol faction squads from non-base terrains to their nearest bases.
@@ -1419,7 +1436,7 @@ function process_nonbase_squads(smart, always_recall, keep_one)
             for sid_peek,_ in pairs(squads_peek) do
                 if random_patrols[sid_peek] then
                     local sq = alife_object(sid_peek)
-                    if sq and sq.current_action == 1 then
+                    if sq and sq.current_action == 1 and not sim_squad_warfare.squad_is_settled(sq) then
                         local roll = math.random(100)
                         if roll <= 20 then
                             local target = find_random_patrol_target(smart, random_patrols[sid_peek], sid_peek)
@@ -1442,7 +1459,9 @@ function process_nonbase_squads(smart, always_recall, keep_one)
         for sid,_ in pairs(squads) do
             local squad = sid and alife_object(sid)
             local faction = squad and squad:get_squad_community()
-            if (squad) and (squad_is_commandable(squad) or squad.patrol_table) and (squad.current_action == 1) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
+            if (squad) and (squad_is_commandable(squad) or squad.patrol_table)
+            and not patrol_system_owns(squad) and not sim_squad_warfare.squad_is_settled(squad)
+            and (squad.current_action == 1) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
                 eligible_count = eligible_count + 1
             end
         end
@@ -1455,7 +1474,9 @@ function process_nonbase_squads(smart, always_recall, keep_one)
     for sid,_ in pairs(squads) do
         local squad = sid and alife_object(sid)
         local faction = squad:get_squad_community()
-        if (squad) and (squad_is_commandable(squad) or squad.patrol_table) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
+        if (squad) and (squad_is_commandable(squad) or squad.patrol_table)
+        and not patrol_system_owns(squad) and not sim_squad_warfare.squad_is_settled(squad)
+        and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
             if squad.current_action ~= 1 then
                 -- already moving, skip
             else
@@ -5220,6 +5241,9 @@ function check_owner(smart)
                         local target = find_random_patrol_target(smart, faction, squad.id)
                         if target then
                             sim_squad_warfare.set_target(squad, target)
+                        else
+                            squad.arrive_time = warfare.get_time()
+                            squad.wait_time = math.random(10, 60)
                         end
                     end
                 else

@@ -738,6 +738,24 @@ function get_warfare_info(squad)
     return get_squad_info(squad, true, show_target)
 end
 
+function squad_is_settled(squad)
+--[[
+    Is this squad still resting where it arrived?
+
+    A squad in transit has no arrive_time -- set_target clears it -- so this is false
+    while travelling and true only for a squad that has actually arrived and not yet
+    served its rest.
+
+    Routine dispatchers (recall, overflow, morning dispatch, random patrols) must respect
+    this. Combat, invasion and player orders reach set_target directly and are unaffected.
+]]
+    if not (squad and squad.arrive_time and squad.wait_time) then
+        return false
+    end
+    return warfare.get_time_ref():diffSec(squad.arrive_time) < (squad.wait_time * 6)
+end
+
+
 -- Function to help set a squads target; also registers the squad if they are not registered already.
 function set_target(squad, target, force)
     warfare_log.trace("set_target: squad=%s target=%s force=%s", squad and squad.id or "?", target, force)
@@ -780,6 +798,8 @@ function set_target(squad, target, force)
         warfare_log.debug("set_target: assign squad=%s target=%s clsid=%s", squad.id, target, obj:clsid())
         squad.current_action = 0
         squad.scripted_target = nil
+        squad.arrive_time = nil
+        squad.wait_time = nil
         squad.current_target_id = target
         squad.assigned_target_id = target
         squad.registered_with_warfare = true
