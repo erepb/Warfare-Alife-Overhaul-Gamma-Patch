@@ -209,25 +209,6 @@ local night_activity_allowed = {}                -- night activity is cleared on
 local actor_informed = {}                        -- Players on the same level of an allied defending point will be notified one time about the attack
 
 
--- Whether a faction wants pure territories / lairs on a given level, using the same
--- arithmetic the target scorers use: baseline type weight plus the faction's priority
--- for that level. A faction with a negative baseline needs enough enthusiasm for the
--- level to overcome it, which is what makes per-level behaviour tunable rather than a
--- single global on/off. Replaces the old send_to_territory boolean table.
-function territory_interest(faction, level_id)
-    local ff = warfare_options.options.factions[faction]
-    if not (ff) then return 0 end
-    return (ff.territory_priority or 0) + (ff[get_level_priority_key(level_id)] or 0)
-end
-
-
-function lair_interest(faction, level_id)
-    local ff = warfare_options.options.factions[faction]
-    if not (ff) then return 0 end
-    return (ff.lair_priority or 0) + (ff[get_level_priority_key(level_id)] or 0)
-end
-
-
 -- if has_alife_info("bar_deactivate_radar_done") then  --- method to determine scorcher status
 
 
@@ -1124,9 +1105,7 @@ function process_base_squads(smart)
     local aggression = invading_faction_props.expansion_aggression
     local isMorning = (warfare_utils.get_warfare_hour() > 7 and warfare_utils.get_warfare_hour() < 15)  -- In the morning, squads at base are given new targets or sent out for invasion
 
-    local resources = {}
-    local lairs = {}
-    local enemy_bases = {}
+    local claim_targets = nil   -- ranked claimable ground, built lazily once per call
     local regular_squads, sq_pow, stationary_sq_num = squad_count_detailed(smart, faction)  -- Get squad counts of the smart terrain owner. Does NOT count random patrol squads
     local squads = SIMBOARD.smarts[smart.id].squads
 
@@ -1158,97 +1137,27 @@ function process_base_squads(smart)
                     end
                     -- Send squads to resources unless faction doesn't care about resources
                     if not (warfare_options.options.factions[faction] and warfare_options.options.factions[faction].use_bases_not_resources) then
-                        -- Find nearby resources to send base squads to in the morning - this is only done once per function call
-                        if not (#resources > 0) then
-                            local level_info = warfare_levels.level_information[smart.level_id]
-                            for i,sm in pairs(level_info.smarts) do
-                                local other = sm and alife_object(sm)
-                                if not (other.owning_faction) then
-                                    check_owner(other)
-                                end
-
-                                if other.props and (other.props.base > 0) and (other.owning_faction ~= "none") and is_factions_enemies(smart.owning_faction, other.owning_faction) then
-                                    local dist = fetch_smart_distance(smart, other)
-                                    enemy_bases[#enemy_bases + 1] = { other.id, dist }    -- enemy bases
-                                end
-
-                                -- Resources, and pure territories the faction actually wants. Territory
-                                -- interest is the same arithmetic the scorers use: the faction's baseline
-                                -- territory weight plus its priority for this level. A faction disinterested
-                                -- in territory needs enough enthusiasm for the level to overcome it.
-                                local wants_territory = (other.props.territory > 0) and (other.props.lair < 1)
-                                    and (other.props.resource < 1) and (other.props.base < 1)
-                                    and (territory_interest(faction, smart.level_id) > 0)
-
-                                if other.props and ((other.props.resource > 0) or wants_territory) then
-                                    local numTargeting = squad_count(other, smart.owning_faction)  -- See if already sending a squad to the resource
-                                    if (numTargeting < 1) and (other.owning_faction == "none" or ((other.owning_faction == "stalker" or other.owning_faction == "ecolog") and (other.props.base < 1) and not is_factions_enemies(smart.owning_faction, other.owning_faction))) then
-                                        local dist = fetch_smart_distance(smart, other)
-                                        resources[#resources + 1] = { other.id, dist }    -- claimable resources
-                                    end
-                                end
-
-                                -- Lairs are a separate, lowest tier: only factions that hunt mutants take
-                                -- them, and only after every resource and territory has been considered.
-                                if other.props and (other.props.lair > 0) and (other.props.base < 1) and (other.props.resource < 1)
-                                    and (other.owning_faction == "none") and (lair_interest(faction, smart.level_id) > 0) then
-                                    if (squad_count(other, smart.owning_faction) < 1) then
-                                        local dist = fetch_smart_distance(smart, other)
-                                        lairs[#lairs + 1] = { other.id, dist }
-                                    end
-                                end
-                            end
-
-                            table.sort(enemy_bases, function(a, b)
-                                return a[2] < b[2]
-                            end)
-
-                            table.sort(resources, function(a, b)
-                                return a[2] < b[2]
-                            end)
-
-                            table.sort(lairs, function(a, b)
-                                return a[2] < b[2]
-                            end)
-                        end
-                        -- Send squad to nearest unclaimed resources
-                        if (#resources > 0) then
-                            local closest_enemy_base_distance = enemy_bases and enemy_bases[1] and enemy_bases[1][2] or nil
-                            for i=1,#resources do
-                                local resource_id = resources[i][1]
-                                local resource_distance = resources[i][2]
-                                local other = resource_id and alife_object(resource_id)
-                                local numTargeting = squad_count(other, smart.owning_faction)
-                                -- Only resources within the same distance as the nearest hostile base are considered
-                                if (closest_enemy_base_distance and (resource_distance < closest_enemy_base_distance)) or not closest_enemy_base_distance then
-                                    if (numTargeting < 1) and (math.random(100) < aggression) then
-                                        warfare_log.debug("process_base_squads: send squad to resource smart=%s squad=%s -> resource=%s",
-                                            smart:name(), tostring(squad.id), tostring(resource_id))
-                                        sim_squad_warfare.set_target(squad, resource_id)
-                                        squad_sent = true
-                                        regular_squads = regular_squads - 1  -- Keep count of squads remaining at base
-                                        break
-                                    end
-                                end
-                            end
+                        if not (claim_targets) then
+                            claim_targets = warfare_targeting.find_claim_targets(smart, faction)
                         end
 
-                        -- Lowest tier: nothing claimable left, so mutant-hunting factions clear a den
-                        if not squad_sent and (#lairs > 0) then
-                            local closest_enemy_base_distance = enemy_bases and enemy_bases[1] and enemy_bases[1][2] or nil
-                            for i=1,#lairs do
-                                local lair_id = lairs[i][1]
-                                local lair_distance = lairs[i][2]
-                                local other = lair_id and alife_object(lair_id)
-                                if (closest_enemy_base_distance and (lair_distance < closest_enemy_base_distance)) or not closest_enemy_base_distance then
-                                    if (squad_count(other, smart.owning_faction) < 1) and (math.random(100) < aggression) then
-                                        warfare_log.debug("process_base_squads: send squad to lair smart=%s squad=%s -> lair=%s",
-                                            smart:name(), tostring(squad.id), tostring(lair_id))
-                                        sim_squad_warfare.set_target(squad, lair_id)
-                                        squad_sent = true
-                                        regular_squads = regular_squads - 1
-                                        break
-                                    end
+                        -- Expansion stays aggression-gated, but as one roll per squad
+                        -- followed by "take the best target". It used to roll per
+                        -- candidate and walk the list until a roll succeeded, which
+                        -- turned a low aggression score into a bias towards distant
+                        -- targets rather than into less expansion.
+                        if (#claim_targets > 0) and (math.random(100) < aggression) then
+                            for i = 1, #claim_targets do
+                                local target_id = claim_targets[i][2]
+                                local other = target_id and alife_object(target_id)
+
+                                if (other) and (squad_count(other, faction) < 1) then
+                                    warfare_log.debug("process_base_squads: send squad to claim smart=%s squad=%s -> target=%s score=%s",
+                                        smart:name(), tostring(squad.id), other:name(), tostring(claim_targets[i][1]))
+                                    sim_squad_warfare.set_target(squad, target_id)
+                                    squad_sent = true
+                                    regular_squads = regular_squads - 1  -- Keep count of squads remaining at base
+                                    break
                                 end
                             end
                         end

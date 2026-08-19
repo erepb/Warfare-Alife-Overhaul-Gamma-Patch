@@ -87,38 +87,39 @@ function is_rest_target(smart, other, faction, ctx)
 end
 
 
-function score(smart, other, faction, ff)
+function interest(other, faction, ff)
 --[[
-    Additive desirability of `other` as seen from `smart`. Every term is an existing
-    per-faction knob; the shape is the one find_targets_for_overflow established:
+    How much this faction wants a smart of this kind, on this level, before any travel
+    cost is considered: the sum of its type weights plus its weight for the level.
 
-        sum(prop magnitude * type weight) + level weight + same-level weight
-            - distance cost * linear distance
-
-    Additive rather than multiplicative because only a difference can express a travel
-    radius: a score divided by distance is scale-free, so it can rank candidates but
-    can never say "not worth the walk".
-
-    Returns nil when the smart holds nothing this faction can own -- pure lairs,
-    lair+territory pairs, propless smarts -- which is a different answer from "scores
-    badly" and is why the caller must not treat nil as a number.
+    This is the *appetite* half of a targeting decision, and it is deliberately separate
+    from score's distance term. Eligibility asks "do I want this kind of thing here at
+    all?", which must not depend on how far away the particular instance is -- otherwise
+    a faction's disinterest in lairs and its reluctance to walk become the same number
+    and cannot be tuned apart. Generalises the old territory_interest / lair_interest
+    helpers, which computed exactly this for two of the four types.
 ]]
     local props = other.props
-    local priority = 0
+    local weight = 0
     local usable = false
 
     if (props.base > 0) then
-        priority = priority + (props.base * (ff.base_priority or 0))
+        weight = weight + (props.base * (ff.base_priority or 0))
         usable = true
     end
 
     if (props.resource > 0) then
-        priority = priority + (props.resource * (ff.resource_priority or 0))
+        weight = weight + (props.resource * (ff.resource_priority or 0))
         usable = true
     end
 
     if (props.territory > 0) and (props.resource < 1) and (props.base < 1) and (props.lair < 1) then
-        priority = priority + (props.territory * (ff.territory_priority or 0))
+        weight = weight + (props.territory * (ff.territory_priority or 0))
+        usable = true
+    end
+
+    if (props.lair > 0) and (props.base < 1) and (props.resource < 1) then
+        weight = weight + (props.lair * (ff.lair_priority or 0))
         usable = true
     end
 
@@ -126,7 +127,27 @@ function score(smart, other, faction, ff)
         return nil
     end
 
-    priority = priority + (ff[smart_terrain_warfare.get_level_priority_key(other.level_id)] or 0)
+    return weight + (ff[smart_terrain_warfare.get_level_priority_key(other.level_id)] or 0)
+end
+
+
+function score(smart, other, faction, ff)
+--[[
+    Additive desirability of `other` as seen from `smart`:
+
+        interest(other) + same-level weight - distance cost * linear distance
+
+    Additive rather than multiplicative because only a difference can express a travel
+    radius: a score divided by distance is scale-free, so it can rank candidates but can
+    never say "not worth the walk".
+
+    Ranking only. Callers gate on a predicate, not on the sign of this number -- see
+    find_rest_targets for why recall in particular must not be gated on it.
+]]
+    local priority = interest(other, faction, ff)
+    if not (priority) then
+        return nil
+    end
 
     if (other.level_id == smart.level_id) then
         priority = priority + (ff.target_on_same_level_priority or 0)
@@ -242,5 +263,61 @@ function find_rest_targets(smart, faction, cross_level)
     return find_candidates(smart, faction, is_rest_target, {
         cross_level = cross_level,
         ctx = { incoming = smart_terrain_warfare.build_incoming_map(faction) },
+    })
+end
+
+function is_claim_target(smart, other, faction, ctx)
+--[[
+    Eligibility for CLAIM: ground this faction can expand onto. Resources, pure
+    territories and lairs -- never bases, which are invasion business and go through
+    find_targets.
+
+    Appetite is checked through interest rather than through the full score, so a
+    faction's disinterest in a *kind* of smart (lair_priority is negative for the eleven
+    factions that do not hunt mutants) vetoes it, while mere distance only ranks it. That
+    is what replaces the old territory_interest / lair_interest gates.
+
+    Only a *negative* appetite vetoes. Zero means "no preference".
+]]
+    local props = other.props
+    if (props.base > 0) then
+        return false
+    end
+    if (props.resource < 1) and (props.territory < 1) and (props.lair < 1) then
+        return false
+    end
+
+    local owner = other.owning_faction or "none"
+    if (owner ~= "none") and (owner ~= faction) then
+        local hijackable = (owner == "stalker") or (owner == "ecolog")
+        if not (hijackable or game_relations.is_factions_enemies(faction, owner)) then
+            return false
+        end
+    end
+
+    local appetite = interest(other, faction, ctx.ff)
+    if not (appetite) or (appetite < 0) then
+        return false
+    end
+
+    return smart_terrain_warfare.squad_count(other, faction) < 1
+end
+
+
+function find_claim_targets(smart, faction)
+--[[
+    Ground this faction can expand onto from `smart`, best first.
+
+    On this level only, matching what the morning dispatch has always searched. The level
+    weight is therefore constant across candidates and cancels out of the ordering; it
+    still does real work inside is_claim_target, where it can lift a faction's appetite
+    for a type above zero or push it below.
+
+    Returns:
+        list of { score, smart_id }, best first
+]]
+    return find_candidates(smart, faction, is_claim_target, {
+        cross_level = false,
+        ctx = { ff = warfare_options.options.factions[faction] },
     })
 end
