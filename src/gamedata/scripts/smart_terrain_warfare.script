@@ -334,8 +334,8 @@ local main_base_data = {
     ["val_smart_terrain_7_4"]        = { faction = "bandit",   protect = true,  resurrect = true  },
     ["val_smart_terrain_7_5"]        = { faction = "bandit",   protect = true,  resurrect = true  },
     -- Military
-    ["agr_smart_terrain_1_6"]        = { faction = "army",     protect = true,  resurrect = true, resurrect_also = {"isg"} }, -- Army Base
-    ["agr_smart_terrain_1_6_near_1"] = { faction = "army",     protect = false, resurrect = true  },
+    ["agr_smart_terrain_1_6"]        = { faction = "army",     protect = true,  resurrect = true  }, -- Army Base
+    ["agr_smart_terrain_1_6_near_1"] = { faction = "army",     protect = false, resurrect = true, resurrect_also = {"isg"} },
     ["agr_smart_terrain_1_6_near_2"] = { faction = "army",     protect = true,  resurrect = true  }, -- location of some 1_6 uniques
     -- Duty
     ["bar_dolg_general"]             = { faction = "dolg",     protect = true,  resurrect = true  }, -- Duty Base
