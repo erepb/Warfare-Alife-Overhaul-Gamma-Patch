@@ -200,7 +200,12 @@ function ui_options.init_opt_coder()
         { id = "min_patrol_rest_time", type = "track", val = 2, def = 60, min = 0, max = 5000, step = 10, hint = "alife_warfare_faction_min_patrol_rest_time" },
         { id = "max_patrol_rest_time", type = "track", val = 2, def = 240, min = 0, max = 5000, step = 10, hint = "alife_warfare_faction_max_patrol_rest_time" },
 
-        { id = "min_resurgence_wait_time", type = "track", val = 2, def = 10000, min = 1000, max = 500000, step = 1000, hint = "alife_warfare_faction_min_resurgence_wait_time" },
+        -- min was 1000, above the 30 G.A.M.M.A. ships. UIOptions:GetValue clamps a stored
+        -- value into the track range before handing it to CacheValue as the "unchanged"
+        -- baseline, so a preset supplying exactly 1000 compared equal to the clamped 30 and
+        -- was never written: the slider read 1000 while ui_options.get returned 30. Matches
+        -- max_resurgence_wait_time, which has always allowed 0.
+        { id = "min_resurgence_wait_time", type = "track", val = 2, def = 10000, min = 0, max = 500000, step = 1000, hint = "alife_warfare_faction_min_resurgence_wait_time" },
         { id = "max_resurgence_wait_time", type = "track", val = 2, def = 50000, min = 0, max = 1000000, step = 1000, hint = "alife_warfare_faction_max_resurgence_wait_time" },
 
         { id = "random_squad_count", type = "check", val = 1, def = true, hint = "alife_warfare_faction_random_squad_count" },
