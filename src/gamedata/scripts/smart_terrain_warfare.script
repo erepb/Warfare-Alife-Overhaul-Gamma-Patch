@@ -2891,6 +2891,14 @@ function spawn_patrols(smart)
 end
 
 function find_patrol_target(smart,patrol_table,squad)
+--[[
+    Pick the next stop for a base patrol: a territory or lair on the level, or an enemy
+    patrol to hunt. Bases are deliberately not candidates -- patrols circulate, they do
+    not garrison.
+
+    patrol_table is the patrol's current entry ({ target, stay_time, arrive_time,
+    attacking }); its target is excluded so the patrol always moves somewhere new.
+]]
     warfare_log.trace("find_patrol_target: smart=%s", smart:name())
 
     local target_squads = {}
@@ -2918,7 +2926,7 @@ function find_patrol_target(smart,patrol_table,squad)
             if (neighbor.props and ((neighbor.props.territory > 0 or neighbor.props.lair > 0) and neighbor.props.resource < 1 and neighbor.props.base < 1)) then
                 local dist = warfare.distance_to_xz_sqr(global_position.from(smart), global_position.from(neighbor))
 
-                if (not patrol_table or patrol_table[1] ~= neighbor_id) then
+                if (not patrol_table or patrol_table.target ~= neighbor_id) then
                     smarts_by_distance[#smarts_by_distance + 1] = { neighbor, dist }
                 end
             end
@@ -2952,7 +2960,7 @@ function find_patrol_target(smart,patrol_table,squad)
                     if (neighbor.props and ((neighbor.props.territory > 0 or neighbor.props.lair > 0) and neighbor.props.resource < 1 and neighbor.props.base < 1)) then
                         local dist = warfare.distance_to_xz_sqr(global_position.from(smart), global_position.from(neighbor))
 
-                        if (not patrol_table or patrol_table[1] ~= neighbor_id) then
+                        if (not patrol_table or patrol_table.target ~= neighbor_id) then
                             smarts_by_distance[#smarts_by_distance + 1] = { neighbor, dist }
                         end
                     end
