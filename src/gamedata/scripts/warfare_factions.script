@@ -417,10 +417,23 @@ function emergency_resurrection_spawn(faction)
                     if game_graph():vertex(smart.m_game_vertex_id):level_id() ~= get_player_level_id() then
                         if (smart.props and smart.props.base > 0) then
                             if (smart.owning_faction == "none" or game_relations.is_factions_enemies(smart.owning_faction, faction)) then
-                                if smart_terrain_warfare.is_resurrect_base(smart:name(), faction) then
-                                    priority_targets[#priority_targets+1] = smart
-                                elseif not (warfare_options.options.prevent_mainbase_attacks and smart_terrain_warfare.is_main_base(smart:name())) then
-                                    all_targets[#all_targets+1] = smart
+                                local name = smart:name()
+
+                                -- A main base its own faction still holds cannot be taken
+                                -- while prevent_mainbase_attacks is on: offline combat
+                                -- refuses to engage there and squad_warfare_update rescues
+                                -- whoever arrives, so a resurrection aimed at one is spent
+                                -- for nothing.
+                                local protected = warfare_options.options.prevent_mainbase_attacks
+                                    and (smart_terrain_warfare.get_protected_base_faction(name)
+                                         == (smart.owning_faction or "none"))
+
+                                if not (protected) then
+                                    if smart_terrain_warfare.is_resurrect_base(name, faction) then
+                                        priority_targets[#priority_targets+1] = smart
+                                    elseif not (warfare_options.options.prevent_mainbase_attacks and smart_terrain_warfare.is_main_base(name)) then
+                                        all_targets[#all_targets+1] = smart
+                                    end
                                 end
                             end
                         end
