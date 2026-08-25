@@ -5542,9 +5542,6 @@ function find_random_patrol_target(smart, faction, sid)
     -- used for spawning and re-targeting
     if (#targets > 0) then
         local target = targets[math.random(#targets)]
-        if (smart) then
-        else
-        end
         warfare_log.debug("find_random_patrol_target: picked target=%s smart=%s faction=%s (from %s candidates)",
             tostring(target.id), smart and smart:name() or "?", tostring(faction), tostring(#targets))
         return target.id
@@ -5580,12 +5577,6 @@ function remove_random_patrol(squad_id)
     local faction = random_patrols[squad_id]
     if faction then
         warfare_log.debug("remove_random_patrol: squad=%s faction=%s", tostring(squad_id), tostring(faction))
-        local sq = alife_object(squad_id)
-        local caller = (debug.traceback("", 2) or "?"):gsub("\n", " | ")
-        local npc = sq and sq:npc_count() or -1
-        local action = sq and sq.current_action or "nil"
-        local target = sq and sq.current_target_id and alife_object(sq.current_target_id)
-        local tgt_name = target and target:name() or tostring(sq and sq.current_target_id)
         random_patrols[squad_id] = nil
         if random_patrol_counts[faction] and random_patrol_counts[faction] > 0 then
             random_patrol_counts[faction] = random_patrol_counts[faction] - 1
