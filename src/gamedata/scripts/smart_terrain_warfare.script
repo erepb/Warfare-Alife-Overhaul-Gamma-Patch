@@ -128,12 +128,20 @@ function build_smart_collections()
 end
 
 
-function get_smart_collection(level_id, faction)
-    local ff = warfare_options.options.factions[faction]
-    if (ff) and (ff.linked_level_targeting) then
-        return linked_smart_collection[level_id] or {}
-    end
-    return all_smart_collection or {}
+function get_linked_smart_collection(level_id)
+--[[
+    Smarts on `level_id` plus every level directly connected to it.
+
+    Recall is capped at the neighbourhood on purpose: a displaced squad may walk to an
+    adjacent level, never across the Zone. Before this cap, an overflowing base searched
+    every active level, so a squad evicted from its own HQ could be sent to the far side
+    of the map -- whichever empty base happened to be the least-bad candidate.
+
+    linked_level_targeting is deliberately not consulted here. That option tunes how far a
+    base looks for *targets* (find_targets), which is an expansion decision; it has never
+    been about how far a homeless squad may be marched.
+]]
+    return linked_smart_collection[level_id] or {}
 end
 
 -- Timer used for capturing smart terrains.
@@ -1217,7 +1225,7 @@ function recall_squad_to_base(from_smart, squad, caller)
 --[[
     Send a displaced/idle faction squad home, in priority order:
       1. best own-faction or empty base with intake room on this level
-      2. same, searching linked levels (or every level, per linked_level_targeting)
+      2. same, searching directly linked levels only -- recall never crosses the Zone
       3. last resort: the faction's closest own-held or empty main base (HQ), any level
       4. nothing eligible: leave the squad where it is
 ]]

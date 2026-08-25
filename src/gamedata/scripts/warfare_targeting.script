@@ -170,8 +170,9 @@ function find_candidates(smart, faction, eligible, opts)
         faction: faction string of the squad
         eligible: predicate(smart, other, faction, ctx) -> boolean
         opts: optional table
-            cross_level: also consider other levels, subject to the faction's
-                         linked_level_targeting option; false = this level only
+            cross_level: also consider directly linked levels; false = this level only.
+                         Never widens past the neighbourhood, whatever the faction's
+                         linked_level_targeting says -- see get_linked_smart_collection
             min_score: discard candidates scoring at or below this (nil = keep all)
             ctx: shared per-call state handed to the predicate
     Returns:
@@ -185,7 +186,7 @@ function find_candidates(smart, faction, eligible, opts)
 
     local collection
     if (opts.cross_level) then
-        collection = smart_terrain_warfare.get_smart_collection(smart.level_id, faction)
+        collection = smart_terrain_warfare.get_linked_smart_collection(smart.level_id)
     else
         local level_info = warfare_levels.level_information[smart.level_id]
         collection = level_info and level_info.smarts
@@ -254,6 +255,10 @@ function find_rest_targets(smart, faction, cross_level)
 
     Replaces find_nearby_bases (on-level) and find_targets_for_overflow (cross-level).
     Both used to return candidates the arrival check rejected; neither can now.
+
+    Bounded to this level and the ones directly linked to it. Ranking alone cannot bound
+    it: scores may go negative and the best of a bad list still wins, so with an unbounded
+    pool a base with no local vacancy would ship squads to the far side of the map.
 
     Ranked, not gated: recall is an obligation rather than a preference, so a faction
     whose base_priority is zero or negative must still be able to reach its own bases.
