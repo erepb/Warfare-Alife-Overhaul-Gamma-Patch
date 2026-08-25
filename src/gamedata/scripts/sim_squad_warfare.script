@@ -156,10 +156,12 @@ function squad_on_update(squad)
     if not (axr_companions.companion_squads[squad.id]) then
         local now_ap = warfare_alifeplus.is_ap_controlled(squad)
         if now_ap ~= squad._wf_was_ap then
-            if now_ap then
-                warfare_log.debug("ap handoff: squad=%s lent to AlifePlus (target=%s)", squad.id, tostring(squad.scripted_target))
-            else
-                warfare_log.debug("ap return: squad=%s returned to warfare control", squad.id)
+            if (squad._wf_was_ap ~= nil) then
+                if now_ap then
+                    warfare_log.debug("ap handoff: squad=%s lent to AlifePlus (target=%s)", squad.id, tostring(squad.scripted_target))
+                else
+                    warfare_log.debug("ap return: squad=%s returned to warfare control", squad.id)
+                end
             end
             squad._wf_was_ap = now_ap
         end
