@@ -133,6 +133,10 @@ end
 -- Queries
 -- ---------------------------------------------------------------------------
 
+function is_ranked()
+    return warfare_options.options.cmd_ranked == true
+end
+
 function is_controlled(id)
     -- When the feature is disabled, treat nothing as controlled so the AI resumes managing
     -- squads (avoids stranding squads if the option is turned off mid-game).
@@ -260,6 +264,7 @@ end
 
 function quota_for_rank()
     if not warfare_options.options.cmd_enable then return 0 end
+    if not is_ranked() then return math.huge end
     local hi = warfare_options.options.cmd_max_squads or 10
     if hi < 1 then hi = 1 end
     local n = #rank_ladder()
@@ -275,6 +280,7 @@ local HELI_RANK_BAND = 2
 
 function can_buy_heli()
     if not db.actor then return false end
+    if not is_ranked() then return true end
     local n = #rank_ladder()
     if n <= HELI_RANK_BAND then return true end
     return actor_rank_index() > n - HELI_RANK_BAND
@@ -295,7 +301,8 @@ end
 -- Control transitions
 -- ---------------------------------------------------------------------------
 
--- Bring a squad under player control, if the quota and the rank bands allow.
+-- Bring a squad under player control. In ranked mode the quota and the rank bands must allow it;
+-- in unrestricted mode any actor-faction squad is takeable.
 -- Returns true, or false + reason ("off"/"rank"/"quota"/"elite").
 function take_control(squad)
     if not squad then return false, "nil" end
@@ -303,20 +310,22 @@ function take_control(squad)
     local id = squad.id
     if controlled[id] then return true end
 
-    local band = command_band(squad)
-    if band == "over" then
-        warfare_log.debug("take_control: refused (rank) squad=%s", id)
-        return false, "rank"
-    end
+    if is_ranked() then
+        local band = command_band(squad)
+        if band == "over" then
+            warfare_log.debug("take_control: refused (rank) squad=%s", id)
+            return false, "rank"
+        end
 
-    local n, elite = count_controlled()
-    if n >= quota_for_rank() then
-        warfare_log.debug("take_control: refused (quota) squad=%s", id)
-        return false, "quota"
-    end
-    if band == "elite" and elite >= elite_quota() then
-        warfare_log.debug("take_control: refused (elite) squad=%s", id)
-        return false, "elite"
+        local n, elite = count_controlled()
+        if n >= quota_for_rank() then
+            warfare_log.debug("take_control: refused (quota) squad=%s", id)
+            return false, "quota"
+        end
+        if band == "elite" and elite >= elite_quota() then
+            warfare_log.debug("take_control: refused (elite) squad=%s", id)
+            return false, "elite"
+        end
     end
 
     controlled[id] = true

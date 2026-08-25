@@ -179,9 +179,29 @@ function update_settings()
     options.min_invasion_depart_time         = ui_options.get("alife/warfare/general/min_invasion_depart_time")
     options.max_invasion_depart_time         = ui_options.get("alife/warfare/general/max_invasion_depart_time")
 
-    -- Player command. Everything else about the quota is derived from the actor's rank on the
-    -- fixed Anomaly rank ladder (see warfare_squad_command), so this is the only number.
-    options.cmd_enable = ui_options.get("alife/warfare/command/enable_player_command")
+    -- Migrate old boolean enable_player_command -> command_mode ("ranked" is what "on" meant)
+    local old_cmd = axr_main.config:r_value("options", "alife/warfare/command/enable_player_command", 0)
+    if old_cmd ~= nil then
+        local old_val = axr_main.config:r_value("options", "alife/warfare/command/enable_player_command", 1)
+        local migrated = old_val == true and "ranked" or "off"
+        warfare_log.info("warfare_options: migrating enable_player_command=%s -> command_mode=%s", tostring(old_val), migrated)
+        axr_main.config:w_value("options", "alife/warfare/command/command_mode", migrated)
+        axr_main.config:remove_line("options", "alife/warfare/command/enable_player_command")
+        axr_main.config:save()
+    end
+
+    -- Player command. "ranked" scales the controllable count with the actor's rank on the fixed
+    -- Anomaly rank ladder and lets the rank gap decide which squads are eligible; "unrestricted"
+    -- keeps the whole command layer but drops both limits; "off" disables it. cmd_enable and
+    -- cmd_ranked are the two questions the rest of the mod actually asks (see warfare_squad_command).
+    local cmd_mode = ui_options.get("alife/warfare/command/command_mode")
+    if cmd_mode ~= "unrestricted" and cmd_mode ~= "off" then
+        cmd_mode = "ranked" -- unset or unrecognized: fall back to the default, not the loosest mode
+    end
+    options.cmd_mode = cmd_mode
+    options.cmd_enable = cmd_mode ~= "off"
+    options.cmd_ranked = cmd_mode == "ranked"
+    -- Only meaningful in ranked mode: the ceiling the rank-scaled quota grows toward.
     options.cmd_max_squads = ui_options.get("alife/warfare/command/command_max_squads")
 
     options.azazel_mode = ui_options.get("alife/warfare/azazel/state") -- To keep the option in one place. This and the other azazel mode checkbox option will both count

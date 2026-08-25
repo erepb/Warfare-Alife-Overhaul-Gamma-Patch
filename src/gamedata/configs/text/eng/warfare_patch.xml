@@ -4,17 +4,23 @@
 	<string id="ui_mm_menu_command">
 		<text>Player Command</text>
 	</string>
-	<string id="ui_mm_alife_warfare_command_enable_player_command">
-		<text>Enable player squad command</text>
+	<string id="ui_mm_alife_warfare_command_command_mode">
+		<text>Player squad command</text>
 	</string>
-	<string id="ui_mm_alife_warfare_command_enable_player_command_desc">
-		<text>Lets you take persistent control of your faction's squads from the PDA map, select and order multiple squads, and group them into detachments</text>
+	<string id="ui_mm_alife_warfare_command_command_mode_desc">
+		<text>Lets you take persistent control of your faction's squads from the PDA map, select and order multiple squads, and group them into detachments. Ranked scales how many squads you may hold with your rank, and only squads that stand below you will obey. Unrestricted gives you the same commands with no limits at all: any number of squads, any tier. Off removes the command menu entirely</text>
+	</string>
+	<string id="ui_mm_lst_ranked">
+		<text>Ranked</text>
+	</string>
+	<string id="ui_mm_lst_unrestricted">
+		<text>Unrestricted</text>
 	</string>
 	<string id="ui_mm_alife_warfare_command_command_max_squads">
 		<text>Maximum controllable squads</text>
 	</string>
 	<string id="ui_mm_alife_warfare_command_command_max_squads_desc">
-		<text>How many squads you can hold under control once you reach the highest rank. You start with one and the cap grows with every rank you gain. Which squads you may take depends on how far they stand below you: squads two or more ranks below are unrestricted, squads one rank below fill at most half your cap, and squads of your own standing or higher will not take your orders</text>
+		<text>Ranked mode only. How many squads you can hold under control once you reach the highest rank. You start with one and the cap grows with every rank you gain. Which squads you may take depends on how far they stand below you: squads two or more ranks below are unrestricted, squads one rank below fill at most half your cap, and squads of your own standing or higher will not take your orders</text>
 	</string>
 <string id="ui_mm_prst_warfare_alifeoverhaul">
 		<text>Alife Overhaul - Default (1x)</text>
