@@ -186,7 +186,7 @@ supporting_invasion = {}                     -- tracks which base a smart is con
 local invasion_cooldown = {}                 -- cooldown timer for bases that failed to start an invasion: invasion_cooldown[smart.id] = CTime
 local invasion_max_size = 5                  -- hard cap on invasion force size
 local invasion_cooldown_hours = 6            -- cooldown in game hours after a failed invasion attempt
-local invasion_targets_per_bases = 5         -- faction allowed 1 invasion target per this many bases owned
+local invasion_targets_per_bases = 2         -- faction allowed 1 invasion target per this many bases owned, floored at 1 while it holds any base
 
 -- Resource count takes the maximum amount of resources owned on a given day, with the count reset at midday every day
 max_resource_count = {
@@ -1976,7 +1976,10 @@ function faction_at_invasion_target_limit(faction)
     local fi = warfare_factions.faction_information[faction]
     if not fi then return true end
     local max_targets = math.floor(fi.base_count / invasion_targets_per_bases)
-    if max_targets < 1 then return true end
+    if max_targets < 1 then
+        if fi.base_count < 1 then return true end
+        max_targets = 1
+    end
     local targets = {}
     local count = 0
     for base_id, inv in pairs(invasions) do
