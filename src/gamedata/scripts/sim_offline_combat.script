@@ -49,6 +49,16 @@ local RANK_COMMANDER_GAIN = 50
 local ROUND_INTERVAL = 180     -- 3 in-game minutes
 local ROUND_CAP = 30           -- safety cap per tick
 
+-- Skirmish gate: squads that merely cross paths roll for whether they bother to
+-- engage, using each faction's patrol_hunt_chance (its appetite for going after
+-- enemies). Combined with OR, so one willing side is enough -- a timid faction can
+-- still be attacked, it just rarely starts anything. Deliberate engagements (a
+-- patrol hunt, or both squads sent at the same smart) bypass the roll entirely.
+local SKIRMISH_FLOOR = 10      -- % floor; without it stalker/ecolog/zombied (all 0) never fight each other
+local SKIRMISH_RECHECK = 1800  -- game seconds before a declined pair may roll again
+local MONSTER_HUNT = 100       -- mutants always engage
+local DEFAULT_HUNT = 50        -- fallback when a community has no faction options row
+
 local can_fight_mutant
 local smart_battles_only
 local ini_ocs
@@ -67,6 +77,7 @@ opponents = {}
 squads_by_level = {}
 local faction_power = {}
 local last_combat_time = {}    -- [squad_id] = CTime of last combat round
+local skirmish_decline = {}    -- [pair_key] = CTime a pair declined to engage
 
 local c_cnt, c_tbl = 0, {} -- enemies collector
 local tbl_smart = {}
@@ -468,6 +479,8 @@ local function coordinator()
         can_fight_mutant = true
     end
 
+    purge_expired_skirmishes()
+
     warfare_log.debug("coordinator: tick done opt_dist=%s can_fight_mutant=%s pop_factor=%s", opt_dist, can_fight_mutant and "y" or "n", pop_factor)
 
     --[[ Debugger
@@ -515,6 +528,74 @@ local function squad_is_switching_online(squad)
         end
     end
     return false
+end
+
+-- Order-independent key: validate_enemy sees the same pair in both orders on
+-- different ticks, so the decision has to be stored once for the pair.
+local function skirmish_pair_key(id_1, id_2)
+    if id_1 < id_2 then
+        return id_1 * 65536 + id_2
+    end
+    return id_2 * 65536 + id_1
+end
+
+local function skirmish_hunt_chance(community)
+    if community == "monster" then
+        return MONSTER_HUNT
+    end
+    local factions = warfare_options and warfare_options.options and warfare_options.options.factions
+    local opts = factions and factions[community]
+    return (opts and opts.patrol_hunt_chance) or DEFAULT_HUNT
+end
+
+-- Decides whether two squads that have found each other actually fight.
+-- Only incidental meetings roll; anything deliberate resolves as before.
+local function should_skirmish(squad_1, squad_2, id_1, id_2, community_1, community_2)
+    -- Already locked to each other: the fight is underway, never re-roll it.
+    if opponents[id_1] == id_2 then
+        return true
+    end
+
+    -- Deliberate: one squad was sent at the other (patrol hunt), or both were
+    -- sent at the same smart (assault vs its garrison, or a contested objective).
+    local t1, t2 = squad_1.assigned_target_id, squad_2.assigned_target_id
+    if (t1 == id_2) or (t2 == id_1) or (t1 and t1 == t2) then
+        return true
+    end
+
+    local key = skirmish_pair_key(id_1, id_2)
+    local declined = skirmish_decline[key]
+    if declined and warfare.get_time_ref():diffSec(declined) < SKIRMISH_RECHECK then
+        return false
+    end
+
+    local a = skirmish_hunt_chance(community_1)
+    local b = skirmish_hunt_chance(community_2)
+    local chance = 100 - ((100 - a) * (100 - b)) / 100
+    if chance < SKIRMISH_FLOOR then
+        chance = SKIRMISH_FLOOR
+    end
+
+    if math_random(100) > chance then
+        skirmish_decline[key] = warfare.get_time()
+        warfare_log.debug("validate_enemy: skirmish declined squad_1=%s squad_2=%s community_1=%s community_2=%s chance=%s",
+            id_1, id_2, community_1, community_2, chance)
+        return false
+    end
+
+    skirmish_decline[key] = nil
+    return true
+end
+
+-- Drops declines that have aged out. Entries are keyed by squad pair, and squad
+-- ids get recycled, so they must not be allowed to sit around indefinitely.
+function purge_expired_skirmishes()
+    local now = warfare.get_time_ref()
+    for key, t in pairs(skirmish_decline) do
+        if now:diffSec(t) >= SKIRMISH_RECHECK then
+            skirmish_decline[key] = nil
+        end
+    end
 end
 
 function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
@@ -631,6 +712,14 @@ function validate_enemy(sim, lid, squad_1, id_1, id_2, community_1)
                             return false
                         end
                     end
+                end
+
+                -- Two squads crossing paths only fight if one of them is willing.
+                -- Returning false (rather than true) leaves both unlocked and lets
+                -- the caller keep scanning, so a squad that waves this one through
+                -- can still engage somebody else on the same tick.
+                if not should_skirmish(squad_1, squad_2, id_1, id_2, community_1, community_2) then
+                    return false
                 end
 
                 -- Calculate combat rounds from time delta
@@ -836,6 +925,7 @@ function remove_squad_info(squad_2, id_2, id_1, lid)
     ocs_power[id_2] = nil
 
     if id_1 then
+        skirmish_decline[skirmish_pair_key(id_1, id_2)] = nil
         opponents[id_1] = nil
         last_combat_time[id_1] = nil
     end
