@@ -268,9 +268,10 @@ function pda_warfare_tab:Reset()
         self.txt_squads[f]:SetText(game.translate_string("ui_st_pda_warfare_squads") .. ": " .. clr_gr .. str_squads .. "(" .. str_regular .. "/" .. str_patrols .. "/" .. str_rpatrols .. ")")
         
         local str_smarts = self.curr_map and self.faction_smarts_lvl[f] or self.faction_smarts[f] or 0
-        local faction_global_resources = warfare_factions.faction_information[f].resource_count or 0
         local faction_resources_modifier = warfare_options.options.factions[f].resource_count_modifier or 0
-        local faction_resources_count = faction_global_resources - faction_resources_modifier
+        -- owned_* is the holdings count before enemy_*_boost and the *_count_modifier options;
+        -- subtracting the modifier off the boosted count would still leave enemy_*_boost in.
+        local faction_resources_count = warfare_factions.faction_information[f].owned_resource_count or 0
         
         
         self.txt_captured_smarts[f] = xml:InitTextWnd("faction:info_captured_smarts", _st)
@@ -282,9 +283,8 @@ function pda_warfare_tab:Reset()
             self.txt_captured_smarts[f]:SetText("Resource Points: " .. clr_gr .. faction_resources_count .. " + " .. faction_resources_modifier )
         end
         
-        local faction_global_bases = warfare_factions.faction_information[f].base_count or 0
         local faction_base_modifier = warfare_options.options.factions[f].base_count_modifier or 0
-        local faction_base_count = faction_global_bases - faction_base_modifier
+        local faction_base_count = warfare_factions.faction_information[f].owned_base_count or 0
         
         --local str_territory = faction_territory[f] and faction_territory[f][1] and alife():level_name(faction_territory[f][1])
         if (not self.curr_map) then
@@ -339,14 +339,10 @@ function pda_warfare_tab:Update()
             local str_fac_smarts = self.curr_map and self.faction_smarts_lvl[f] or self.faction_smarts[f] or 0
             local str_all_smarts = self.curr_map and self.tot_smarts_lvl or self.tot_smarts
             local str_extra = self.curr_map and game.translate_string(level.name()) or game.translate_string("ui_st_pda_warfare_zone")
-            local global_bases_2 = warfare_factions.faction_information[f].base_count
-            local base_modifier_2 = warfare_options.options.factions[f].base_count_modifier
-            local str_faction_base_count = global_bases_2 - base_modifier_2
+            local str_faction_base_count = warfare_factions.faction_information[f].owned_base_count or 0
             local str_total_base_count = warfare.base_count
             local str_territory = faction_territory[f] and faction_territory[f][1] and alife():level_name(faction_territory[f][1])
-            local global_resources_2 = warfare_factions.faction_information[f].resource_count
-            local resources_modifier_2 = warfare_options.options.factions[f].resource_count_modifier
-            local str_faction_resources_count = global_resources_2 - resources_modifier_2
+            local str_faction_resources_count = warfare_factions.faction_information[f].owned_resource_count or 0
             local str_faction_terrain_count = str_faction_resources_count + str_faction_base_count
             local str_total_terrain_count = warfare.resource_count + warfare.base_count
             local str_total_resources_count = warfare.resource_count

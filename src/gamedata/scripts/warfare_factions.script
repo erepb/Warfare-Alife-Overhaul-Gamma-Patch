@@ -127,6 +127,8 @@ function update_faction(faction)
         faction_information[faction] = {}
         faction_information[faction].base_count = 0
         faction_information[faction].resource_count = 0
+        faction_information[faction].owned_base_count = 0
+        faction_information[faction].owned_resource_count = 0
         faction_information[faction].total_power = 0
         faction_information[faction].inactive_squads = 0
         faction_information[faction].active_squads = 0
@@ -166,6 +168,8 @@ function update_faction(faction)
         fi.next_update = math.random(1, 5)
         fi.base_count = 0
         fi.resource_count = 0
+        fi.owned_base_count = 0
+        fi.owned_resource_count = 0
         fi.total_power = 0
         fi.inactive_squads = 0
         fi.active_squads = 0
@@ -195,6 +199,11 @@ function update_faction(faction)
 
         local base_count = fi.base_count or 0
         local resource_count = fi.resource_count or 0
+
+        -- What the faction actually holds, before any option boost. The PDA reports this; the
+        -- simulation reads the boosted fi.base_count / fi.resource_count set further down.
+        fi.owned_base_count = base_count
+        fi.owned_resource_count = resource_count
 
         if (game_relations.is_factions_enemies(faction, warfare.actor_faction)) then
             base_count = base_count + warfare_options.options.enemy_base_boost
