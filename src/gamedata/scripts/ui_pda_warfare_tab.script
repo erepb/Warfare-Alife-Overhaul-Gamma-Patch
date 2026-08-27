@@ -7,8 +7,8 @@
 
     New PDA tab for Warfare mode: faction war
     This file converts the 'contacts' tab into a faction ranking info tab. Faction squad
-    count, base count, and resource count are provided. Ranking is based on number of
-    bases and resources owned versus the total available in the Zone.
+    count, base count, and resource count are provided. Ranking is based on the summed
+    raw combat power of each faction's squads.
 =======================================================================================
 
 --]]
@@ -36,6 +36,8 @@ function pda_warfare_tab:__init() super()
     self.faction_patrols_lvl = {}
     self.faction_random_patrols = {}
     self.faction_random_patrols_lvl = {}
+    self.faction_power = {}
+    self.faction_power_lvl = {}
     self.faction_smarts = {}
     self.faction_smarts_lvl = {}
     self.faction_smarts_lvls = {}
@@ -99,7 +101,6 @@ function pda_warfare_tab:Reset()
     local gg = game_graph()
     local actor_faction = get_actor_true_community()
     local curr_lvl = gg:vertex(sim:actor().m_game_vertex_id):level_id()
-    local factions = {}
     
     -- Gather active level
     local active_levels = {}
@@ -114,25 +115,45 @@ function pda_warfare_tab:Reset()
     empty_table(self.faction_patrols_lvl)
     empty_table(self.faction_random_patrols)
     empty_table(self.faction_random_patrols_lvl)
+    empty_table(self.faction_power)
+    empty_table(self.faction_power_lvl)
     for f,sq in pairs(warfare.registered_squads) do
-        factions[f] = true
-        for sq_id,_ in pairs(sq) do
-            local squad = sq_id and alife_object(sq_id)
-            if squad then
-                self.faction_squads[f] = (self.faction_squads[f] or 0) + 1
-                local lvl = gg:vertex(squad.m_game_vertex_id):level_id()
-                if (lvl == curr_lvl) then
-                    self.faction_squads_lvl[f] = (self.faction_squads_lvl[f] or 0) + 1
-                end
-                if smart_terrain_warfare.random_patrols[sq_id] then
-                    self.faction_random_patrols[f] = (self.faction_random_patrols[f] or 0) + 1
-                    if (lvl == curr_lvl) then
-                        self.faction_random_patrols_lvl[f] = (self.faction_random_patrols_lvl[f] or 0) + 1
+        -- Monsters are not a war faction: they hold no smarts and take no part in the
+        -- power ranking, so skip them before paying for any per-squad power maths.
+        if warfare_factions.factions_p[f] then
+            for sq_id,_ in pairs(sq) do
+                local squad = sq_id and alife_object(sq_id)
+                if squad then
+                    self.faction_squads[f] = (self.faction_squads[f] or 0) + 1
+                    local lvl = gg:vertex(squad.m_game_vertex_id):level_id()
+                    local is_random_patrol = smart_terrain_warfare.random_patrols[sq_id]
+                    
+                    -- Raw power: raw=true skips the ocs_power combat cache so a squad mid-fight
+                    -- still reports its on-paper strength, no_distance=true drops the actor-distance
+                    -- multiplier so the ranking does not shift as the player moves around.
+                    -- Random patrols are transient spawns rather than standing strength, so they
+                    -- contribute nothing; they still show up in the squad tallies below, and the
+                    -- faction is entered at 0 so it stays listed while it has any squad in scope.
+                    local power = 0
+                    if (not is_random_patrol) then
+                        power = sim_offline_combat.calculate_squad_power(squad, f, true, true)
                     end
-                elseif squad.patrol_table then
-                    self.faction_patrols[f] = (self.faction_patrols[f] or 0) + 1
+                    self.faction_power[f] = (self.faction_power[f] or 0) + power
+                    
                     if (lvl == curr_lvl) then
-                        self.faction_patrols_lvl[f] = (self.faction_patrols_lvl[f] or 0) + 1
+                        self.faction_squads_lvl[f] = (self.faction_squads_lvl[f] or 0) + 1
+                        self.faction_power_lvl[f] = (self.faction_power_lvl[f] or 0) + power
+                    end
+                    if is_random_patrol then
+                        self.faction_random_patrols[f] = (self.faction_random_patrols[f] or 0) + 1
+                        if (lvl == curr_lvl) then
+                            self.faction_random_patrols_lvl[f] = (self.faction_random_patrols_lvl[f] or 0) + 1
+                        end
+                    elseif squad.patrol_table then
+                        self.faction_patrols[f] = (self.faction_patrols[f] or 0) + 1
+                        if (lvl == curr_lvl) then
+                            self.faction_patrols_lvl[f] = (self.faction_patrols_lvl[f] or 0) + 1
+                        end
                     end
                 end
             end
@@ -159,7 +180,7 @@ function pda_warfare_tab:Reset()
             end
             
             local o_f = smart.owning_faction
-            if o_f and factions[o_f] then
+            if o_f and warfare_factions.factions_p[o_f] then
                 self.faction_smarts[o_f] = (self.faction_smarts[o_f] or 0) + 1
                 
                 if (lvl == curr_lvl) then
@@ -173,14 +194,20 @@ function pda_warfare_tab:Reset()
     end
     
     
-    -- Sort faction by captured smart
+    -- Sort factions by the summed raw power of their squads, strongest first.
+    -- A faction with no squads in scope is not listed: it cannot hold a smart on a level it
+    -- has no squads on, so having no squads means having nothing to rank.
+    local power_tbl = self.curr_map and self.faction_power_lvl or self.faction_power
+    
     local faction_by_power = {}
-    local search_tbl = self.curr_map and self.faction_smarts_lvl or self.faction_smarts
-    for fac,num in pairs(search_tbl) do
-        table.insert(faction_by_power, {fac, num})
+    for fac,pow in pairs(power_tbl) do
+        faction_by_power[#faction_by_power + 1] = {fac, pow}
     end
     
-    function compare(a,b)
+    local function compare(a,b)
+        if (a[2] == b[2]) then
+            return a[1] < b[1]        -- deterministic tie-break, table.sort is not stable
+        end
         return a[2] > b[2]
     end
     
@@ -200,9 +227,8 @@ function pda_warfare_tab:Reset()
     
     -- Show
     local n = 0
-    for _,v in pairs(faction_by_power) do
+    for _,v in ipairs(faction_by_power) do
         local f = v[1]
-        local cap_smarts = v[2]
         n = n + 1
         
         local _st = xml:InitStatic("temp", nil)
