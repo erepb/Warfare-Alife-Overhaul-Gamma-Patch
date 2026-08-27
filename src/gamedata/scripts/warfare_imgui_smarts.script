@@ -24,9 +24,9 @@ end
 -- Function to get spawn timer remaining
 function get_spawn_timer(smart)
     -- Check for faction spawn timer (defense timer) first
-    if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id] then
+    local next_defense = warfare_imgui_smart_info.get_defense_interval(smart)
+    if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id] and next_defense then
         local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
-        local next_defense = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] or 10
 
         local delay = smart_terrain_warfare.defense_delay[smart.id] or 0
         local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer, (next_defense * 6) * (delay + 1))
@@ -104,11 +104,10 @@ end
 -- Function to get spawn timer raw value for sorting
 function get_spawn_timer_number(smart)
     -- Check for faction spawn timer (defense timer) first
-    if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id] and
-       smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] then
+    local next_defense = warfare_imgui_smart_info.get_defense_interval(smart)
+    if smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id] and next_defense then
 
         local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
-        local next_defense = smart_terrain_warfare.defense_next_update[smart.id]
 
         local delay = smart_terrain_warfare.defense_delay[smart.id] or 0
         return warfare_utils.get_real_seconds_until_spawn(defense_timer, (next_defense * 6) * (delay + 1))

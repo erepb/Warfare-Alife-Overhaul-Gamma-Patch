@@ -51,15 +51,38 @@ function format_time_remaining(seconds)
     end
 end
 
+-- Current defense respawn interval for a smart, or nil when it isn't computable (no owner, or
+-- the option/faction ledger isn't populated). This is the same source spawn_defense and the PDA
+-- map tooltip use; there is no per-smart defense_next_update table -- the one that exists is
+-- invasion_defense_next_update, which is unrelated and local to smart_terrain_warfare.
+function get_defense_interval(smart)
+    local faction = smart.owning_faction
+    if not faction or faction == "none" then
+        return nil
+    end
+    if not (warfare_options and warfare_options.options and warfare_options.options.factions
+            and warfare_options.options.factions[faction]) then
+        return nil
+    end
+    if not (warfare_factions and warfare_factions.faction_information
+            and warfare_factions.faction_information[faction]) then
+        return nil
+    end
+    return smart_terrain_warfare.get_current_def_respawn_interval(faction)
+end
+
 -- Function to get defense timer remaining
 function get_defense_timer(smart)
     if not smart_terrain_warfare.defense_timers or not smart_terrain_warfare.defense_timers[smart.id] then
         return ""
     end
 
-    local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
-    local next_defense = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id] or 10
+    local next_defense = get_defense_interval(smart)
+    if not next_defense then
+        return ""
+    end
 
+    local defense_timer = smart_terrain_warfare.defense_timers[smart.id]
     local delay = smart_terrain_warfare.defense_delay[smart.id] or 0
     local remaining = warfare_utils.get_real_seconds_until_spawn(defense_timer, (next_defense * 6) * (delay + 1))
     return format_time_remaining(remaining)
@@ -250,7 +273,7 @@ function render_faction_smart_info(smart, faction)
         ImGui.Text("Defense Spawn Details:")
         
         local defense_timer_val = smart_terrain_warfare.defense_timers and smart_terrain_warfare.defense_timers[smart.id]
-        local next_update_val = smart_terrain_warfare.defense_next_update and smart_terrain_warfare.defense_next_update[smart.id]
+        local next_update_val = get_defense_interval(smart)
         local reset_timer = smart_terrain_warfare.reset_defense_timer and smart_terrain_warfare.reset_defense_timer[smart.id]
         
         if reset_timer then
