@@ -201,6 +201,8 @@ function update_faction(faction)
             resource_count = resource_count + warfare_options.options.enemy_resource_boost
         end
 
+        -- fi.base_count / fi.resource_count carry the option boosts from here on. Everything reading
+        -- them downstream must take them as-is: adding base_count_modifier again applies it twice.
         base_count = base_count + (ff.base_count_modifier or 0)
         resource_count = resource_count + (ff.resource_count_modifier or 0)
 
@@ -235,12 +237,6 @@ function update_faction(faction)
         fi.patrol_respawn = patrol_respawn
         fi.invasion_size = invasion_size
         fi.patrol_pop_factor = patrol_pop_factor
-
-        local mod = (ff.base_count_modifier or 0)
-
-        if (game_relations.is_factions_enemies(faction, warfare.actor_faction)) then
-            mod = mod + warfare_options.options.enemy_base_boost
-        end
 
         if (ff.random_patrols) and not warfare.is_spawn_blocked() then
             if (warfare.get_time_ref():diffSec(fi.last_random_patrol) > fi.next_random_patrol * 6) then
@@ -291,8 +287,8 @@ function update_faction(faction)
         end
 
         -- Emergency resurrection when faction has 0 bases
-        if not warfare.is_spawn_blocked() and ((fi.base_count + mod) < 1) then
-            warfare_log.debug("update_faction: %s has 0 effective bases (base_count=%s, mod=%s), considering resurgence", tostring(faction), tostring(fi.base_count), tostring(mod))
+        if not warfare.is_spawn_blocked() and (fi.base_count < 1) then
+            warfare_log.debug("update_faction: %s has 0 effective bases (base_count=%s), considering resurgence", tostring(faction), tostring(fi.base_count))
             if (warfare.get_time_ref():diffSec(fi.last_resurgence_attempt) > fi.next_resurgence_attempt * 6) then
                 warfare_log.info("update_faction: %s resurgence timer elapsed, attempting resurrection", tostring(faction))
                 fi.last_resurgence_attempt = warfare.get_time()

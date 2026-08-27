@@ -1751,7 +1751,7 @@ function process_targets(smart)
     if not (smart.process_targets_time) then
         smart.process_targets_time = warfare.get_time()
         smart.next_process_targets_time = math.random(1, 3)
-        base_recheck[smart.id] = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
+        base_recheck[smart.id] = warfare_factions.faction_information[smart.owning_faction].base_count
         return
     end
 
@@ -1935,7 +1935,7 @@ function process_targets(smart)
     end
 
     -- if the faction has lost a base, re-check the targets for all bases
-    local current_base_count = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
+    local current_base_count = warfare_factions.faction_information[smart.owning_faction].base_count
     if (auto_target_count > 0) and (current_base_count < base_recheck[smart.id]) then
         warfare_log.debug("process_targets: base lost, recheck targets smart=%s faction=%s",
             smart:name(), tostring(smart.owning_faction))
@@ -2785,7 +2785,7 @@ end
 function get_current_def_respawn_interval(faction)
     local min_respawn = warfare_options.options.factions[faction].min_faction_respawn
     local max_respawn = warfare_options.options.factions[faction].max_faction_respawn
-    local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier
+    local faction_bases = warfare_factions.faction_information[faction].base_count
     local current_respawn = warfare.lerp(min_respawn, max_respawn, base_lerp_factor(faction_bases))
     if faction == "monolith" and has_alife_info("bar_deactivate_radar_done") then
         current_respawn = 2 * current_respawn  -- Once the Brain Scorcher is deactivated, Monolith spawn at a much slower rate
@@ -2820,7 +2820,7 @@ function spawn_defense(smart)
     local section = faction_expansions.get_spawn_section(smart.owning_faction, max_resource_count[smart.owning_faction], current_level)
     -- army spawn quality depends on number of bases
     if (warfare_options.options.factions[smart.owning_faction].use_bases_not_resources) then
-        local faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count + warfare_options.options.factions[smart.owning_faction].base_count_modifier
+        local faction_bases = warfare_factions.faction_information[smart.owning_faction].base_count
         section = faction_expansions.get_spawn_section(smart.owning_faction, faction_bases, current_level)
     end
 
@@ -2833,7 +2833,7 @@ end
 
 function get_current_patrol_respawn_interval(faction)
     local ff = warfare_options.options.factions[faction]
-    local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier
+    local faction_bases = warfare_factions.faction_information[faction].base_count
     local respawn = warfare.lerp(ff.min_patrol_time, ff.max_patrol_time, base_lerp_factor(faction_bases))
     return respawn * (warfare_options.options.spawn_speed_multiplier or 1)
 end
