@@ -86,7 +86,7 @@ end
 
 -- Updates information for the specified level.
 function update_level(lvl)
-	if (not level_timers[lvl] or game.get_game_time():diffSec(level_timers[lvl]) >= (level_information[lvl].next_update*60)) then
+	if (not level_timers[lvl] or game.get_game_time():diffSec(level_timers[lvl]) >= (level_information[lvl].next_update*6)) then
 		warfare_log.trace("update_level: lvl=%s entering update branch", tostring(lvl))
 
 		level_timers[lvl] = game.get_game_time()
