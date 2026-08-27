@@ -2771,11 +2771,22 @@ function advance_spawn_timers(seconds)
     end
 end
 
+-- Share of the world's bases a faction holds, as the 0..1 lerp factor for its respawn intervals.
+-- Anchored so a single base scores 0: a faction down to its last base respawns at the configured
+-- minimum interval, and only a faction holding every base in the Zone reaches the maximum. Anchoring
+-- at 0 bases instead would make the minimum unreachable by anyone still in the war -- with
+-- max = min * spawn_timer_max_multiplier, each base costs a large fraction of that span.
+local function base_lerp_factor(faction_bases)
+    local span = (warfare.base_count or 1) - 1
+    if span < 1 then return 0 end
+    return clamp((faction_bases - 1) / span, 0, 1)
+end
+
 function get_current_def_respawn_interval(faction)
     local min_respawn = warfare_options.options.factions[faction].min_faction_respawn
     local max_respawn = warfare_options.options.factions[faction].max_faction_respawn
     local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier
-    local current_respawn = warfare.lerp(min_respawn, max_respawn, clamp(faction_bases / warfare.base_count, 0, 1))
+    local current_respawn = warfare.lerp(min_respawn, max_respawn, base_lerp_factor(faction_bases))
     if faction == "monolith" and has_alife_info("bar_deactivate_radar_done") then
         current_respawn = 2 * current_respawn  -- Once the Brain Scorcher is deactivated, Monolith spawn at a much slower rate
     end
@@ -2823,7 +2834,7 @@ end
 function get_current_patrol_respawn_interval(faction)
     local ff = warfare_options.options.factions[faction]
     local faction_bases = warfare_factions.faction_information[faction].base_count + warfare_options.options.factions[faction].base_count_modifier
-    local respawn = warfare.lerp(ff.min_patrol_time, ff.max_patrol_time, clamp(faction_bases / warfare.base_count, 0, 1))
+    local respawn = warfare.lerp(ff.min_patrol_time, ff.max_patrol_time, base_lerp_factor(faction_bases))
     return respawn * (warfare_options.options.spawn_speed_multiplier or 1)
 end
 
