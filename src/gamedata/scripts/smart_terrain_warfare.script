@@ -1230,8 +1230,11 @@ function process_base_squads(smart)
                 end
             else
                 local squatter_faction = squad:get_squad_community()
-                if (squatter_faction ~= "stalker") and (squatter_faction ~= "ecolog") and (squatter_faction ~= "monster") then
-                    -- Non loner/ecolog squads squatting on bases they don't own are moved back to their own bases
+                if (squatter_faction ~= "stalker") and (squatter_faction ~= "ecolog") and (squatter_faction ~= "monster")
+                and (squatter_faction ~= "zombied") then
+                    -- Non loner/ecolog squads squatting on bases they don't own are moved back to their own bases.
+                    -- The zombied are exempt for the same reason they are in process_nonbase_squads: they hold no
+                    -- main base, so the eviction can only ever fail and it repeats on every pass.
                     if isMorning or (warfare_utils.get_warfare_hour() > 15 and warfare_utils.get_warfare_hour() < 20) or (night_activity_allowed[smart.id] == 1) then
                         process_overflow_squad(smart, squad)
                     end
@@ -1341,6 +1344,10 @@ function process_nonbase_squads(smart, always_recall, keep_one)
 --[[
     Recall non-patrol faction squads from non-base terrains to their nearest bases.
     Resources and territories recall at night only. Lairs recall always (faction squads should not idle there).
+    Loners, ecologists, monsters and the zombied are exempt: the first two run their own
+    dispatch (process_loners / process_ecolog) and the last two have no main base in
+    main_base_data, so recall_squad_to_base could never place them anyway and every
+    attempt was a wasted search.
     If no base of this faction can take the squad, it stays where it is -- see
     recall_squad_to_base. The previous fallbacks documented here (nearest neutral base,
     then attacking the weakest hostile base on the level) were the source of the
@@ -1397,7 +1404,7 @@ function process_nonbase_squads(smart, always_recall, keep_one)
             local faction = squad and squad:get_squad_community()
             if (squad) and (squad_is_commandable(squad) or squad.patrol_table)
             and not patrol_system_owns(squad) and not sim_squad_warfare.squad_is_settled(squad)
-            and (squad.current_action == 1) and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
+            and (squad.current_action == 1) and not (faction == "stalker" or faction == "ecolog" or faction == "monster" or faction == "zombied") then
                 eligible_count = eligible_count + 1
             end
         end
@@ -1412,7 +1419,7 @@ function process_nonbase_squads(smart, always_recall, keep_one)
         local faction = squad and squad:get_squad_community()
         if (squad) and (squad_is_commandable(squad) or squad.patrol_table)
         and not patrol_system_owns(squad) and not sim_squad_warfare.squad_is_settled(squad)
-        and not (faction == "stalker" or faction == "ecolog" or faction == "monster") then
+        and not (faction == "stalker" or faction == "ecolog" or faction == "monster" or faction == "zombied") then
             if squad.current_action ~= 1 then
                 -- already moving, skip
             else
