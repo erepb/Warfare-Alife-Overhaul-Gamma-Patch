@@ -500,7 +500,7 @@ end
 
 local tasks_assault_evaluate_smarts_squads = tasks_assault.evaluate_smarts_squads
 function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, faction_def)
-    if not _G.WARFARE then
+    if (not smart or not _G.WARFARE) then
         tasks_assault_evaluate_smarts_squads(task_id, tbl, smart, squad_def, faction_def)
         return
     end
@@ -522,6 +522,10 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
         -- if warfare, override checks on stay time, default squad stuff
         -- if smart's squad is on its level + they are targeting it
         local squad = alife_object(sq_id)
+        if (not squad) then
+            goto continue
+        end
+
         local is_same_level = simulation_objects.is_on_the_same_level(squad, smart)
         local is_targeting_smart = squad.current_target_id and (squad.current_target_id == smrt_id)
         local is_attacking = squad.current_action == 1
@@ -531,7 +535,7 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
         local is_not_scripted = squad_def.scripted or (not squad:get_script_target())
         local no_script_target = not squad:get_script_target()
 
-        if squad and is_same_level
+        if is_same_level
                 and is_targeting_smart
                 and is_attacking
                 and (
@@ -549,6 +553,8 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
                 end
             end
         end
+
+        ::continue::
     end
 end
 
