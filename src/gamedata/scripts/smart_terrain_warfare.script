@@ -174,6 +174,27 @@ ecolog_next_update = {}
 night_flag_timer = {}
 night_flag_next_update = {}
 
+local reported_stale_squads = {}
+
+function resolve_roster_squad(smart_id, sid)
+    local squad = sid and alife_object(sid)
+    if (squad) then
+        return squad
+    end
+
+    local key = tostring(smart_id) .. ":" .. tostring(sid)
+    if (reported_stale_squads[key]) then
+        return nil
+    end
+    reported_stale_squads[key] = true
+
+    warfare_log.warn("stale squad id %s in roster of smart %s%s",
+        sid, smart_id, tostring(callstack(nil, true)))
+
+    return nil
+end
+
+
 smart_terrain_distances = {}                -- store distances when they get used. Save it in warfare.script to avoid lag spikes from continuously measuring distances between smart terrains
 smart_terrain_distances_linear = {}         -- sqrt of the above, cached the same way; used by the target scorers for a plain 1/r falloff
 under_attack = {}                            -- when a smart is under attack, halt squad assignment from that smart until the threat has passed or the point has changed hands
@@ -778,7 +799,7 @@ function process_manual_capture(smart)
                             -- check for ally squads already targeting, cancel capture if already targeting
                             local squads = SIMBOARD.smarts[smart.id].squads                            -- get info of all squads targeting location
                             for sid,_ in pairs(squads) do
-                                local squad = sid and alife_object(sid)
+                                local squad = resolve_roster_squad(smart.id, sid)
                                 local faction = squad and squad:get_squad_community()                            -- get faction of squads
                                 if (faction == warfare.actor_faction) and (not warfare.ignore[squad:section_name()]) then
                                     -- squad already targeting
@@ -897,7 +918,7 @@ function process_manual_capture(smart)
                     local base_squad
                     local sender
                     for sid,_ in pairs(squads) do
-                        local squad = sid and alife_object(sid)
+                        local squad = resolve_roster_squad(closest_base.id, sid)
                         local faction = squad and squad:get_squad_community()                            -- get faction of squads
 
                         if (faction == warfare.actor_faction) then
@@ -1080,7 +1101,7 @@ function process_base_squads(smart)
             if (regular_squads + stationary_sq_num > guards) then
                 local squads = SIMBOARD.smarts[smart.id].squads
                 for sid,_ in pairs(squads) do
-                    local squad = sid and alife_object(sid)
+                    local squad = resolve_roster_squad(smart.id, sid)
                     if (squad) and squad_is_commandable(squad, true) and (squad.current_action == 1) and (squad:get_squad_community() == smart.owning_faction) and not random_patrols[squad.id] then
                         warfare_log.debug("process_base_squads: support_invasion smart=%s squad=%s -> inv_base=%s",
                             smart:name(), tostring(squad.id), tostring(inv_base_id))
@@ -1118,7 +1139,7 @@ function process_base_squads(smart)
     local squads = SIMBOARD.smarts[smart.id].squads
 
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid) -- Look at each squad individually
+        local squad = resolve_roster_squad(smart.id, sid) -- Look at each squad individually
         -- First criterion: Operate only on valid idle squads at base. Random patrol squads are included
         if (squad) and squad_is_commandable(squad, true) and (squad.current_action == 1)
         and not sim_squad_warfare.squad_is_settled(squad) then
@@ -1372,7 +1393,7 @@ function process_nonbase_squads(smart, always_recall, keep_one)
     local eligible_count = 0
     if keep_one then
         for sid,_ in pairs(squads) do
-            local squad = sid and alife_object(sid)
+            local squad = resolve_roster_squad(smart.id, sid)
             local faction = squad and squad:get_squad_community()
             if (squad) and (squad_is_commandable(squad) or squad.patrol_table)
             and not patrol_system_owns(squad) and not sim_squad_warfare.squad_is_settled(squad)
@@ -1387,7 +1408,7 @@ function process_nonbase_squads(smart, always_recall, keep_one)
 
     local recalled = 0
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
         local faction = squad and squad:get_squad_community()
         if (squad) and (squad_is_commandable(squad) or squad.patrol_table)
         and not patrol_system_owns(squad) and not sim_squad_warfare.squad_is_settled(squad)
@@ -1560,7 +1581,7 @@ function surge_behavior(smart)
                 local shelter_targets = {}
 
                 for sid,_ in pairs(squads) do
-                    local squad = sid and alife_object(sid)
+                    local squad = resolve_roster_squad(smart.id, sid)
                     local faction = squad and squad:get_squad_community()
 
                     if (squad) and (faction ~= "monolith") and (faction ~= "monster") and (faction ~= "zombied") and not (axr_companions.companion_squads[sid]) then    -- ignore mutants and zombified, and companion squads
@@ -1715,7 +1736,7 @@ function process_invasion_departure(smart)
             smart:name(), target and target:name() or "?", tostring(invasion_size))
 
         for sid,_ in pairs(squads) do
-            local squad = sid and alife_object(sid)
+            local squad = resolve_roster_squad(smart.id, sid)
 
             if squad_is_commandable(squad) and (squad:get_squad_community() == smart.owning_faction) and (squad.current_action == 1) then
                 numSent = numSent + 1
@@ -2107,7 +2128,7 @@ function capture_empty_location(smart, target)
             local ally_squads = SIMBOARD.smarts[other.id].squads
 
             for sid,_ in pairs(ally_squads) do
-                local squad = sid and alife_object(sid)
+                local squad = resolve_roster_squad(other.id, sid)
                 local faction = squad and squad:get_squad_community()
 
                 -- only check for idle squads of same faction
@@ -2140,7 +2161,7 @@ function capture_empty_location_simple(smart, target)
     if (squads_available > 0) and not under_attack[smart.id] then
         local ally_squads = SIMBOARD.smarts[smart.id].squads
         for sid,_ in pairs(ally_squads) do
-            local squad = sid and alife_object(sid)
+            local squad = resolve_roster_squad(smart.id, sid)
             local faction = squad and squad:get_squad_community()
             -- only check for idle squads of same faction
             if squad_is_commandable(squad) and (faction == smart.owning_faction) and (squad.current_action == 1) then
@@ -2227,7 +2248,7 @@ function create_invasion_plan(smart, target)
         local enemy_target_squads = SIMBOARD.smarts[target.id].squads
 
         for sid,_ in pairs(enemy_target_squads) do
-            local squad = sid and alife_object(sid)
+            local squad = resolve_roster_squad(target.id, sid)
 
             if (squad) and (squad.registered_with_warfare) and (squad:get_squad_community() == defending_faction) and not (warfare.ignore[squad:section_name()]) then
                 total_enemy_power = total_enemy_power + sim_offline_combat.calculate_squad_power(squad)
@@ -2400,7 +2421,7 @@ function contribute_to_other_invasion(smart, skip_aggression)
                     if squads_needed > 0 then
                         local squads = SIMBOARD.smarts[smart.id].squads
                         for sid,_ in pairs(squads) do
-                            local squad = sid and alife_object(sid)
+                            local squad = resolve_roster_squad(smart.id, sid)
                             if (squads_available > 0) and squad_is_commandable(squad) and (squad:get_squad_community() == smart.owning_faction) and (squad.current_action == 1) then
                                 warfare_log.debug("contribute_to_other_invasion: smart=%s squad=%s -> base=%s",
                                     smart:name(), tostring(squad.id), other:name())
@@ -2477,7 +2498,7 @@ function process_invasion_defense(smart)
     local msg_allied_squad        -- store an allied squad for message ID purposes
     -- determine all enemy squads advancing on this position
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
 
         -- don't include ignore_list squads or story squads
         -- also exclude random patrols
@@ -2625,7 +2646,7 @@ function process_invasion_defense(smart)
 
                 if (squads_available > 0) then
                     for sid,_ in pairs(ally_squads) do
-                        local squad = sid and alife_object(sid)
+                        local squad = resolve_roster_squad(other.id, sid)
                         local faction = squad and squad:get_squad_community()
 
                         -- only check for idle squads of same faction
@@ -2660,7 +2681,7 @@ function process_invasion_defense(smart)
                     -- Send all squads on the current point to the closest ally location
                     local ally_squads = SIMBOARD.smarts[smart.id].squads
                     for sid,_ in pairs(ally_squads) do
-                        local squad = sid and alife_object(sid)
+                        local squad = resolve_roster_squad(smart.id, sid)
                         local faction = squad and squad:get_squad_community()
                         if squad_is_commandable(squad) and (faction == defending_faction) and (squad.current_action == 1) then
                             sim_squad_warfare.set_target(squad, other.id)
@@ -3202,7 +3223,7 @@ function process_loners(smart)
     end
 
     for sid, _ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
         local faction = squad and squad:get_squad_community()                            -- get faction of squads
 
         if faction and (faction == "stalker") and squad_is_commandable(squad, true) and (squad.current_action == 1) then
@@ -3567,7 +3588,7 @@ function process_ecolog(smart)
     local squads = SIMBOARD.smarts[smart.id].squads                            -- get info of all squads at location
 
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
         local faction = squad and squad:get_squad_community() or "none"                            -- get faction of squads
 
         if (faction == "ecolog") and squad_is_commandable(squad, true) and (squad.current_action == 1) then                                -- only operate on ecologists, exclude unique npcs
@@ -3838,7 +3859,7 @@ function spawn_mutants(smart)
         local spawned = false
         local squads = SIMBOARD.smarts[smart.id].squads
         for sid,_ in pairs(squads) do
-            local squad = sid and alife_object(sid)
+            local squad = resolve_roster_squad(smart.id, sid)
             if squad then
                 local faction = squad:get_squad_community()
                 if (faction == "monster") and (not warfare.ignore[squad:section_name()]) and (not sim_offline_combat.stationary_squads[squad:section_name()]) and (squad.current_action == 1) then
@@ -3895,7 +3916,7 @@ function process_mutants(smart)
     -- count squads on smart
     local mutant_squad_count = 0
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
         if squad then
             local faction = squad:get_squad_community()
             if (faction == "monster") and (not warfare.ignore[squad:section_name()]) and (not sim_offline_combat.stationary_squads[squad:section_name()]) then
@@ -3911,7 +3932,7 @@ function process_mutants(smart)
 
     -- potentially send mutant to a new smart terrain
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
         if squad then
             local faction = squad:get_squad_community()
             if (faction == "monster") and (not warfare.ignore[squad:section_name()]) and (not sim_offline_combat.stationary_squads[squad:section_name()]) then
@@ -4003,7 +4024,7 @@ function get_faction_power(smart, faction)
     local power = 0
 
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
 
         if (squad) then
             if (squad.current_action == 1 and squad.registered_with_warfare) then
@@ -4829,7 +4850,7 @@ function get_warfare_info(smart, visible)
         local player_is_attacker = false
         if smart.owning_faction ~= warfare.actor_faction and SIMBOARD and SIMBOARD.smarts[smart.id] then
             for sid,_ in pairs(SIMBOARD.smarts[smart.id].squads) do
-                local squad = sid and alife_object(sid)
+                local squad = resolve_roster_squad(smart.id, sid)
                 if squad and squad.registered_with_warfare and not random_patrols[squad.id]
                 and squad:get_squad_community() == warfare.actor_faction
                 and squad.current_action == 0 then
@@ -4895,7 +4916,7 @@ function squad_count_defending(smart, faction)
 
     local squads = SIMBOARD.smarts[smart.id].squads
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
         if (squad) and (squad:clsid() == clsid.online_offline_group_s) and warfare.registered_squads[faction][sid] then
             if (squad:get_squad_community() == faction and squad.current_action == 1) and (not axr_companions.companion_squads[squad.id]) and (not warfare.ignore[squad:section_name()]) then
                 local power = sim_offline_combat.calculate_squad_power(squad)
@@ -4928,7 +4949,7 @@ function squad_count_detailed(smart, faction)
 
     local squads = SIMBOARD.smarts[smart.id].squads
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
 
         if (squad) and (squad:clsid() == clsid.online_offline_group_s) and warfare.registered_squads[faction][sid] then
             if squad_is_commandable(squad) then
@@ -4969,7 +4990,7 @@ function squad_count_defending_all(smart)
 
     local squads = SIMBOARD.smarts[smart.id].squads
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
         if squad and (squad:clsid() == clsid.online_offline_group_s) then
             local faction = squad:get_squad_community()
 
@@ -5006,7 +5027,7 @@ function squad_count_targeting(smart, faction)
     end
 
     for sid,_ in pairs(squads) do
-        local squad = sid and alife_object(sid)
+        local squad = resolve_roster_squad(smart.id, sid)
 
         if (squad and squad:clsid() == clsid.online_offline_group_s) then
             if (squad.registered_with_warfare and squad:get_squad_community() == faction and squad.current_action == 0) and not (axr_companions.companion_squads[squad.id]) then

@@ -521,7 +521,7 @@ function tasks_assault.evaluate_smarts_squads(task_id, tbl, smart, squad_def, fa
 
         -- if warfare, override checks on stay time, default squad stuff
         -- if smart's squad is on its level + they are targeting it
-        local squad = alife_object(sq_id)
+        local squad = smart_terrain_warfare.resolve_roster_squad(smrt_id, sq_id)
         if (not squad) then
             goto continue
         end
@@ -747,7 +747,7 @@ function tasks_smart_control.evaluate_smarts_squads(task_id, tbl, smart, squad_d
 
         -- if warfare, override checks on stay time
         -- if smart's squad is on its level + they are targeting it
-        local squad = alife_object(sq_id)
+        local squad = smart_terrain_warfare.resolve_roster_squad(smrt_id, sq_id)
         if squad and simulation_objects.is_on_the_same_level(squad, smart)
                 and squad.current_target_id and (squad.current_target_id == smrt_id)
                 and (squad.current_action == 1)
@@ -781,7 +781,7 @@ function tasks_smart_control.evaluate_squads_smarts(task_id, var, smart, smrt)
 
     for sq_id, _ in pairs(smrt.squads) do
 
-        local squad = alife_object(sq_id)
+        local squad = smart_terrain_warfare.resolve_roster_squad(smrt.smrt and smrt.smrt.id, sq_id)
         if squad and simulation_objects.is_on_the_same_level(squad, smart) then
             if not (squad.first_update) then
                 return true
