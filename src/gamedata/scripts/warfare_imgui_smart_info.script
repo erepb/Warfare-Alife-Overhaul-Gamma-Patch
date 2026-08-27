@@ -376,20 +376,20 @@ function render_faction_smart_info(smart, faction)
            warfare_options.options.factions[faction] and warfare_factions and 
            warfare_factions.faction_information and warfare_factions.faction_information[faction] then
             
+            -- Mirrors smart_terrain_warfare.get_current_def_respawn_interval so the breakdown
+            -- explains the number the simulation actually uses: base_count already carries
+            -- base_count_modifier, the lerp is anchored at one base, and the final line is read
+            -- back from the real function rather than recomputed here.
             local min_respawn = warfare_options.options.factions[faction].min_faction_respawn
             local max_respawn = warfare_options.options.factions[faction].max_faction_respawn
-            local base_count_modifier = warfare_options.options.factions[faction].base_count_modifier
-            local faction_bases = warfare_factions.faction_information[faction].base_count + base_count_modifier
+            local faction_bases = warfare_factions.faction_information[faction].base_count
             local base_count_total = warfare.base_count or 1
-            local lerp_factor = math.min(math.max(faction_bases / base_count_total, 0), 1)
+            local lerp_span = base_count_total - 1
+            local lerp_factor = lerp_span >= 1 and math.min(math.max((faction_bases - 1) / lerp_span, 0), 1) or 0
             local calculated_respawn = warfare.lerp and warfare.lerp(min_respawn, max_respawn, lerp_factor) or min_respawn
-            
-            -- Monolith special case
-            local final_respawn = calculated_respawn
-            if faction == "monolith" and has_alife_info and has_alife_info("bar_deactivate_radar_done") then
-                final_respawn = calculated_respawn * 2
-            end
-            
+            local spawn_mult = warfare_options.options.spawn_speed_multiplier or 1
+            local final_respawn = smart_terrain_warfare.get_current_def_respawn_interval(faction)
+
             ImGui.Text("  Min Respawn Time: " .. format_time_remaining(min_respawn  * 6))
             ImGui.Text("  Max Respawn Time: " .. format_time_remaining(max_respawn  * 6))
             ImGui.Text("  Faction Bases: " .. tostring(faction_bases))
@@ -398,8 +398,9 @@ function render_faction_smart_info(smart, faction)
             ImGui.Text("  Calculated Interval: " .. format_time_remaining(calculated_respawn  * 6))
             if faction == "monolith" and has_alife_info and has_alife_info("bar_deactivate_radar_done") then
                 ImGui.Text("  Monolith Penalty: 2x (Brain Scorcher off)")
-                ImGui.Text("  Final Interval: " .. format_time_remaining(final_respawn  * 6))
             end
+            ImGui.Text("  Spawn Speed Multiplier: " .. string.format("%.2fx", spawn_mult))
+            ImGui.Text("  Final Interval: " .. format_time_remaining(final_respawn  * 6))
         else
             ImGui.Text("  Calculation Data: Not available")
         end
