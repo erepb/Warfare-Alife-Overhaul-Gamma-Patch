@@ -359,7 +359,23 @@ function save_state(m_data)
 end
 
 loaded_squads = false
-legacy_save_stagger = false  -- set true when loading a save that has no persisted defense/patrol timers
+-- Reason string ("new game" / "legacy save") when the spawn-timer stagger is armed, else nil.
+-- Armed by fill_start_position or load_state; consumed by stagger_spawn_timers.
+--
+-- Mirrored into alife_storage_manager state because GAMMA autosaves a freshly created new game
+-- and immediately loads it: the script VM reloads in between, which wipes a plain module-level
+-- flag before stagger_spawn_timers ever runs. Same trick fill_start_position_on_load uses with
+-- warfare_filled_start_position.
+pending_spawn_stagger = nil
+
+function arm_spawn_stagger(reason)
+    pending_spawn_stagger = reason
+    local st = alife_storage_manager.get_state()
+    if st then
+        st.warfare_pending_spawn_stagger = reason
+    end
+    warfare_log.info("arm_spawn_stagger: armed for %s", reason)
+end
 
 function load_state(m_data)
     -- if warfare data isn't saved, return early.
@@ -380,9 +396,13 @@ function load_state(m_data)
 
     -- Detect legacy save (pre-1.4.5): defense_delay was introduced after 1.4.2.
     -- Old saves have warfare data but no defense_delay key.
-    legacy_save_stagger = m_data.warfare ~= nil and m_data.warfare.defense_delay == nil
-    if legacy_save_stagger then
+    if m_data.warfare ~= nil and m_data.warfare.defense_delay == nil then
         warfare_log.warn("load_state: legacy save detected (no defense_delay) - will stagger spawn timers")
+        arm_spawn_stagger("legacy save")
+    elseif m_data.warfare_pending_spawn_stagger then
+        -- carried across GAMMA's new-game autosave+reload
+        pending_spawn_stagger = m_data.warfare_pending_spawn_stagger
+        warfare_log.info("load_state: spawn stagger still pending from %s", pending_spawn_stagger)
     end
 
     smart_terrain_warfare.defense_timers = m_data.warfare and m_data.warfare.defense_timers or {}
@@ -626,6 +646,7 @@ function actor_on_update()
 
     warfare_levels.update()
     warfare_factions.update()
+    stagger_spawn_timers()   -- no-op unless armed; needs the base counts the two updates produce
 
     local new_surge_cnt = game_statistics.actor_statistics["emissions"].count or 0
     if (not old_surge_cnt) then
@@ -733,6 +754,11 @@ function fill_start_position()
 
     SIMBOARD.start_position_filled = true
 
+    -- Arm the spawn-timer stagger. It can't be applied here (see stagger_spawn_timers),
+    -- so it runs from the actor_on_update one-shot init -- possibly after GAMMA's
+    -- autosave-and-reload of the freshly created game, hence the persisted flag.
+    arm_spawn_stagger("new game")
+
     if (warfare_options.options.random_starting_locations) then
         warfare_log.info("fill_start_position: random_starting_locations enabled, deferring")
         return
@@ -811,6 +837,18 @@ function fill_start_position()
         end
     end
 
+    -- Ownership of everything we populate is decided here rather than left to check_owner.
+    -- SIMBOARD:create_squad registers the squad with the smart immediately, but
+    -- squad_count_defending_all -- which is how check_owner derives an owner -- only counts squads
+    -- whose current_action has reached 1, and that does not happen until each squad's own update
+    -- cycle runs. So ownership would otherwise dribble in over the following seconds, and the
+    -- autosave GAMMA takes right after creating a new game would capture a mostly-unowned world.
+    -- We know the answer without counting: we just created these squads.
+    local spawned_by_faction = {}   -- smart id -> community -> squads spawned
+    local spawn_order = {}          -- smart id -> community -> first spawn sequence (tie-break)
+    local spawned_smart = {}        -- smart id -> smart
+    local spawn_seq = 0
+
     warfare_log.info("fill_start_position: lair seeding complete, processing simulation.ltx sections")
     setting_ini:section_for_each(function(section)
         lc = setting_ini:line_count(section)
@@ -880,15 +918,21 @@ function fill_start_position()
                                 sim_squad_warfare.set_target(squad, smart.id)
                                 warfare_log.info("fill_start_position: spawned squad section=%s faction=%s smart=%s", squad_section, sf, smart:name())
 
-                                -- stagger defense/patrol timers for bases so they don't all fire in sync
-                                if smart.props and smart.props.base > 0 and not smart_terrain_warfare.defense_timers[smart.id] then
-                                    local ff = warfare_options.options.factions[sf]
-                                    if ff then
-                                        local def_interval = ff.min_faction_respawn * speed_mult
-                                        local pat_interval = ff.min_patrol_time * speed_mult
-                                        smart_terrain_warfare.defense_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(def_interval * 6)))
-                                        smart_terrain_warfare.patrol_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(pat_interval * 6)))
-                                        warfare_log.trace("fill_start_position: stagger base smart=%s faction=%s", smart:name(), sf)
+                                -- Tally by the squad's real community, not by sf:
+                                -- get_squad_section_faction has no "monster" branch and falls
+                                -- through to "stalker", which would hand lairs to the loners.
+                                local community = squad:get_squad_community()
+                                if community and not is_squad_monster[community] then
+                                    spawn_seq = spawn_seq + 1
+                                    if not spawned_by_faction[smart.id] then
+                                        spawned_by_faction[smart.id] = {}
+                                        spawn_order[smart.id] = {}
+                                        spawned_smart[smart.id] = smart
+                                    end
+                                    local tally = spawned_by_faction[smart.id]
+                                    tally[community] = (tally[community] or 0) + 1
+                                    if not spawn_order[smart.id][community] then
+                                        spawn_order[smart.id][community] = spawn_seq
                                     end
                                 end
                             else
@@ -899,6 +943,34 @@ function fill_start_position()
             end
         end
     end)
+
+    -- Commit ownership: plurality of squads spawned, ties broken by whoever arrived first.
+    -- Both smart.owning_faction and smart_owners are written. smart_owners is the load-bearing
+    -- half: bootstrap_smart falls back to "none" when the smart has no entry there, so without it
+    -- the assignment is clobbered on the smart's first update; and save_state copies live
+    -- owning_faction into smart_owners, so GAMMA's post-creation autosave now persists a complete
+    -- ownership map instead of a mostly-empty one.
+    local assigned = 0
+    for id, tally in pairs(spawned_by_faction) do
+        local best, best_count, best_seq
+        for community, n in pairs(tally) do
+            local seq = spawn_order[id][community]
+            if (not best) or (n > best_count) or (n == best_count and seq < best_seq) then
+                best, best_count, best_seq = community, n, seq
+            end
+        end
+
+        local smart = spawned_smart[id]
+        if best and smart then
+            smart.owning_faction = best
+            smart.last_owner = best
+            smart_terrain_warfare.smart_owners[id] = best
+            assigned = assigned + 1
+            warfare_log.debug("fill_start_position: owner smart=%s faction=%s squads=%s",
+                smart:name(), best, tostring(best_count))
+        end
+    end
+    warfare_log.info("fill_start_position: assigned ownership for %s smarts", assigned)
 
     warfare_log.info("fill_start_position: complete")
 end
@@ -949,16 +1021,31 @@ function fill_start_position_on_load()
     warfare_log.info("fill_start_position_on_load: retargeted %s squads", retargeted)
 end
 
--- When loading a legacy save (pre-1.4.5, detected via missing defense_delay),
--- stagger defense/patrol timers randomly so all bases don't fire their first spawn in the same wave.
--- Mirrors the stagger applied during fill_start_position for new games.
-function stagger_legacy_spawn_timers()
-    if not legacy_save_stagger then return end
-    legacy_save_stagger = false
-    warfare_log.info("stagger_legacy_spawn_timers: applying legacy timer stagger")
+-- Back-date each owned base's defense/patrol timer by a random slice of that base's own current
+-- respawn interval, so first spawns land spread across 0..interval instead of every base of a
+-- faction firing in one wave. Armed for a new game (fill_start_position) or for a legacy save
+-- (load_state, pre-1.4.5 detected via missing defense_delay).
+--
+-- Armed there but applied from actor_on_update, because the interval needs warfare.base_count
+-- (set in actor_on_first_update) and faction_information[f].base_count (produced by the
+-- warfare_levels/warfare_factions updates that run immediately before this call).
+--
+-- Single pass: ownership is already correct by now. fill_start_position commits it for a new game
+-- and bootstrap_smart restores it from smart_owners on load, both before any aggregation runs, so
+-- there is nothing to wait for and no reason to revisit a base twice.
+function stagger_spawn_timers()
+    local st = alife_storage_manager.get_state()
+    local reason = pending_spawn_stagger or (st and st.warfare_pending_spawn_stagger)
+    if not reason then return end
 
-    local speed_mult = warfare_options.options.spawn_speed_multiplier or 1
+    pending_spawn_stagger = nil
+    if st then
+        st.warfare_pending_spawn_stagger = nil
+    end
+
     local staggered = 0
+    local unowned = 0
+    local total_bases = 0
 
     for name, smart in pairs(SIMBOARD.smarts_by_names) do
         if not smart.props then
@@ -966,20 +1053,37 @@ function stagger_legacy_spawn_timers()
         end
 
         if smart.props and smart.props.base > 0 then
-            local faction = smart_terrain_warfare.smart_owners[smart.id] or smart.owning_faction
-            if faction and faction ~= "none" then
-                local ff = warfare_options.options.factions[faction]
-                if ff then
-                    local def_interval = ff.min_faction_respawn * speed_mult
-                    local pat_interval = ff.min_patrol_time * speed_mult
-                    smart_terrain_warfare.defense_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(def_interval * 6)))
-                    smart_terrain_warfare.patrol_timers[smart.id] = warfare_utils.subtract_time(get_time(), math.random(0, math.floor(pat_interval * 6)))
-                    staggered = staggered + 1
-                end
+            total_bases = total_bases + 1
+            local faction = smart.owning_faction
+
+            if faction and faction ~= "none"
+                    and warfare_options.options.factions[faction]
+                    and warfare_factions.faction_information[faction] then
+                -- Must be the interval spawn_defense/spawn_patrols will compare against. Sizing the
+                -- spread against anything larger leaves bases instantly overdue: they fire on the
+                -- next tick, advance by the smaller interval, and converge back into the very wave
+                -- this exists to break up.
+                local def_interval = smart_terrain_warfare.get_current_def_respawn_interval(faction)
+                local pat_interval = smart_terrain_warfare.get_current_patrol_respawn_interval(faction)
+                local def_offset = math.random(0, math.floor(def_interval * 6))
+                local pat_offset = math.random(0, math.floor(pat_interval * 6))
+
+                smart_terrain_warfare.defense_timers[smart.id] = warfare_utils.subtract_time(get_time(), def_offset)
+                smart_terrain_warfare.patrol_timers[smart.id] = warfare_utils.subtract_time(get_time(), pat_offset)
+                staggered = staggered + 1
+
+                warfare_log.debug("stagger_spawn_timers: smart=%s faction=%s def=%s/%s pat=%s/%s",
+                    smart:name(), faction,
+                    tostring(def_offset), tostring(def_interval * 6),
+                    tostring(pat_offset), tostring(pat_interval * 6))
+            else
+                unowned = unowned + 1
             end
         end
     end
-    warfare_log.info("stagger_legacy_spawn_timers: staggered %s bases", staggered)
+
+    warfare_log.info("stagger_spawn_timers: %s - staggered %s of %s bases (%s unowned)",
+        reason, staggered, total_bases, unowned)
 end
 
 function initialize_random_starting_locations()
@@ -1202,7 +1306,6 @@ function on_game_start()
     local function on_game_load()
         warfare_log.info("on_game_load: priming ignore list and scheduling resetter")
         ignore = sim_offline_combat.get_ignore_list()
-        stagger_legacy_spawn_timers()
         CreateTimeEvent(0, "reset_warfare_callbacks", 60, resetter)
     end
     RegisterScriptCallback("on_game_load", on_game_load)
