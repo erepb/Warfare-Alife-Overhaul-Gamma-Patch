@@ -1,17 +1,31 @@
 ## What's Changed
 
 ### Features
-- Save and delete warfare presets from the options screen: name a preset, store the current warfare settings in it, and pick it back up from the preset dropdown
-- Hawkie's Warfare Mechanic Fix is bundled for non-GAMMA installs, so toolkits handed to a Warfare faction mechanic reach the workbench
+- Reworked target scoring: linear distance replaces distance squared, and the priority weights were rebalanced
+- Dispatch now contests enemy-held resources and territories instead of only bases
+- Patrol destinations are weighted by distance instead of being clipped to the two nearest smarts
+- Overflow relocation scores additively, so distance becomes a travel radius rather than a hard cutoff
+- Offline squads that merely cross paths now roll for whether they engage, using each faction's patrol hunt chance - deliberate hunts and assaults on a garrison still always engage
+- New option to lift the rank-based cap on commanded squads
+- The PDA warfare tab sorts factions by power
 
 ### Improvements
-- Removed the per-faction "Participate in Warfare" setting - every faction always takes part in warfare
-- Factions in the balanced preset now target levels they are not directly linked to
-- Emergency resurrection spawns at least four squads instead of at most four
+- Balanced preset updated with playtested faction values
 
 ### Bug Fixes
-- Fix option descriptions only showing for one faction group - every faction now gets hover tooltips
-- Add the option descriptions that were missing entirely, in English and Russian
-- Fix "Ignore empty targets" doing nothing: factions with it enabled no longer target unowned locations
-- Fix the emission zone purge percentage defaulting to 50 instead of 5
-- Fix crash from a nil global position in the offline combat distance multiplier
+- Fix a crash when the task system scanned a smart terrain whose squad list still referenced a released squad
+- Fix squads oscillating between adjacent bases: destination choice now counts squads already in transit, and a base at capacity no longer looks able to receive
+- Fix overflow squads with nowhere to go being deleted instead of falling back to their faction HQ
+- Fix squads leaving a smart immediately after arriving, and patrols re-picking the smart they are standing on
+- Fix overflow relocation targeting smarts too far away
+- Fix zombied squads being recalled to bases they do not have: with no main base of their own the recall could only ever fail, and it was retried on every pass over the smart
+- Fix night being defined differently in different places - it is now 21:00 to 06:00 everywhere
+- Fix min_resurgence_wait_time being unreachable in GAMMA installs which lead to almost immediate resurrection
+- Fix resurrection landing on main bases their owner still holds, and move ISG's Agroprom resurrection anchor to a capturable smart
+- Fix small factions being unable to launch invasions
+- Fix every base of a faction spawning its first defense wave at the same moment
+- Fix the base respawn interval never reaching its configured minimum: the curve is anchored at one base instead of zero
+- Fix base_count_modifier being applied twice outside update_faction
+- Fix the PDA warfare tab reporting base and resource counts inflated by the enemy boosts
+- Fix the ImGui timer panels showing a respawn interval the simulation does not use
+- Fix a misleading log line about AlifePlus squad release
