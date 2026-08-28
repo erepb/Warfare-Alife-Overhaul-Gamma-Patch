@@ -796,7 +796,7 @@ function fill_start_position()
     -- mutant spawns on new game + stagger mutant spawn timers
     local speed_mult = warfare_options.options.spawn_speed_multiplier or 1
     local mutant_max = warfare_options.options.monster_max_faction_respawn
-    local max_active = warfare_options.options.monster_max_squads_per_level
+    local seeded_by_level = {}
     for name, smart in pairs(SIMBOARD.smarts_by_names) do
 
         if not (smart.props) then
@@ -809,32 +809,23 @@ function fill_start_position()
         end
 
         if (smart.props.lair > 0) and (smart.props.base < 1) and (smart.props.resource < 1) and (smart.props.territory < 1) then
-            --local mutants_on_level = sim_offline_combat.get_num_squads_on_level(smart.level_id, "monster")
-
             -- stagger mutant spawn timer so lairs don't all fire at the same time
             smart_terrain_warfare.spawn_mutant_next_update[smart.id] = math.random(0, mutant_max) * speed_mult
             smart_terrain_warfare.spawn_mutant_timers[smart.id] = get_time()
 
+            -- Same cap and rarity band the respawn path uses. This runs before
+            -- resolve_monster_level_capacity, so a level nobody has a cap for yet seeds nothing and
+            -- fills in on its own respawn cycle instead.
+            local level_max, rare_chance = smart_terrain_warfare.get_mutant_level_settings(smart.level_id)
+            local seeded = seeded_by_level[smart.level_id] or 0
+
             -- for new game, spawn 50% the allowable mutants, or one mutant squad per smart (whichever occurs first)
-            if (math.random(100) < 50 * monster_pop_factor) then
-                local current_level = smart.level_id
-                local rare_chance = warfare_options.options.monster_rare_chance_south
-
-                if (current_level > 12) and (current_level < 32) then
-                    -- levels 13 - 31 include all levels north of military warehouses/dead city/trucks cemetery. Also includes all labs. See level_targets.script for more info
-                    if (current_level > 19) and (current_level < 27) then
-                        -- labs will spawn scary mutants
-                        rare_chance = warfare_options.options.monster_rare_chance_lab
-                    else
-                        rare_chance = warfare_options.options.monster_rare_chance_north
-                    end
-                end
-
+            if (seeded < level_max) and (math.random(100) < 50 * monster_pop_factor) then
                 local section = faction_expansions.get_spawn_section("monster", rare_chance, smart.level_id)
                 local squad = utils_obj.create_squad(section, smart:name())
                 warfare_log.info("fill_start_position: spawned monster section=%s at smart=%s", section, smart:name())
                 sim_squad_warfare.set_target(squad, smart.id)
-
+                seeded_by_level[smart.level_id] = seeded + 1
             end
         end
     end
