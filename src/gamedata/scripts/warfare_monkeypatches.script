@@ -925,6 +925,13 @@ end
 -- no .m_game_vertex_id. Note vanilla recurses through the script-global from(), which is this
 -- function, so an object on an unmapped level ends up in the position path below.
 -- Position path (level_id set): no offset entry for that level_id.
+-- A missing offset is a property of the level, and a missing position a property of the object, so
+-- both repeat for as long as the condition lasts. Callers include per-squad loops over every smart
+-- (sim_offline_combat.calculate_distance_combat_multiplier), which turns one broken level into
+-- thousands of identical lines, so each key is reported once per session.
+local warned_offset = {}
+local warned_object = {}
+
 local global_position_from = global_position.from
 global_position.from = function(object_or_position, level_id)
     if (level_id == nil) then
@@ -932,22 +939,28 @@ global_position.from = function(object_or_position, level_id)
         if not (gp) then
             -- tostring() throughout: any of these can be nil, and string.format("%s", nil) throws.
             local id = object_or_position and object_or_position.id
-            warfare_log.warn("global_position.from: nil for object id=%s name=%s gvid=%s level_id=%s pos=%s",
-                tostring(id),
-                tostring(id and object_or_position:name()),
-                tostring(object_or_position and object_or_position.m_game_vertex_id),
-                tostring(object_or_position and object_or_position.level_id),
-                (object_or_position and object_or_position.position) and "ok" or "nil")
+            if not (warned_object[id or 0]) then
+                warned_object[id or 0] = true
+                warfare_log.warn("global_position.from: nil for object id=%s name=%s gvid=%s level_id=%s pos=%s (reported once)",
+                    tostring(id),
+                    tostring(id and object_or_position:name()),
+                    tostring(object_or_position and object_or_position.m_game_vertex_id),
+                    tostring(object_or_position and object_or_position.level_id),
+                    (object_or_position and object_or_position.position) and "ok" or "nil")
+            end
         end
         return gp
     end
 
     local offset = global_position.level_offsets[level_id]
     if (not object_or_position) or (not offset) then
-        warfare_log.warn("global_position.from: nil for position level_id=%s pos=%s offset=%s",
-            tostring(level_id),
-            object_or_position and "ok" or "nil",
-            offset and "ok" or "nil")
+        if not (warned_offset[level_id]) then
+            warned_offset[level_id] = true
+            warfare_log.warn("global_position.from: nil for position level_id=%s pos=%s offset=%s (reported once)",
+                tostring(level_id),
+                object_or_position and "ok" or "nil",
+                offset and "ok" or "nil")
+        end
         return
     end
     local p = object_or_position
