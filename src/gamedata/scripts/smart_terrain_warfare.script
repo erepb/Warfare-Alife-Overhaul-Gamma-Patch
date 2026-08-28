@@ -567,6 +567,24 @@ function resolve_monster_level_capacity()
     end
 end
 
+function get_mutant_level_zone(level_id)
+    if not (level_id) then
+        return "south"
+    end
+
+    for _, lab_id in pairs(level_targets.labs or {}) do
+        if (lab_id == level_id) then
+            return "lab"
+        end
+    end
+
+    if (level_id > 12) and (level_id < 32) then
+        return "north"
+    end
+
+    return "south"
+end
+
 local clr_gr = utils_xml.get_color("ui_gray_1")
 local clr_w = utils_xml.get_color("white")
 local clr_o = utils_xml.get_color("d_orange")
@@ -3873,15 +3891,14 @@ function get_mutant_level_settings(level_id)
 
     local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, capacity * pop_factor))        -- max allowable squads is min of user setting or level-specific capacity
     local rare_chance = warfare_options.options.monster_rare_chance_south
-    if (level_id) and (level_id > 12) and (level_id < 32) then
-        -- levels 13 - 31 include all levels north of military warehouses/dead city/trucks cemetery. Also includes all labs. See level_targets.script for more info
-        if ((level_id > 19) and (level_id < 27)) or (level_id == 29) or (level_id == 31) then
-            -- labs will spawn scary mutants
-            max_active = round_idp(math.min(max_active, warfare_options.options.monster_max_squads_per_level_lab))            -- max monster squads in labs is min of level-allowed max and user setting
-            rare_chance = warfare_options.options.monster_rare_chance_lab
-        else
-            rare_chance = warfare_options.options.monster_rare_chance_north
-        end
+    local zone = get_mutant_level_zone(level_id)
+
+    if (zone == "lab") then
+        -- labs will spawn scary mutants
+        max_active = round_idp(math.min(max_active, warfare_options.options.monster_max_squads_per_level_lab))            -- max monster squads in labs is min of level-allowed max and user setting
+        rare_chance = warfare_options.options.monster_rare_chance_lab
+    elseif (zone == "north") then
+        rare_chance = warfare_options.options.monster_rare_chance_north
     end
     return max_active, rare_chance
 end
