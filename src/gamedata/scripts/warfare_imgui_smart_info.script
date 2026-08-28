@@ -497,25 +497,13 @@ function render_mutant_smart_info(smart)
     if warfare_options and warfare_options.options and smart_terrain_warfare.monster_level_capacity then
         local base_capacity = smart_terrain_warfare.monster_level_capacity[current_level] or 0
         local user_setting = warfare_options.options.monster_max_squads_per_level or 0
-        local mutant_pop_multiplier = warfare.get_monster_pop_factor()
-        local effective_capacity = math.min(user_setting, base_capacity * mutant_pop_multiplier)
-        
-        -- Level type and rare spawn chances
-        local level_type = "South"
-        local rare_chance = warfare_options.options.monster_rare_chance_south
-        
-        if (current_level > 12) and (current_level < 32) then
-            if ((current_level > 19) and (current_level < 27)) or (current_level == 29) or (current_level == 31) then
-                level_type = "Lab"
-                rare_chance = warfare_options.options.monster_rare_chance_lab
-                local lab_max = warfare_options.options.monster_max_squads_per_level_lab
-                effective_capacity = math.min(effective_capacity, lab_max)
-            else
-                level_type = "North"
-                rare_chance = warfare_options.options.monster_rare_chance_north
-            end
-        end
-        
+        local mutant_pop_multiplier = warfare.get_monster_pop_factor() or 1
+
+        local effective_capacity, rare_chance = smart_terrain_warfare.get_mutant_level_settings(current_level)
+        local level_type = smart_terrain_warfare.get_mutant_level_zone(current_level)
+        effective_capacity = effective_capacity or 0
+        rare_chance = rare_chance or 0
+
         ImGui.Text("Level Spawn Limits:")
         ImGui.Text("  Level Type: " .. level_type)
         ImGui.Text("  Base Capacity: " .. tostring(base_capacity))
