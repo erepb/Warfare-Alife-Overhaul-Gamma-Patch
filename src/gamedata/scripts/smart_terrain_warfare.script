@@ -680,7 +680,6 @@ function bootstrap_smart(smart)
     end
 
     set_max_population(smart)
-    smart.global_position = global_position.from(smart)
     night_activity_allowed[smart.id] = 0
 end
 
