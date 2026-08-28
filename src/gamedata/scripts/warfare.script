@@ -279,6 +279,8 @@ function actor_on_first_update()
         end
     end
     warfare_log.info("actor_on_first_update: bootstrapped %s smarts before level/faction aggregation", tostring(bootstrapped))
+
+    smart_terrain_warfare.resolve_monster_level_capacity()
 end
 
 -- save warfare state

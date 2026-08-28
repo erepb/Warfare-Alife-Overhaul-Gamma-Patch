@@ -478,7 +478,10 @@ local lab_entrance_smarts = {
 }
 
 -- Number of mutant squads allowed on each level (on a 1.0 mutant pop factor). Mixed lair/territories count for half the mutant capacity
--- This should be changed if the # of lairs changes at any point in the future
+-- This should be changed if the # of lairs changes at any point in the future.
+-- configs/unlocalizers/unlocalizers_warfare.ltx strips the `local` below at load time, so other
+-- scripts reach this as smart_terrain_warfare.monster_level_capacity: level packs register their
+-- own levels into it
 local monster_level_capacity = {
     [1] = 17,    -- Marsh [13 lairs, 17 cap]
     [2] = 9,    -- Cordon [9 lairs, 9 cap]
@@ -515,6 +518,54 @@ local monster_level_capacity = {
     [33] = 0,    -- Test Level
     [34] = 4,    -- Village
 }
+
+local level_name_cache = {}
+local function level_name_for(level_id)
+    if (level_id == nil) then
+        return nil
+    end
+    local name = level_name_cache[level_id]
+    if (name == nil) then
+        local ok, resolved = pcall(function() return alife():level_name(level_id) end)
+        name = (ok and resolved) or false
+        level_name_cache[level_id] = name
+    end
+    return name or nil
+end
+
+local function smart_sim_available(smart)
+    if not (smart.sim_avail) then
+        return true
+    end
+    return xr_logic.pick_section_from_condlist(nil, smart, smart.sim_avail) == "true"
+end
+
+local function count_mutant_lairs(li)
+    local count = 0
+    for _, sid in pairs(li.smarts or {}) do
+        local smart = sid and alife_object(sid)
+        local props = smart and smart.props
+        if (props) and (props.lair > 0) and (props.base < 1) and (props.resource < 1) and (props.territory < 1)
+                and smart_sim_available(smart) then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+-- Level ids are handed out by the game graph, so a level added by another mod cannot have an
+-- entry in monster_level_capacity when this script is parsed. warfare.actor_on_first_update calls
+-- this once warfare_levels.level_information is populated, and any level still without a cap gets
+-- one derived from its own lairs. Level packs that register their own cap keep it.
+function resolve_monster_level_capacity()
+    for level_id, li in pairs(warfare_levels.level_information) do
+        if (monster_level_capacity[level_id] == nil) then
+            monster_level_capacity[level_id] = count_mutant_lairs(li)
+            warfare_log.info("resolve_monster_level_capacity: level %s (%s) has no cap, using its %s usable lairs",
+                level_id, level_name_for(level_id) or "unknown", monster_level_capacity[level_id])
+        end
+    end
+end
 
 local clr_gr = utils_xml.get_color("ui_gray_1")
 local clr_w = utils_xml.get_color("white")
@@ -3808,9 +3859,21 @@ end
 
 
 function get_mutant_level_settings(level_id)
-    local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, monster_level_capacity[level_id] * warfare.get_monster_pop_factor()))        -- max allowable squads is min of user setting or level-specific capacity
+    local capacity = monster_level_capacity[level_id]
+    local pop_factor = warfare.get_monster_pop_factor()
+
+    if not (capacity) or not (pop_factor) then
+        local li = level_id and warfare_levels.level_information[level_id]
+        local lairs = li and count_mutant_lairs(li)
+        warfare_log.warn("get_mutant_level_settings: level_id=%s (%s) capacity=%s pop_factor=%s usable_lairs=%s",
+            level_id, level_name_for(level_id) or "unknown", capacity, pop_factor, lairs)
+        capacity = capacity or lairs or 0
+        pop_factor = pop_factor or 1
+    end
+
+    local max_active = round_idp(math.min(warfare_options.options.monster_max_squads_per_level, capacity * pop_factor))        -- max allowable squads is min of user setting or level-specific capacity
     local rare_chance = warfare_options.options.monster_rare_chance_south
-    if (level_id > 12) and (level_id < 32) then
+    if (level_id) and (level_id > 12) and (level_id < 32) then
         -- levels 13 - 31 include all levels north of military warehouses/dead city/trucks cemetery. Also includes all labs. See level_targets.script for more info
         if ((level_id > 19) and (level_id < 27)) or (level_id == 29) or (level_id == 31) then
             -- labs will spawn scary mutants
